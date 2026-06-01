@@ -144,7 +144,7 @@ export default function RutinasPage() {
         for (const studentId of alumnoIds) {
           if (studentId === oldStudentId) {
             const wi = indicacionesSemanales.some((s) => s.trim()) ? indicacionesSemanales : undefined;
-            await updateWorkoutPlan(editandoId, nombre.trim(), "", dias, storeEjercicios, wi);
+            await updateWorkoutPlan(editandoId, nombre.trim(), "", dias as any, storeEjercicios, wi);
             useAppStore.setState((s) => ({
               rutinas: s.rutinas.map((r) =>
                 r.id === editandoId ? { ...r, nombre: nombre.trim(), dias, indicacionesSemanales: wi } : r
