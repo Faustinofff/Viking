@@ -1,11 +1,6 @@
 {
-  "git": {
-    "deploymentEnabled": {
-      "main": true
-    }
-  },
-  "installCommand": "cd packages/web && npm install",
-  "buildCommand": "cd packages/web && npm run build",
+  "installCommand": "npm install --workspace=@viking/web",
+  "buildCommand": "npm run build --workspace=@viking/web",
   "outputDirectory": "packages/web/.next",
   "framework": "nextjs"
 }
