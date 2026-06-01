@@ -4,19 +4,29 @@
   "private": true,
   "description": "Viking — Plataforma premium de entrenamiento para coaches y alumnos",
   "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "mobile": "cd packages/mobile && npm start",
-    "web": "cd packages/web && npm run dev",
-    "build:shared": "cd packages/shared && npm run build",
-    "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "shared:build": "cd packages/shared && npm run build"
   },
-  "workspaces": [
-    "packages/*"
-  ],
   "dependencies": {
+    "@huggingface/transformers": "^3.0.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "mercadopago": "^3.0.0",
+    "next": "^14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "styled-jsx": "^5.1.0"
+    "zustand": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.0"
   },
   "engines": {
     "node": ">=18"
