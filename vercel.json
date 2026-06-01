@@ -1,4 +1,3 @@
 {
-  "installCommand": "npm install --workspace=@viking/web --legacy-peer-deps",
-  "buildCommand": "npm run build --workspace=@viking/web",
+  "installCommand": "npm install --legacy-peer-deps"
 }
