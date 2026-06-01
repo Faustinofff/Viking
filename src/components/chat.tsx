@@ -60,6 +60,24 @@ export default function ChatDialog({ collapsed, mobile, header }: { collapsed?: 
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  // Prevent body scroll when chat is open on mobile
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+    };
+  }, [open]);
+
   const ask = async (q: string) => {
     if (!q.trim() || loading) return;
     const userMsg: Message = { role: "user", content: q };
@@ -111,9 +129,9 @@ export default function ChatDialog({ collapsed, mobile, header }: { collapsed?: 
       )}
 
       {open && typeof window === "object" && createPortal(
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50 overflow-hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
-          <div className="relative flex flex-col w-full max-w-[420px] mx-auto h-screen bg-bg-primary sm:h-[600px] sm:mt-8 sm:border sm:border-white/[0.08] sm:rounded-2xl shadow-2xl">
+          <div className="relative flex flex-col w-full max-w-[420px] mx-auto h-full bg-bg-primary sm:max-h-[600px] sm:mt-8 sm:border sm:border-white/[0.08] sm:rounded-2xl shadow-2xl">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
               <div className="flex items-center gap-2.5">
                 <img src="/vikingIA.png" alt="IA" className="max-w-14 max-h-14 w-auto h-auto object-contain" />
@@ -125,7 +143,7 @@ export default function ChatDialog({ collapsed, mobile, header }: { collapsed?: 
               <button onClick={() => setOpen(false)} className="text-white/20 hover:text-white/60 text-lg leading-none">&times;</button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
               {messages.map((m, i) => {
                 const isLastAssistant = m.role === "assistant" && i === messages.length - 1 && i > 0 && !loading;
                 return (
@@ -177,11 +195,12 @@ export default function ChatDialog({ collapsed, mobile, header }: { collapsed?: 
               <div ref={bottomRef} />
             </div>
 
-            <div className="p-4 border-t border-white/[0.06]">
+            <div className="sticky bottom-0 p-4 border-t border-white/[0.06] bg-bg-primary" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}>
               <div className="flex gap-2">
                 <input
                   className="input flex-1 text-sm"
                   placeholder="Escribí tu consulta..."
+                  style={{ fontSize: "16px" }}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); document.getElementById("chat-send-btn")?.click(); } }}
