@@ -195,7 +195,7 @@ export async function createWorkoutPlan(
   descripcion: string | undefined,
   _mes: number,
   _anio: number,
-  dias: { id: string; nombre: string; diaSemana: string; ejercicios: { id: string; ejercicioId: string; ejercicioNombre: string; grupoMuscular: string; series: number; reps: number; descansoSegundos: number; notas?: string; videoUrl?: string; seriesPorSemana?: number[]; repsPorSemana?: number[]; descansoPorSemana?: number[]; notasPorSemana?: string[] }[] },
+  dias: { id: string; nombre: string; diaSemana: string; ejercicios: { id: string; ejercicioId: string; ejercicioNombre: string; grupoMuscular: string; series: number; reps: number; descansoSegundos: number; notas?: string; videoUrl?: string; seriesPorSemana?: number[]; repsPorSemana?: number[]; descansoPorSemana?: number[]; notasPorSemana?: string[] }[] }[],
   ejerciciosGlobales: { id: string; nombre: string; grupoMuscular: string }[],
   indicacionesSemanales?: string[]
 ) {
@@ -263,7 +263,7 @@ export async function updateWorkoutPlan(
   planId: string,
   nombre: string,
   descripcion: string | undefined,
-  dias: { id: string; nombre: string; diaSemana: string; ejercicios: { id: string; ejercicioId: string; ejercicioNombre: string; grupoMuscular: string; series: number; reps: number; descansoSegundos: number; notas?: string; videoUrl?: string; seriesPorSemana?: number[]; repsPorSemana?: number[]; descansoPorSemana?: number[]; notasPorSemana?: string[] }[] },
+  dias: { id: string; nombre: string; diaSemana: string; ejercicios: { id: string; ejercicioId: string; ejercicioNombre: string; grupoMuscular: string; series: number; reps: number; descansoSegundos: number; notas?: string; videoUrl?: string; seriesPorSemana?: number[]; repsPorSemana?: number[]; descansoPorSemana?: number[]; notasPorSemana?: string[] }[] }[],
   ejerciciosGlobales: { id: string; nombre: string; grupoMuscular: string }[],
   indicacionesSemanales?: string[]
 ) {
