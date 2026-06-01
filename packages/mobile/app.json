@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Viking",
+    "slug": "viking",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0A0A0B",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.viking.app",
+      "config": {
+        "googleSignIn": true
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0B"
+      },
+      "package": "com.viking.app"
+    },
+    "plugins": [
+      "expo-av",
+      "expo-haptics"
+    ]
+  }
+}

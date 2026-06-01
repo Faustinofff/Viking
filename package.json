@@ -1,0 +1,24 @@
+{
+  "name": "viking",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Viking — Plataforma premium de entrenamiento para coaches y alumnos",
+  "scripts": {
+    "mobile": "cd packages/mobile && npm start",
+    "web": "cd packages/web && npm run dev",
+    "build:shared": "cd packages/shared && npm run build",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "styled-jsx": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

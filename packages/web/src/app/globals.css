@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@layer base {
+  body {
+    @apply bg-bg-primary text-white antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  ::selection {
+    background: rgba(0, 212, 170, 0.3);
+    color: white;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white/[0.04] backdrop-blur-xl border border-white/[0.06] rounded-2xl p-6;
+  }
+  .card-hover {
+    @apply card hover:bg-white/[0.08] cursor-pointer transition-all duration-200;
+  }
+  .card-glow {
+    @apply card border-accent/20 shadow-glow;
+  }
+  .btn-primary {
+    @apply bg-accent text-bg-primary font-semibold rounded-xl px-5 py-2.5 
+           hover:bg-accent/90 active:scale-[0.97] transition-all duration-200
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-white/[0.08] text-white font-semibold rounded-xl px-5 py-2.5 
+           border border-white/[0.1] hover:bg-white/[0.12] active:scale-[0.97] transition-all;
+  }
+  .btn-ghost {
+    @apply text-white/60 hover:text-white hover:bg-white/[0.06] rounded-xl px-4 py-2 transition-all;
+  }
+  .btn-danger {
+    @apply bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl px-5 py-2.5 
+           hover:bg-red-500/20 transition-all;
+  }
+  .input {
+    @apply w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-2.5 
+           text-white placeholder:text-white/30
+           focus:outline-none focus:border-accent focus:bg-accent/[0.03] transition-all;
+  }
+  select.input, select.select {
+    color-scheme: dark;
+  }
+  select.input option, select.select option {
+    background: #1a1a2e;
+    color: #fff;
+  }
+  .label {
+    @apply text-xs font-semibold text-white/50 uppercase tracking-wider;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-green {
+    @apply badge bg-accent/10 text-accent;
+  }
+  .badge-yellow {
+    @apply badge bg-yellow-500/10 text-yellow-500;
+  }
+  .badge-red {
+    @apply badge bg-red-500/10 text-red-400;
+  }
+  .badge-blue {
+    @apply badge bg-blue-500/10 text-blue-400;
+  }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
