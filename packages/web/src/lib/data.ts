@@ -73,11 +73,15 @@ export function serializeIndicacionesSemanales(indicaciones: string[]): string {
 /** Returns the week-appropriate value from an exercise's per-week array, or falls back to the scalar. */
 export function ejercicioWeekValue<T>(ej: { seriesPorSemana?: T[]; repsPorSemana?: T[]; descansoPorSemana?: T[]; notasPorSemana?: string[] }, field: "series" | "reps" | "descanso" | "notas", scalar: T, weekIndex?: number): T {
   const idx = weekIndex ?? getCurrentWeekIndex();
+  if (field === "notas") {
+    const arr = ej.notasPorSemana;
+    if (arr && arr.length > idx && arr[idx] !== undefined && arr[idx] !== null) return arr[idx] as T;
+    return scalar;
+  }
   const map: Record<string, T[] | undefined> = {
     series: ej.seriesPorSemana as T[] | undefined,
     reps: ej.repsPorSemana as T[] | undefined,
     descanso: ej.descansoPorSemana as T[] | undefined,
-    notas: ej.notasPorSemana as string[] | undefined,
   };
   const arr = map[field];
   if (arr && arr.length > idx && arr[idx] !== undefined && arr[idx] !== null) return arr[idx];
