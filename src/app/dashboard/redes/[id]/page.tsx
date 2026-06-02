@@ -104,9 +104,9 @@ export default function RedDetailPage() {
           <h1 className="text-3xl font-extrabold text-white tracking-tight">{red.nombre}</h1>
           <p className="text-white/40 mt-1">{red.tipo === "gimnasio" ? "🏋️ Presencial" : "💻 Online"} · {alumnosRed.length} alumnos</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => setShowExistingModal(true)} className="btn-secondary">+ Agregar Existente</button>
-          <button onClick={() => setShowModal(true)} className="btn-primary">+ Nuevo Alumno</button>
+        <div className="flex gap-1.5 items-start sm:items-center flex-col sm:flex-row">
+          <button onClick={() => setShowExistingModal(true)} className="btn-secondary text-sm !px-3 !py-1.5">+ Agregar Existente</button>
+          <button onClick={() => setShowModal(true)} className="btn-primary text-sm !px-3 !py-1.5">+ Nuevo Alumno</button>
         </div>
       </div>
 
@@ -114,9 +114,9 @@ export default function RedDetailPage() {
         <div className="card text-center py-12">
           <p className="text-white/30 text-lg mb-2">Esta red está vacía</p>
           <p className="text-white/20 text-sm mb-4">Agregá tu primer alumno para empezar</p>
-          <div className="flex gap-2 justify-center">
-            <button onClick={() => setShowExistingModal(true)} className="btn-secondary">+ Agregar Existente</button>
-            <button onClick={() => setShowModal(true)} className="btn-primary">+ Nuevo Alumno</button>
+          <div className="flex gap-1.5 justify-center flex-wrap">
+            <button onClick={() => setShowExistingModal(true)} className="btn-secondary text-sm !px-3 !py-1.5">+ Agregar Existente</button>
+            <button onClick={() => setShowModal(true)} className="btn-primary text-sm !px-3 !py-1.5">+ Nuevo Alumno</button>
           </div>
         </div>
       ) : (

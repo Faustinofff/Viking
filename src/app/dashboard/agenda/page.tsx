@@ -262,27 +262,27 @@ export default function AgendaPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 sm:p-6" onClick={() => setShowModal(false)}>
-          <div className="card w-full max-w-md p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-white mb-4">{isEditing ? "Editar Sesión" : "Nueva Sesión"}</h2>
-            <form onSubmit={handleCreate} className="space-y-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-3 sm:p-6" onClick={() => setShowModal(false)}>
+          <div className="card w-full max-w-md p-3 sm:p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-white mb-3 sm:mb-4">{isEditing ? "Editar Sesión" : "Nueva Sesión"}</h2>
+            <form onSubmit={handleCreate} className="space-y-3 sm:space-y-4">
               <div>
-                <label className="label block mb-1.5">Fecha</label>
-                <input type="date" className="input" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} required={!isEditing} disabled={isEditing} style={{ minWidth: 0 }} />
+                <label className="label block mb-1">Fecha</label>
+                <input type="date" className="input !w-auto" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} required={!isEditing} disabled={isEditing} />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 <div>
-                  <label className="label block mb-1.5">Hora</label>
-                  <input type="time" className="input" value={hora} onChange={(e) => setHora(e.target.value)} required style={{ minWidth: 0 }} />
+                  <label className="label block mb-1">Hora</label>
+                  <input type="time" className="input !w-auto" value={hora} onChange={(e) => setHora(e.target.value)} required />
                 </div>
                 <div>
-                  <label className="label block mb-1.5">Grupo Muscular</label>
-                  <input className="input w-full" placeholder="Ej: Espalda y Bíceps" value={grupoMuscular} onChange={(e) => setGrupoMuscular(e.target.value)} required />
+                  <label className="label block mb-1">Grupo Muscular</label>
+                  <input className="input" placeholder="Ej: Espalda y Bíceps" value={grupoMuscular} onChange={(e) => setGrupoMuscular(e.target.value)} required />
                 </div>
               </div>
               <div>
-                <label className="label block mb-1.5">Título</label>
-                <input className="input w-full" placeholder="Ej: Entreno Juan + Pedro" value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
+                <label className="label block mb-1">Título</label>
+                <input className="input" placeholder="Ej: Entreno Juan + Pedro" value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
               </div>
               <div>
                 <label className="label block mb-1.5">Alumnos</label>
