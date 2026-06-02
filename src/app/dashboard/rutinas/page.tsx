@@ -50,6 +50,7 @@ export default function RutinasPage() {
   const [editandoId, setEditandoId] = useState<string | null>(draft.editandoId ?? null);
   const [expandidoId, setExpandidoId] = useState<string | null>(null);
   const [showAssignPicker, setShowAssignPicker] = useState<string | null>(null);
+  const [assignSearch, setAssignSearch] = useState("");
   const [indicacionesSemanales, setIndicacionesSemanales] = useState<string[]>(["", "", "", ""]);
   const [showIndicaciones, setShowIndicaciones] = useState(false);
 
@@ -147,6 +148,9 @@ export default function RutinasPage() {
     setSaveError("");
     try {
       if (noAssign) {
+        if (editandoId) {
+          deleteUnassignedRoutine(editandoId);
+        }
         await saveUnassignedRoutine({ coachId, nombre: nombre.trim(), alumnoId: "", mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi });
         setShowBuilder(false);
         resetForm();
@@ -274,6 +278,7 @@ export default function RutinasPage() {
     setCustomEquipment("Bodyweight");
     setAlumnoSearch("");
     setShowAssignPicker(null);
+    setAssignSearch("");
     useAppStore.getState().setPageDraft("rutinas", {});
   }, [alumnoIdParam]);
   const [alumnoSearch, setAlumnoSearch] = useState("");
@@ -319,28 +324,15 @@ export default function RutinasPage() {
           <div className="grid gap-3">
             {unassignedRoutines.map((r) => (
               <div key={r.id} className="card-hover" onClick={() => setExpandidoId(expandidoId === r.id ? null : r.id)}>
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-semibold">{r.nombre}</h3>
-                    <p className="text-sm text-white/40">{r.dias.length} días · {r.dias.reduce((s, d) => s + d.ejercicios.length, 0)} ejercicios</p>
+                    <h3 className="text-white font-semibold truncate">{r.nombre}</h3>
+                    <p className="text-sm text-white/40 truncate">{r.dias.length} días · {r.dias.reduce((s, d) => s + d.ejercicios.length, 0)} ejercicios</p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <div className="relative">
-                      <button onClick={() => setShowAssignPicker(showAssignPicker === r.id ? null : r.id)} className="btn-ghost text-xs">Asignar a...</button>
-                      {showAssignPicker === r.id && (
-                        <div className="absolute right-0 top-full mt-1 z-50 w-56 bg-surface border border-white/[0.08] rounded-xl shadow-xl overflow-hidden">
-                          <div className="max-h-40 overflow-y-auto p-1">
-                            {alumnos.length === 0 && <p className="text-xs text-white/30 px-3 py-2">No hay alumnos</p>}
-                            {alumnos.map((a) => (
-                              <button key={a.id} onClick={async () => { await assignUnassignedRoutine(r.id, a.id); setShowAssignPicker(null); }}
-                                className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg transition-colors">
-                                {a.nombre}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-xs">📥 Excel</button>
+                    <button onClick={() => { resetForm(); setNombre(r.nombre); setDias(r.dias); setIndicacionesSemanales(r.indicacionesSemanales ?? ["", "", "", ""]); setEditandoId(r.id); setNoAssign(true); setShowBuilder(true); }} className="btn-ghost text-xs">Editar</button>
+                    <button onClick={() => setShowAssignPicker(showAssignPicker === r.id ? null : r.id)} className="text-xs font-semibold bg-accent text-bg-primary px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">Asignar a...</button>
                     <button onClick={async () => { if (await confirm("¿Eliminar esta rutina guardada?")) deleteUnassignedRoutine(r.id); }} className="btn-danger text-xs !px-2 !py-1">✕</button>
                   </div>
                 </div>
@@ -372,6 +364,30 @@ export default function RutinasPage() {
         </div>
       )}
 
+      {/* Assign Student Modal */}
+      {showAssignPicker && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowAssignPicker(null)}>
+          <div className="card w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider">Asignar rutina</h3>
+              <button onClick={() => setShowAssignPicker(null)} className="text-white/40 hover:text-white text-lg">✕</button>
+            </div>
+            <input className="input mb-3" placeholder="Buscar alumno..." value={assignSearch} onChange={(e) => setAssignSearch(e.target.value)} autoFocus />
+            <div className="max-h-60 overflow-y-auto space-y-1">
+              {alumnos.filter((a) => a.nombre.toLowerCase().includes(assignSearch.toLowerCase())).length === 0 && (
+                <p className="text-sm text-white/30 text-center py-4">No hay alumnos</p>
+              )}
+              {alumnos.filter((a) => a.nombre.toLowerCase().includes(assignSearch.toLowerCase())).map((a) => (
+                <button key={a.id} onClick={async () => { await assignUnassignedRoutine(showAssignPicker, a.id); setShowAssignPicker(null); setAssignSearch(""); }}
+                  className="w-full text-left px-3 py-2.5 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg transition-colors">
+                  {a.nombre}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {rutinasFiltradas.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-white">Rutinas Asignadas</h2>
@@ -380,12 +396,12 @@ export default function RutinasPage() {
               const a = alumnos.find((al) => al.id === r.alumnoId);
               return (
                 <div key={r.id} className="card-hover" onClick={() => setExpandidoId(expandidoId === r.id ? null : r.id)}>
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-semibold">{r.nombre}</h3>
-                      <p className="text-sm text-white/40">Para {a?.nombre ?? "?"} · {r.dias.length} días · {r.dias.reduce((s, d) => s + d.ejercicios.length, 0)} ejercicios</p>
+                      <h3 className="text-white font-semibold truncate">{r.nombre}</h3>
+                      <p className="text-sm text-white/40 truncate">Para {a?.nombre ?? "?"} · {r.dias.length} días · {r.dias.reduce((s, d) => s + d.ejercicios.length, 0)} ejercicios</p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end" onClick={(e) => e.stopPropagation()}>
                       <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-xs">📥 Excel</button>
                       <button onClick={() => abrirEditor(r)} className="btn-ghost text-xs">Editar</button>
                       <button onClick={async () => { if (await confirm("¿Desasignar esta rutina?")) unassignRoutine(r.id); }} className="btn-ghost text-xs">Desasignar</button>

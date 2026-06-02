@@ -40,6 +40,19 @@ function comidasIguales(a: Comida[], b: Comida[]): boolean {
   });
 }
 
+function planToGrupos(plan: Pick<PlanNutricional, "dias">): GrupoDias[] {
+  const grupos: GrupoDias[] = [];
+  for (const dia of plan.dias) {
+    const existente = grupos.find((g) => comidasIguales(g.comidas, dia.comidas));
+    if (existente) {
+      existente.dias.push(dia.diaSemana);
+    } else {
+      grupos.push({ id: `gr_${Date.now()}_${grupos.length}`, dias: [dia.diaSemana], comidas: dia.comidas.map((c) => ({ ...c, alimentos: [...c.alimentos] })) });
+    }
+  }
+  return grupos;
+}
+
 export default function NutricionPage() {
   const searchParams = useSearchParams();
   const alumnoIdParam = searchParams.get("alumnoId");
@@ -61,6 +74,7 @@ export default function NutricionPage() {
   const [editandoId, setEditandoId] = useState<string | null>(draft.editandoId ?? null);
   const [expandidoId, setExpandidoId] = useState<string | null>(null);
   const [showAssignPicker, setShowAssignPicker] = useState<string | null>(null);
+  const [assignSearch, setAssignSearch] = useState("");
   const [nombre, setNombre] = useState(draft.nombre ?? "");
   const [alumnoIds, setAlumnoIds] = useState<string[]>(draft.alumnoIds ?? (alumnoIdParam ? [alumnoIdParam] : []));
   const [noAssign, setNoAssign] = useState(draft.noAssign ?? false);
@@ -75,17 +89,7 @@ export default function NutricionPage() {
   const abrirEditor = (plan: PlanNutricional) => {
     setNombre(plan.nombre);
     setAlumnoIds([plan.alumnoId]);
-    // Group days with identical meals
-    const gruposCargados: GrupoDias[] = [];
-    for (const dia of plan.dias) {
-      const existente = gruposCargados.find((g) => comidasIguales(g.comidas, dia.comidas));
-      if (existente) {
-        existente.dias.push(dia.diaSemana);
-      } else {
-        gruposCargados.push({ id: `gr_${Date.now()}_${gruposCargados.length}`, dias: [dia.diaSemana], comidas: dia.comidas.map((c) => ({ ...c, alimentos: [...c.alimentos] })) });
-      }
-    }
-    setGrupos(gruposCargados);
+    setGrupos(planToGrupos(plan));
     setEditandoId(plan.id);
     setShowBuilder(true);
   };
@@ -166,6 +170,9 @@ export default function NutricionPage() {
     setSaving(true);
     try {
       if (noAssign) {
+        if (editandoId) {
+          deleteUnassignedPlan(editandoId);
+        }
         await saveUnassignedPlanStore({ coachId, nombre: nombre.trim(), alumnoId: "", dias, activo: true });
         setShowBuilder(false);
         setEditandoId(null);
@@ -238,31 +245,18 @@ export default function NutricionPage() {
           <div className="grid gap-3">
             {unassignedPlans.map((p) => (
               <div key={p.id} className="card-hover" onClick={() => setExpandidoId(expandidoId === p.id ? null : p.id)}>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-semibold">{p.nombre}</h3>
-                    <p className="text-sm text-white/40">{p.dias.length} días · {p.dias.reduce((s, d) => s + d.comidas.length, 0)} comidas</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <div className="relative">
-                      <button onClick={() => setShowAssignPicker(showAssignPicker === p.id ? null : p.id)} className="btn-ghost text-xs">Asignar a...</button>
-                      {showAssignPicker === p.id && (
-                        <div className="absolute right-0 top-full mt-1 z-50 w-56 bg-surface border border-white/[0.08] rounded-xl shadow-xl overflow-hidden">
-                          <div className="max-h-40 overflow-y-auto p-1">
-                            {alumnos.length === 0 && <p className="text-xs text-white/30 px-3 py-2">No hay alumnos</p>}
-                            {alumnos.map((a) => (
-                              <button key={a.id} onClick={async () => { await assignUnassignedPlan(p.id, a.id); setShowAssignPicker(null); }}
-                                className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg transition-colors">
-                                {a.nombre}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-semibold truncate">{p.nombre}</h3>
+                      <p className="text-sm text-white/40 truncate">{p.dias.length} días · {p.dias.reduce((s, d) => s + d.comidas.length, 0)} comidas</p>
                     </div>
-                    <button onClick={async () => { if (await confirm("¿Eliminar este plan guardado?")) deleteUnassignedPlan(p.id); }} className="btn-danger text-xs !px-2 !py-1">✕</button>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => exportPlanExcel(p, alumnos)} className="btn-ghost text-xs">📥 Excel</button>
+                      <button onClick={() => { setNombre(p.nombre); setGrupos(planToGrupos(p)); setEditandoId(p.id); setNoAssign(true); setShowBuilder(true); }} className="btn-ghost text-xs">Editar</button>
+                      <button onClick={() => setShowAssignPicker(showAssignPicker === p.id ? null : p.id)} className="text-xs font-semibold bg-accent text-bg-primary px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">Asignar a...</button>
+                      <button onClick={async () => { if (await confirm("¿Eliminar este plan guardado?")) deleteUnassignedPlan(p.id); }} className="btn-danger text-xs !px-2 !py-1">✕</button>
+                    </div>
                   </div>
-                </div>
                 {expandidoId === p.id && (
                   <div className="mt-4 space-y-4 border-t border-white/[0.06] pt-4">
                     {p.dias.map((dia) => (
@@ -290,6 +284,30 @@ export default function NutricionPage() {
         </div>
       )}
 
+      {/* Assign Plan Modal */}
+      {showAssignPicker && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => { setShowAssignPicker(null); setAssignSearch(""); }}>
+          <div className="card w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider">Asignar plan</h3>
+              <button onClick={() => { setShowAssignPicker(null); setAssignSearch(""); }} className="text-white/40 hover:text-white text-lg">✕</button>
+            </div>
+            <input className="input mb-3" placeholder="Buscar alumno..." value={assignSearch} onChange={(e) => setAssignSearch(e.target.value)} autoFocus />
+            <div className="max-h-60 overflow-y-auto space-y-1">
+              {alumnos.filter((a) => a.nombre.toLowerCase().includes(assignSearch.toLowerCase())).length === 0 && (
+                <p className="text-sm text-white/30 text-center py-4">No hay alumnos</p>
+              )}
+              {alumnos.filter((a) => a.nombre.toLowerCase().includes(assignSearch.toLowerCase())).map((a) => (
+                <button key={a.id} onClick={async () => { await assignUnassignedPlan(showAssignPicker, a.id); setShowAssignPicker(null); setAssignSearch(""); }}
+                  className="w-full text-left px-3 py-2.5 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg transition-colors">
+                  {a.nombre}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {planesFiltrados.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-white">Planes Asignados</h2>
@@ -299,12 +317,12 @@ export default function NutricionPage() {
               const totalComidas = p.dias.reduce((s, d) => s + d.comidas.length, 0);
               return (
                 <div key={p.id} className="card-hover" onClick={() => setExpandidoId(expandidoId === p.id ? null : p.id)}>
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-semibold">{p.nombre}</h3>
-                      <p className="text-sm text-white/40">Para {alumno?.nombre ?? "?"} · {p.dias.length} días · {totalComidas} comidas</p>
+                      <h3 className="text-white font-semibold truncate">{p.nombre}</h3>
+                      <p className="text-sm text-white/40 truncate">Para {alumno?.nombre ?? "?"} · {p.dias.length} días · {totalComidas} comidas</p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => exportPlanExcel(p, alumnos)} className="btn-ghost text-xs">📥 Excel</button>
                       <button onClick={() => abrirEditor(p)} className="btn-ghost text-xs">Editar</button>
                       <button onClick={async () => { if (await confirm("¿Desasignar este plan?")) unassignPlan(p.id); }} className="btn-ghost text-xs">Desasignar</button>
