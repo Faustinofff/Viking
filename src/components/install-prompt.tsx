@@ -48,17 +48,18 @@ export default function InstallPrompt() {
             <h2 className="text-lg font-bold text-white mb-5 text-center">Instalar Viking en tu iPhone</h2>
 
             <div className="flex justify-center mb-6">
-              <div className="relative w-48 h-[380px] rounded-[2rem] border-[3px] border-white/[0.12] bg-black overflow-hidden shadow-xl">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-b-xl z-10" />
+              <div className="relative w-48 h-[380px] rounded-[2.5rem] border-[4px] border-white/[0.25] bg-black overflow-hidden shadow-2xl" style={{ boxShadow: "inset 0 0 4px rgba(0,0,0,0.8), 0 0 30px rgba(0,0,0,0.5)" }}>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-[22px] bg-black rounded-b-2xl z-10" />
+                <div className="absolute top-[18px] left-1/2 -translate-x-1/2 w-[10px] h-[10px] rounded-full border border-white/[0.15] z-20" />
                 <video
                   src="/videos/install-iphone.mp4"
                   autoPlay
                   muted
                   loop
                   playsInline
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover rounded-[2.3rem] scale-[0.96]"
                 />
-                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-[118px] h-[4px] rounded-full bg-white/30" />
+                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-[118px] h-[4px] rounded-full bg-white/40" />
               </div>
             </div>
 
