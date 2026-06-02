@@ -132,15 +132,15 @@ export default function ChatDialog({ collapsed, mobile, header }: { collapsed?: 
         <div className="fixed inset-0 z-50 overflow-hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
           <div className="relative flex flex-col w-full max-w-[420px] mx-auto h-full bg-bg-primary sm:max-h-[600px] sm:mt-8 sm:border sm:border-white/[0.08] sm:rounded-2xl shadow-2xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2.5">
-                <img src="/vikingIA.png" alt="IA" className="max-w-14 max-h-14 w-auto h-auto object-contain" />
-                <div>
-                  <p className="text-sm font-semibold text-white">Asistente Viking</p>
-                  <p className="text-[10px] text-white/30">Groq IA</p>
-                </div>
+            <div className="flex items-center gap-3 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,10px))] border-b border-white/[0.06]">
+              <button onClick={() => setOpen(false)} className="flex items-center justify-center w-8 h-8 rounded-xl text-white/40 hover:text-white hover:bg-white/[0.06] transition-all">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <img src="/vikingIA.png" alt="IA" className="w-10 h-10 object-contain flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-white">Asistente Viking</p>
+                <p className="text-[10px] text-white/30">Groq IA</p>
               </div>
-              <button onClick={() => setOpen(false)} className="text-white/20 hover:text-white/60 text-lg leading-none">&times;</button>
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
