@@ -306,7 +306,7 @@ export default function RutinasPage() {
 
   return (
     <>
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 overflow-x-hidden">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Rutinas</h1>
@@ -324,17 +324,15 @@ export default function RutinasPage() {
           <div className="grid gap-3">
             {unassignedRoutines.map((r) => (
               <div key={r.id} className="card-hover" onClick={() => setExpandidoId(expandidoId === r.id ? null : r.id)}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-semibold truncate">{r.nombre}</h3>
-                    <p className="text-sm text-white/40 truncate">{r.dias.length} días · {r.dias.reduce((s, d) => s + d.ejercicios.length, 0)} ejercicios</p>
+                <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
+                  <h3 className="text-white font-semibold truncate min-w-0">{r.nombre}</h3>
+                  <div className="flex items-center gap-1.5 justify-end" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-[10px] !px-1.5 !py-1">📥</button>
+                    <button onClick={() => { resetForm(); setNombre(r.nombre); setDias(r.dias); setIndicacionesSemanales(r.indicacionesSemanales ?? ["", "", "", ""]); setEditandoId(r.id); setNoAssign(true); setShowBuilder(true); }} className="btn-ghost text-[10px] !px-1.5 !py-1">Editar</button>
+                    <button onClick={() => setShowAssignPicker(showAssignPicker === r.id ? null : r.id)} className="text-[10px] font-semibold bg-accent text-bg-primary px-2 py-1 rounded-lg hover:brightness-110 transition-all whitespace-nowrap">Asignar</button>
+                    <button onClick={async () => { if (await confirm("¿Eliminar esta rutina guardada?")) deleteUnassignedRoutine(r.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-xs">📥 Excel</button>
-                    <button onClick={() => { resetForm(); setNombre(r.nombre); setDias(r.dias); setIndicacionesSemanales(r.indicacionesSemanales ?? ["", "", "", ""]); setEditandoId(r.id); setNoAssign(true); setShowBuilder(true); }} className="btn-ghost text-xs">Editar</button>
-                    <button onClick={() => setShowAssignPicker(showAssignPicker === r.id ? null : r.id)} className="text-xs font-semibold bg-accent text-bg-primary px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">Asignar a...</button>
-                    <button onClick={async () => { if (await confirm("¿Eliminar esta rutina guardada?")) deleteUnassignedRoutine(r.id); }} className="btn-danger text-xs !px-2 !py-1">✕</button>
-                  </div>
+                  <p className="text-sm text-white/40 truncate col-span-2">{r.dias.length} días · {r.dias.reduce((s, d) => s + d.ejercicios.length, 0)} ejercicios</p>
                 </div>
                 {expandidoId === r.id && (
                   <div className="mt-4 space-y-3 border-t border-white/[0.06] pt-4">
@@ -396,17 +394,15 @@ export default function RutinasPage() {
               const a = alumnos.find((al) => al.id === r.alumnoId);
               return (
                 <div key={r.id} className="card-hover" onClick={() => setExpandidoId(expandidoId === r.id ? null : r.id)}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-semibold truncate">{r.nombre}</h3>
-                      <p className="text-sm text-white/40 truncate">Para {a?.nombre ?? "?"} · {r.dias.length} días · {r.dias.reduce((s, d) => s + d.ejercicios.length, 0)} ejercicios</p>
+                  <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
+                    <h3 className="text-white font-semibold truncate min-w-0">{r.nombre}</h3>
+                    <div className="flex items-center gap-1.5 justify-end" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-[10px] !px-1.5 !py-1">📥</button>
+                      <button onClick={() => abrirEditor(r)} className="btn-ghost text-[10px] !px-1.5 !py-1">Editar</button>
+                      <button onClick={async () => { if (await confirm("¿Desasignar esta rutina?")) unassignRoutine(r.id); }} className="btn-ghost text-[10px] !px-1.5 !py-1">Desasignar</button>
+                      <button onClick={async () => { if (await confirm("¿Eliminar esta rutina?")) eliminarRutina(r.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-xs">📥 Excel</button>
-                      <button onClick={() => abrirEditor(r)} className="btn-ghost text-xs">Editar</button>
-                      <button onClick={async () => { if (await confirm("¿Desasignar esta rutina?")) unassignRoutine(r.id); }} className="btn-ghost text-xs">Desasignar</button>
-                      <button onClick={async () => { if (await confirm("¿Eliminar esta rutina?")) eliminarRutina(r.id); }} className="btn-danger text-xs !px-2 !py-1">✕</button>
-                    </div>
+                    <p className="text-sm text-white/40 truncate col-span-2">Para {a?.nombre ?? "?"} · {r.dias.length} días · {r.dias.reduce((s, d) => s + d.ejercicios.length, 0)} ejercicios</p>
                   </div>
                   {expandidoId === r.id && (
                     <div className="mt-4 space-y-3 border-t border-white/[0.06] pt-4">

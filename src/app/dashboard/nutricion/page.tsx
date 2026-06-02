@@ -227,7 +227,7 @@ export default function NutricionPage() {
 
   return (
     <>
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 overflow-x-hidden">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Planes Nutricionales</h1>
@@ -245,17 +245,15 @@ export default function NutricionPage() {
           <div className="grid gap-3">
             {unassignedPlans.map((p) => (
               <div key={p.id} className="card-hover" onClick={() => setExpandidoId(expandidoId === p.id ? null : p.id)}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-semibold truncate">{p.nombre}</h3>
-                      <p className="text-sm text-white/40 truncate">{p.dias.length} días · {p.dias.reduce((s, d) => s + d.comidas.length, 0)} comidas</p>
+                  <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
+                    <h3 className="text-white font-semibold truncate min-w-0">{p.nombre}</h3>
+                    <div className="flex items-center gap-1.5 justify-end" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => exportPlanExcel(p, alumnos)} className="btn-ghost text-[10px] !px-1.5 !py-1">📥</button>
+                      <button onClick={() => { setNombre(p.nombre); setGrupos(planToGrupos(p)); setEditandoId(p.id); setNoAssign(true); setShowBuilder(true); }} className="btn-ghost text-[10px] !px-1.5 !py-1">Editar</button>
+                      <button onClick={() => setShowAssignPicker(showAssignPicker === p.id ? null : p.id)} className="text-[10px] font-semibold bg-accent text-bg-primary px-2 py-1 rounded-lg hover:brightness-110 transition-all whitespace-nowrap">Asignar</button>
+                      <button onClick={async () => { if (await confirm("¿Eliminar este plan guardado?")) deleteUnassignedPlan(p.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => exportPlanExcel(p, alumnos)} className="btn-ghost text-xs">📥 Excel</button>
-                      <button onClick={() => { setNombre(p.nombre); setGrupos(planToGrupos(p)); setEditandoId(p.id); setNoAssign(true); setShowBuilder(true); }} className="btn-ghost text-xs">Editar</button>
-                      <button onClick={() => setShowAssignPicker(showAssignPicker === p.id ? null : p.id)} className="text-xs font-semibold bg-accent text-bg-primary px-3 py-1.5 rounded-lg hover:brightness-110 transition-all">Asignar a...</button>
-                      <button onClick={async () => { if (await confirm("¿Eliminar este plan guardado?")) deleteUnassignedPlan(p.id); }} className="btn-danger text-xs !px-2 !py-1">✕</button>
-                    </div>
+                    <p className="text-sm text-white/40 truncate col-span-2">{p.dias.length} días · {p.dias.reduce((s, d) => s + d.comidas.length, 0)} comidas</p>
                   </div>
                 {expandidoId === p.id && (
                   <div className="mt-4 space-y-4 border-t border-white/[0.06] pt-4">
@@ -317,17 +315,15 @@ export default function NutricionPage() {
               const totalComidas = p.dias.reduce((s, d) => s + d.comidas.length, 0);
               return (
                 <div key={p.id} className="card-hover" onClick={() => setExpandidoId(expandidoId === p.id ? null : p.id)}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-semibold truncate">{p.nombre}</h3>
-                      <p className="text-sm text-white/40 truncate">Para {alumno?.nombre ?? "?"} · {p.dias.length} días · {totalComidas} comidas</p>
+                  <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
+                    <h3 className="text-white font-semibold truncate min-w-0">{p.nombre}</h3>
+                    <div className="flex items-center gap-1.5 justify-end" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => exportPlanExcel(p, alumnos)} className="btn-ghost text-[10px] !px-1.5 !py-1">📥</button>
+                      <button onClick={() => abrirEditor(p)} className="btn-ghost text-[10px] !px-1.5 !py-1">Editar</button>
+                      <button onClick={async () => { if (await confirm("¿Desasignar este plan?")) unassignPlan(p.id); }} className="btn-ghost text-[10px] !px-1.5 !py-1">Desasignar</button>
+                      <button onClick={async () => { if (await confirm("¿Eliminar este plan nutricional?")) eliminarPlan(p.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => exportPlanExcel(p, alumnos)} className="btn-ghost text-xs">📥 Excel</button>
-                      <button onClick={() => abrirEditor(p)} className="btn-ghost text-xs">Editar</button>
-                      <button onClick={async () => { if (await confirm("¿Desasignar este plan?")) unassignPlan(p.id); }} className="btn-ghost text-xs">Desasignar</button>
-                      <button onClick={async () => { if (await confirm("¿Eliminar este plan nutricional?")) eliminarPlan(p.id); }} className="btn-danger text-xs !px-2 !py-1">✕</button>
-                    </div>
+                    <p className="text-sm text-white/40 truncate col-span-2">Para {alumno?.nombre ?? "?"} · {p.dias.length} días · {totalComidas} comidas</p>
                   </div>
                   {expandidoId === p.id && (
                     <div className="mt-4 space-y-4 border-t border-white/[0.06] pt-4">
