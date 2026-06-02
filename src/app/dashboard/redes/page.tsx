@@ -29,7 +29,7 @@ export default function RedesPage() {
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Redes de Entrenamiento</h1>
           <p className="text-white/40 mt-1">Grupos de alumnos organizados por gimnasio o modalidad.</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary">+ Nueva Red</button>
+        <button onClick={() => setShowModal(true)} className="btn-primary text-sm !px-3 !py-1.5">+ Nueva Red</button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

@@ -176,7 +176,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto md:pt-0 pt-14">{children}</main>
+      <style>{`@media (max-width:767px){.main-content{padding-top:calc(3.5rem + env(safe-area-inset-top, 0px))!important}}`}</style>
+      <main className="flex-1 overflow-y-auto md:pt-0 pt-14 main-content">{children}</main>
     </div>
   );
 }

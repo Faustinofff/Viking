@@ -369,7 +369,10 @@ export default function RutinasPage() {
       {showBuilder && (
         <div className="fixed inset-0 bg-black/70 flex items-start justify-center z-50 p-4 pt-6 overflow-y-auto" onClick={() => { setShowBuilder(false); resetForm(); }}>
           <div className="card w-full max-w-5xl max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-xl font-bold text-white mb-6">{editandoId ? "Editar Rutina" : "Nueva Rutina"}</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">{editandoId ? "Editar Rutina" : "Nueva Rutina"}</h2>
+              <button onClick={() => { setShowBuilder(false); resetForm(); }} className="text-white/40 hover:text-white text-lg">✕</button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
@@ -443,33 +446,37 @@ export default function RutinasPage() {
                               ))}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                            <input type="text" inputMode="numeric" className="input !w-12 !text-center !text-xs !py-1.5"
-                              value={(ej.seriesPorSemana ?? [ej.series, ej.series, ej.series, ej.series])[sw]}
-                              onChange={(e) => { const v = e.target.value; const n = v === "" ? 0 : parseInt(v); if (!isNaN(n)) updWeek("series", "seriesPorSemana", n); }} />
-                            <span className="text-[10px] text-white/30">×</span>
-                            <input type="text" inputMode="numeric" className="input !w-12 !text-center !text-xs !py-1.5"
-                              value={(ej.repsPorSemana ?? [ej.reps, ej.reps, ej.reps, ej.reps])[sw]}
-                              onChange={(e) => { const v = e.target.value; const n = v === "" ? 0 : parseInt(v); if (!isNaN(n)) updWeek("reps", "repsPorSemana", n); }} />
-                            <span className="text-[10px] text-white/30">reps</span>
-                            <input type="text" inputMode="numeric" className="input !w-14 !text-center !text-xs !py-1.5"
-                              value={(ej.descansoPorSemana ?? [ej.descansoSegundos, ej.descansoSegundos, ej.descansoSegundos, ej.descansoSegundos])[sw]}
-                              onChange={(e) => { const v = e.target.value; const n = v === "" ? 0 : parseInt(v); if (!isNaN(n)) updWeek("descansoSegundos", "descansoPorSemana", n); }} />
-                            <span className="text-[10px] text-white/30">s</span>
-                            {ej.videoUrl && <a href={ej.videoUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent ml-1" title={ej.videoUrl}>▶</a>}
-                            <input className="input !w-28 !text-[10px] !py-1.5" placeholder="URL video" value={ej.videoUrl ?? ""}
-                              onChange={(e) => upd({ videoUrl: e.target.value })} />
-                            <button onClick={() => setNotasAbiertas((prev) => { const next = new Set(prev); if (next.has(ej.id)) next.delete(ej.id); else next.add(ej.id); return next; })}
-                              className={`text-xs px-1.5 py-1 rounded transition-all ${(ej.notasPorSemana ?? ["", "", "", ""])[sw] ? "text-accent bg-accent/10" : "text-white/30 hover:text-white/60"}`} title="Indicaciones del ejercicio">📝</button>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-1.5 sm:flex-wrap sm:justify-end">
+                            <div className="flex items-center gap-1.5">
+                              <input type="text" inputMode="numeric" className="input !w-12 !text-center !text-xs !py-1.5"
+                                value={(ej.seriesPorSemana ?? [ej.series, ej.series, ej.series, ej.series])[sw]}
+                                onChange={(e) => { const v = e.target.value; const n = v === "" ? 0 : parseInt(v); if (!isNaN(n)) updWeek("series", "seriesPorSemana", n); }} />
+                              <span className="text-[10px] text-white/30">×</span>
+                              <input type="text" inputMode="numeric" className="input !w-12 !text-center !text-xs !py-1.5"
+                                value={(ej.repsPorSemana ?? [ej.reps, ej.reps, ej.reps, ej.reps])[sw]}
+                                onChange={(e) => { const v = e.target.value; const n = v === "" ? 0 : parseInt(v); if (!isNaN(n)) updWeek("reps", "repsPorSemana", n); }} />
+                              <span className="text-[10px] text-white/30">reps</span>
+                              <input type="text" inputMode="numeric" className="input !w-14 !text-center !text-xs !py-1.5"
+                                value={(ej.descansoPorSemana ?? [ej.descansoSegundos, ej.descansoSegundos, ej.descansoSegundos, ej.descansoSegundos])[sw]}
+                                onChange={(e) => { const v = e.target.value; const n = v === "" ? 0 : parseInt(v); if (!isNaN(n)) updWeek("descansoSegundos", "descansoPorSemana", n); }} />
+                              <span className="text-[10px] text-white/30">s</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {ej.videoUrl && <a href={ej.videoUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent" title={ej.videoUrl}>▶</a>}
+                              <input className="input !w-28 !text-[10px] !py-1.5" placeholder="URL video" value={ej.videoUrl ?? ""}
+                                onChange={(e) => upd({ videoUrl: e.target.value })} />
+                              <button onClick={() => setNotasAbiertas((prev) => { const next = new Set(prev); if (next.has(ej.id)) next.delete(ej.id); else next.add(ej.id); return next; })}
+                                className={`text-xs px-1.5 py-1 rounded transition-all ${(ej.notasPorSemana ?? ["", "", "", ""])[sw] ? "text-accent bg-accent/10" : "text-white/30 hover:text-white/60"}`} title="Indicaciones del ejercicio">📝</button>
+                              <button onClick={() => setDias(dias.map((d) => d.id === dia.id ? { ...d, ejercicios: d.ejercicios.filter((ex) => ex.id !== ej.id) } : d))}
+                                className="text-white/20 hover:text-red-400 text-xs">✕</button>
+                            </div>
                             {notasAbiertas.has(ej.id) && (
-                              <div className="w-full mt-1">
+                              <div className="w-full">
                                 <textarea className="input !text-xs !py-1.5 w-full resize-none" rows={2} placeholder="Ej: mantener codo pegado al cuerpo..."
                                   value={(ej.notasPorSemana ?? ["", "", "", ""])[sw]}
                                   onChange={(e) => updWeek("notas", "notasPorSemana", e.target.value)} />
                               </div>
                             )}
-                            <button onClick={() => setDias(dias.map((d) => d.id === dia.id ? { ...d, ejercicios: d.ejercicios.filter((ex) => ex.id !== ej.id) } : d))}
-                              className="text-white/20 hover:text-red-400 text-xs ml-1">✕</button>
                           </div>
                         </div>
                         );})}

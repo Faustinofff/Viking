@@ -267,7 +267,10 @@ export default function NutricionPage() {
       {showBuilder && (
         <div className="fixed inset-0 bg-black/70 flex items-start justify-center z-50 p-4 pt-8 overflow-y-auto" onClick={() => { setShowBuilder(false); setEditandoId(null); setGrupos([]); }}>
           <div className="card w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-xl font-bold text-white mb-6">{editandoId ? "Editar Plan Nutricional" : "Nuevo Plan Nutricional"}</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">{editandoId ? "Editar Plan Nutricional" : "Nuevo Plan Nutricional"}</h2>
+              <button onClick={() => { setShowBuilder(false); setEditandoId(null); setGrupos([]); }} className="text-white/40 hover:text-white text-lg">✕</button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
