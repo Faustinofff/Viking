@@ -679,6 +679,22 @@ export async function getCoachAgenda(coachId: string): Promise<any[]> {
   return data.agenda ?? [];
 }
 
+// ─── Redes sync (stored in COACH's blob) ───
+
+export async function saveRedesForCoach(
+  coachId: string,
+  redes: { id: string; coachId: string; nombre: string; tipo: string; alumnoIds: string[] }[]
+) {
+  const { data, originalUrl } = await readProfileBlob(coachId);
+  data.redes = redes;
+  await saveProfileBlob(coachId, data, originalUrl);
+}
+
+export async function getCoachRedes(coachId: string): Promise<any[]> {
+  const { data } = await readProfileBlob(coachId);
+  return data.redes ?? [];
+}
+
 // Read coach phone from their blob (needed by students)
 export async function getCoachPhone(coachId: string): Promise<string> {
   const { data } = await readProfileBlob(coachId);

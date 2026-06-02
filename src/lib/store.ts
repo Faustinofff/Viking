@@ -29,6 +29,8 @@ import {
   getCoachExercises,
   saveAgendaForCoach,
   getCoachAgenda,
+  saveRedesForCoach,
+  getCoachRedes,
   getCurrentWeekIndex,
   ejercicioWeekValue,
   getCoachPhone,
@@ -633,6 +635,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => {
       const nuevas = [...state.redes, { id: `r_${Date.now()}`, coachId: state.usuarioActual?.id ?? "", nombre, tipo, alumnoIds: [] }];
       saveRedes(nuevas);
+      const coachId = state.usuarioActual?.id;
+      if (coachId) saveRedesForCoach(coachId, nuevas).catch(() => {});
       return { redes: nuevas };
     }),
 
@@ -640,6 +644,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => {
       const nuevas = state.redes.filter((r) => r.id !== id);
       saveRedes(nuevas);
+      const coachId = state.usuarioActual?.id;
+      if (coachId) saveRedesForCoach(coachId, nuevas).catch(() => {});
       return { redes: nuevas };
     }),
 
@@ -649,6 +655,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         r.id === redId ? { ...r, alumnoIds: [...r.alumnoIds, alumnoId] } : r
       );
       saveRedes(nuevas);
+      const coachId = state.usuarioActual?.id;
+      if (coachId) saveRedesForCoach(coachId, nuevas).catch(() => {});
       return {
         redes: nuevas,
         alumnos: state.alumnos.map((a) =>
@@ -848,17 +856,55 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
       } catch {}
 
-      // Sync agenda between localStorage and Supabase blob
+      // Sync agenda between localStorage and Supabase blob (MERGE by ID)
       try {
         const localAgenda = get().agenda;
         const remoteAgenda = await getCoachAgenda(coachId);
-        if (remoteAgenda.length > 0 && localAgenda.length === 0) {
-          // No local agenda but remote exists — use remote
-          saveAgenda(remoteAgenda);
-          set({ agenda: remoteAgenda });
-        } else if (localAgenda.length > 0) {
-          // Has local agenda — save to blob for students
-          await saveAgendaForCoach(coachId, localAgenda);
+        if (remoteAgenda.length > 0 || localAgenda.length > 0) {
+          // Merge: keep unique sessions by ID, prefer whichever version has more fields
+          const merged = [...localAgenda];
+          for (const r of remoteAgenda) {
+            const idx = merged.findIndex((m) => m.id === r.id);
+            if (idx === -1) {
+              merged.push(r);
+            } else if (Object.keys(r).length > Object.keys(merged[idx]).length) {
+              merged[idx] = r;
+            }
+          }
+          if (merged.length !== localAgenda.length || JSON.stringify(merged) !== JSON.stringify(localAgenda)) {
+            saveAgenda(merged);
+            set({ agenda: merged });
+          }
+          // Save merged back to blob for cross-device sync
+          await saveAgendaForCoach(coachId, merged);
+        }
+      } catch {}
+
+      // Sync redes from Supabase blob (MERGE by ID)
+      try {
+        const localRedes = get().redes;
+        const remoteRedes = await getCoachRedes(coachId);
+        if (remoteRedes.length > 0) {
+          // Merge: keep unique redes by ID
+          const merged = [...localRedes];
+          let changed = false;
+          for (const r of remoteRedes) {
+            const idx = merged.findIndex((m) => m.id === r.id);
+            if (idx === -1) {
+              merged.push(r);
+              changed = true;
+            } else if (Object.keys(r).length > Object.keys(merged[idx]).length) {
+              merged[idx] = r;
+              changed = true;
+            }
+          }
+          if (changed) {
+            saveRedes(merged);
+            set({ redes: merged });
+          }
+        } else if (localRedes.length > 0) {
+          // No remote redes but local exists — push to blob
+          await saveRedesForCoach(coachId, localRedes);
         }
       } catch {}
 
