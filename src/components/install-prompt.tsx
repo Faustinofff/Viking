@@ -50,7 +50,6 @@ export default function InstallPrompt() {
             <div className="flex justify-center mb-6">
               <div className="relative w-48 h-[380px] rounded-[2.5rem] border-[6px] border-black bg-black overflow-hidden shadow-2xl">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-[22px] bg-black rounded-b-2xl z-10" />
-                <div className="absolute top-[18px] left-1/2 -translate-x-1/2 w-[10px] h-[10px] rounded-full border border-white/[0.12] z-20" />
                 <div className="m-0.5 rounded-[2.1rem] overflow-hidden bg-white/5">
                   <video
                     src="/videos/install-iphone.mp4"
