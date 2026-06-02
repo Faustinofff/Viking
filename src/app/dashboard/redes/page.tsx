@@ -24,12 +24,12 @@ export default function RedesPage() {
   return (
     <>
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Redes de Entrenamiento</h1>
           <p className="text-white/40 mt-1">Grupos de alumnos organizados por gimnasio o modalidad.</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary text-sm !px-3 !py-1.5">+ Nueva Red</button>
+        <button onClick={() => setShowModal(true)} className="btn-primary text-sm !px-3 !py-1.5 mt-0.5">+ Nueva Red</button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
