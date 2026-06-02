@@ -695,6 +695,32 @@ export async function getCoachRedes(coachId: string): Promise<any[]> {
   return data.redes ?? [];
 }
 
+// ─── Unassigned Routines (stored in COACH's blob) ───
+
+export async function saveCoachUnassignedRoutines(coachId: string, routines: any[]) {
+  const { data, originalUrl } = await readProfileBlob(coachId);
+  data.unassignedRoutines = routines;
+  await saveProfileBlob(coachId, data, originalUrl);
+}
+
+export async function getCoachUnassignedRoutines(coachId: string): Promise<any[]> {
+  const { data } = await readProfileBlob(coachId);
+  return data.unassignedRoutines ?? [];
+}
+
+// ─── Unassigned Nutrition Plans (stored in COACH's blob) ───
+
+export async function saveCoachUnassignedPlans(coachId: string, plans: any[]) {
+  const { data, originalUrl } = await readProfileBlob(coachId);
+  data.unassignedPlans = plans;
+  await saveProfileBlob(coachId, data, originalUrl);
+}
+
+export async function getCoachUnassignedPlans(coachId: string): Promise<any[]> {
+  const { data } = await readProfileBlob(coachId);
+  return data.unassignedPlans ?? [];
+}
+
 // Read coach phone from their blob (needed by students)
 export async function getCoachPhone(coachId: string): Promise<string> {
   const { data } = await readProfileBlob(coachId);

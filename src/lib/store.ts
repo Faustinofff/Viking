@@ -31,6 +31,10 @@ import {
   getCoachAgenda,
   saveRedesForCoach,
   getCoachRedes,
+  saveCoachUnassignedRoutines,
+  getCoachUnassignedRoutines,
+  saveCoachUnassignedPlans,
+  getCoachUnassignedPlans,
   getCurrentWeekIndex,
   ejercicioWeekValue,
   getCoachPhone,
@@ -251,6 +255,8 @@ const STORAGE_COACHES_KEY = "viking_coaches";
 const STORAGE_PESO_KEY = "viking_peso";
 const STORAGE_ALUMNOS_PESO_KEY = "viking_alumnos_peso";
 const STORAGE_PAGE_DRAFTS_KEY = "viking_page_drafts";
+const STORAGE_UNASSIGNED_ROUTINES_KEY = "viking_unassigned_routines";
+const STORAGE_UNASSIGNED_PLANS_KEY = "viking_unassigned_plans";
 
 function loadPeso(): RegistroPeso[] {
   if (typeof window === "undefined") return [];
@@ -292,6 +298,34 @@ function loadPageDrafts(): Record<string, any> {
 function savePageDrafts(drafts: Record<string, any>) {
   if (typeof window === "undefined") return;
   try { localStorage.setItem(STORAGE_PAGE_DRAFTS_KEY, JSON.stringify(drafts)); } catch {}
+}
+
+function loadUnassignedRoutines(): Rutina[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = localStorage.getItem(STORAGE_UNASSIGNED_ROUTINES_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return [];
+}
+
+function saveUnassignedRoutines(routines: Rutina[]) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(STORAGE_UNASSIGNED_ROUTINES_KEY, JSON.stringify(routines)); } catch {}
+}
+
+function loadUnassignedPlans(): PlanNutricional[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = localStorage.getItem(STORAGE_UNASSIGNED_PLANS_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return [];
+}
+
+function saveUnassignedPlans(plans: PlanNutricional[]) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(STORAGE_UNASSIGNED_PLANS_KEY, JSON.stringify(plans)); } catch {}
 }
 
 function loadRedes(): Red[] {
@@ -397,6 +431,8 @@ interface AppState {
   ejerciciosPersonalizados: Ejercicio[];
   premium: PremiumData | null;
   premiumCargado: boolean;
+  unassignedRoutines: Rutina[];
+  unassignedPlans: PlanNutricional[];
   agregarAlumno: (a: Omit<Alumno, "id" | "creadoEn">) => Promise<void>;
   eliminarAlumno: (id: string) => Promise<void>;
   actualizarPesoAlumno: (alumnoId: string, peso: number) => Promise<void>;
@@ -464,6 +500,16 @@ interface AppState {
   getEjercicios: () => Ejercicio[];
   getActividadesRecientes: () => Actividad[];
 
+  // Unassigned Routines & Plans
+  saveUnassignedRoutine: (r: Omit<Rutina, "id" | "creadoEn">) => Promise<void>;
+  deleteUnassignedRoutine: (id: string) => void;
+  assignUnassignedRoutine: (routineId: string, alumnoId: string) => Promise<void>;
+  saveUnassignedPlan: (p: Omit<PlanNutricional, "id" | "creadoEn">) => Promise<void>;
+  deleteUnassignedPlan: (id: string) => void;
+  assignUnassignedPlan: (planId: string, alumnoId: string) => Promise<void>;
+  unassignRoutine: (routineId: string) => Promise<void>;
+  unassignPlan: (planId: string) => Promise<void>;
+
   // Premium
   cargarSuscripcion: () => Promise<void>;
   cambiarPlan: (planId: string) => Promise<void>;
@@ -511,6 +557,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   ejerciciosPersonalizados: [],
   premium: null,
   premiumCargado: false,
+  unassignedRoutines: loadUnassignedRoutines(),
+  unassignedPlans: loadUnassignedPlans(),
 
   // ─── Alumnos ──────────────────────────────────────────────
 
@@ -905,6 +953,50 @@ export const useAppStore = create<AppState>((set, get) => ({
         } else if (localRedes.length > 0) {
           // No remote redes but local exists — push to blob
           await saveRedesForCoach(coachId, localRedes);
+        }
+      } catch {}
+
+      // Sync unassigned routines from blob
+      try {
+        const local = get().unassignedRoutines;
+        const remote = await getCoachUnassignedRoutines(coachId);
+        if (remote.length > 0) {
+          const merged = [...local];
+          let changed = false;
+          for (const r of remote) {
+            if (!merged.find((m) => m.id === r.id)) {
+              merged.push(r);
+              changed = true;
+            }
+          }
+          if (changed) {
+            saveUnassignedRoutines(merged);
+            set({ unassignedRoutines: merged });
+          }
+        } else if (local.length > 0) {
+          await saveCoachUnassignedRoutines(coachId, local);
+        }
+      } catch {}
+
+      // Sync unassigned plans from blob
+      try {
+        const local = get().unassignedPlans;
+        const remote = await getCoachUnassignedPlans(coachId);
+        if (remote.length > 0) {
+          const merged = [...local];
+          let changed = false;
+          for (const p of remote) {
+            if (!merged.find((m) => m.id === p.id)) {
+              merged.push(p);
+              changed = true;
+            }
+          }
+          if (changed) {
+            saveUnassignedPlans(merged);
+            set({ unassignedPlans: merged });
+          }
+        } else if (local.length > 0) {
+          await saveCoachUnassignedPlans(coachId, local);
         }
       } catch {}
 
@@ -1519,6 +1611,78 @@ export const useAppStore = create<AppState>((set, get) => ({
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? "Error al crear pago");
     window.location.href = data.init_point;
+  },
+
+  // ─── Unassigned Routines & Plans ──────────────────────────────
+
+  saveUnassignedRoutine: async (r) => {
+    const coachId = get().usuarioActual?.id ?? r.coachId;
+    const state = get();
+    const nueva: Rutina = { ...r, id: `rut_prop_${Date.now()}`, creadoEn: new Date().toISOString() };
+    const nuevas = [...state.unassignedRoutines, nueva];
+    saveUnassignedRoutines(nuevas);
+    set({ unassignedRoutines: nuevas });
+    if (coachId) saveCoachUnassignedRoutines(coachId, nuevas).catch(() => {});
+  },
+
+  deleteUnassignedRoutine: (id) => {
+    const state = get();
+    const nuevas = state.unassignedRoutines.filter((r) => r.id !== id);
+    saveUnassignedRoutines(nuevas);
+    set({ unassignedRoutines: nuevas });
+    const coachId = state.usuarioActual?.id;
+    if (coachId) saveCoachUnassignedRoutines(coachId, nuevas).catch(() => {});
+  },
+
+  assignUnassignedRoutine: async (routineId, alumnoId) => {
+    const state = get();
+    const rutina = state.unassignedRoutines.find((r) => r.id === routineId);
+    if (!rutina) return;
+    await get().asignarRutina({ ...rutina, alumnoId });
+    await get().deleteUnassignedRoutine(routineId);
+  },
+
+  saveUnassignedPlan: async (p) => {
+    const coachId = get().usuarioActual?.id ?? p.coachId;
+    const state = get();
+    const nuevo: PlanNutricional = { ...p, id: `plan_prop_${Date.now()}`, creadoEn: new Date().toISOString() };
+    const nuevos = [...state.unassignedPlans, nuevo];
+    saveUnassignedPlans(nuevos);
+    set({ unassignedPlans: nuevos });
+    if (coachId) saveCoachUnassignedPlans(coachId, nuevos).catch(() => {});
+  },
+
+  deleteUnassignedPlan: (id) => {
+    const state = get();
+    const nuevos = state.unassignedPlans.filter((p) => p.id !== id);
+    saveUnassignedPlans(nuevos);
+    set({ unassignedPlans: nuevos });
+    const coachId = state.usuarioActual?.id;
+    if (coachId) saveCoachUnassignedPlans(coachId, nuevos).catch(() => {});
+  },
+
+  assignUnassignedPlan: async (planId, alumnoId) => {
+    const state = get();
+    const plan = state.unassignedPlans.find((p) => p.id === planId);
+    if (!plan) return;
+    await get().asignarPlanNutricional({ ...plan, alumnoId });
+    await get().deleteUnassignedPlan(planId);
+  },
+
+  unassignRoutine: async (routineId) => {
+    const state = get();
+    const rutina = state.rutinas.find((r) => r.id === routineId);
+    if (!rutina) return;
+    await get().saveUnassignedRoutine({ ...rutina, alumnoId: "" });
+    await get().eliminarRutina(routineId);
+  },
+
+  unassignPlan: async (planId) => {
+    const state = get();
+    const plan = state.planesNutricionales.find((p) => p.id === planId);
+    if (!plan) return;
+    await get().saveUnassignedPlan({ ...plan, alumnoId: "" });
+    await get().eliminarPlanNutricional(planId);
   },
 
   // Page draft state — persists across SPA navigation and full reloads via localStorage

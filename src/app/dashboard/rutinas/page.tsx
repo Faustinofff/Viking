@@ -31,6 +31,11 @@ export default function RutinasPage() {
   const asignarRutina = useAppStore((s) => s.asignarRutina);
   const agregarEjercicioPersonalizado = useAppStore((s) => s.agregarEjercicioPersonalizado);
   const rutinas = useAppStore((s) => s.rutinas);
+  const unassignedRoutines = useAppStore((s) => s.unassignedRoutines);
+  const saveUnassignedRoutine = useAppStore((s) => s.saveUnassignedRoutine);
+  const assignUnassignedRoutine = useAppStore((s) => s.assignUnassignedRoutine);
+  const unassignRoutine = useAppStore((s) => s.unassignRoutine);
+  const deleteUnassignedRoutine = useAppStore((s) => s.deleteUnassignedRoutine);
 
   const eliminarRutina = useAppStore((s) => s.eliminarRutina);
   const { confirm, ToastUI } = useConfirmToast();
@@ -39,10 +44,12 @@ export default function RutinasPage() {
 
   const [nombre, setNombre] = useState(draft.nombre ?? "");
   const [alumnoIds, setAlumnoIds] = useState<string[]>(draft.alumnoIds ?? (alumnoIdParam ? [alumnoIdParam] : []));
+  const [noAssign, setNoAssign] = useState(draft.noAssign ?? false);
   const [dias, setDias] = useState<DiaRutina[]>(draft.dias ?? []);
   const [showBuilder, setShowBuilder] = useState(draft.showBuilder ?? false);
   const [editandoId, setEditandoId] = useState<string | null>(draft.editandoId ?? null);
   const [expandidoId, setExpandidoId] = useState<string | null>(null);
+  const [showAssignPicker, setShowAssignPicker] = useState<string | null>(null);
   const [indicacionesSemanales, setIndicacionesSemanales] = useState<string[]>(["", "", "", ""]);
   const [showIndicaciones, setShowIndicaciones] = useState(false);
 
@@ -132,18 +139,23 @@ export default function RutinasPage() {
   const [saveError, setSaveError] = useState("");
 
   const handleSave = async () => {
-    if (!nombre.trim() || alumnoIds.length === 0 || dias.length === 0) return;
+    if (!nombre.trim() || dias.length === 0) return;
+    if (!noAssign && alumnoIds.length === 0) return;
     const coachId = useAppStore.getState().usuarioActual?.id ?? "";
+    const wi = indicacionesSemanales.some((s) => s.trim()) ? indicacionesSemanales : undefined;
     setSaving(true);
     setSaveError("");
     try {
-      if (editandoId) {
+      if (noAssign) {
+        await saveUnassignedRoutine({ coachId, nombre: nombre.trim(), alumnoId: "", mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi });
+        setShowBuilder(false);
+        resetForm();
+      } else if (editandoId) {
         const oldPlan = rutinas.find((r) => r.id === editandoId);
         const oldStudentId = oldPlan?.alumnoId;
         const storeEjercicios = useAppStore.getState().ejercicios;
         for (const studentId of alumnoIds) {
           if (studentId === oldStudentId) {
-            const wi = indicacionesSemanales.some((s) => s.trim()) ? indicacionesSemanales : undefined;
             await updateWorkoutPlan(editandoId, nombre.trim(), "", dias as any, storeEjercicios, wi);
             useAppStore.setState((s) => ({
               rutinas: s.rutinas.map((r) =>
@@ -151,19 +163,21 @@ export default function RutinasPage() {
               ),
             }));
           } else {
-            await asignarRutina({ coachId, nombre: nombre.trim(), alumnoId: studentId, mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales });
+            await asignarRutina({ coachId, nombre: nombre.trim(), alumnoId: studentId, mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi });
           }
         }
         if (oldStudentId && !alumnoIds.includes(oldStudentId)) {
           await eliminarRutina(editandoId);
         }
+        setShowBuilder(false);
+        resetForm();
       } else {
         for (const id of alumnoIds) {
-          await asignarRutina({ coachId, nombre: nombre.trim(), alumnoId: id, mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales });
+          await asignarRutina({ coachId, nombre: nombre.trim(), alumnoId: id, mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi });
         }
+        setShowBuilder(false);
+        resetForm();
       }
-      setShowBuilder(false);
-      resetForm();
     } catch (e: any) {
       setSaveError(e?.message ?? "Error al guardar la rutina. Revisá la consola.");
       console.error("Error saving routine:", e);
@@ -245,6 +259,7 @@ export default function RutinasPage() {
   const resetForm = useCallback(() => {
     setNombre("");
     setAlumnoIds(alumnoIdParam ? [alumnoIdParam] : []);
+    setNoAssign(false);
     setDias([]);
     setEditandoId(null);
     setIndicacionesSemanales(["", "", "", ""]);
@@ -258,6 +273,7 @@ export default function RutinasPage() {
     setCustomMuscle("Pecho");
     setCustomEquipment("Bodyweight");
     setAlumnoSearch("");
+    setShowAssignPicker(null);
     useAppStore.getState().setPageDraft("rutinas", {});
   }, [alumnoIdParam]);
   const [alumnoSearch, setAlumnoSearch] = useState("");
@@ -296,6 +312,66 @@ export default function RutinasPage() {
 
       <input className="input max-w-md" placeholder="Buscar alumno..." value={busquedaAlumno} onChange={(e) => setBusquedaAlumno(e.target.value)} />
 
+      {/* Unassigned Routines */}
+      {unassignedRoutines.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-white">Rutinas Guardadas (sin asignar)</h2>
+          <div className="grid gap-3">
+            {unassignedRoutines.map((r) => (
+              <div key={r.id} className="card-hover" onClick={() => setExpandidoId(expandidoId === r.id ? null : r.id)}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-semibold">{r.nombre}</h3>
+                    <p className="text-sm text-white/40">{r.dias.length} días · {r.dias.reduce((s, d) => s + d.ejercicios.length, 0)} ejercicios</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <div className="relative">
+                      <button onClick={() => setShowAssignPicker(showAssignPicker === r.id ? null : r.id)} className="btn-ghost text-xs">Asignar a...</button>
+                      {showAssignPicker === r.id && (
+                        <div className="absolute right-0 top-full mt-1 z-50 w-56 bg-surface border border-white/[0.08] rounded-xl shadow-xl overflow-hidden">
+                          <div className="max-h-40 overflow-y-auto p-1">
+                            {alumnos.length === 0 && <p className="text-xs text-white/30 px-3 py-2">No hay alumnos</p>}
+                            {alumnos.map((a) => (
+                              <button key={a.id} onClick={async () => { await assignUnassignedRoutine(r.id, a.id); setShowAssignPicker(null); }}
+                                className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg transition-colors">
+                                {a.nombre}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <button onClick={async () => { if (await confirm("¿Eliminar esta rutina guardada?")) deleteUnassignedRoutine(r.id); }} className="btn-danger text-xs !px-2 !py-1">✕</button>
+                  </div>
+                </div>
+                {expandidoId === r.id && (
+                  <div className="mt-4 space-y-3 border-t border-white/[0.06] pt-4">
+                    {r.dias.map((dia) => (
+                      <div key={dia.id}>
+                        <p className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">{dia.nombre} · {dia.diaSemana}</p>
+                        <div className="space-y-1.5">
+                          {dia.ejercicios.map((ej) => (
+                            <div key={ej.id} className="flex items-center justify-between text-sm bg-white/[0.03] rounded-lg px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-white/30 font-mono">{ej.grupoMuscular.slice(0, 3).toUpperCase()}</span>
+                                <span className="text-white/80">{ej.ejercicioNombre}</span>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-white/40 text-xs">{ej.series}×{ej.reps} · {ej.descansoSegundos}s</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {rutinasFiltradas.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-white">Rutinas Asignadas</h2>
@@ -312,6 +388,7 @@ export default function RutinasPage() {
                     <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                       <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-xs">📥 Excel</button>
                       <button onClick={() => abrirEditor(r)} className="btn-ghost text-xs">Editar</button>
+                      <button onClick={async () => { if (await confirm("¿Desasignar esta rutina?")) unassignRoutine(r.id); }} className="btn-ghost text-xs">Desasignar</button>
                       <button onClick={async () => { if (await confirm("¿Eliminar esta rutina?")) eliminarRutina(r.id); }} className="btn-danger text-xs !px-2 !py-1">✕</button>
                     </div>
                   </div>
@@ -390,6 +467,10 @@ export default function RutinasPage() {
                     </label>
                   ))}
                 </div>
+                <label className="flex items-center gap-2 mt-2 px-1">
+                  <input type="checkbox" checked={noAssign} onChange={(e) => { setNoAssign(e.target.checked); if (e.target.checked) setAlumnoIds([]); }} className="accent-accent" />
+                  <span className="text-sm text-white/60">No asignar por ahora (guardar como borrador)</span>
+                </label>
               </div>
             </div>
 
@@ -541,8 +622,8 @@ export default function RutinasPage() {
             )}
             <div className="flex gap-2 pt-4 border-t border-white/[0.06]">
               <button onClick={() => { setShowBuilder(false); resetForm(); }} className="btn-secondary flex-1">Cancelar</button>
-              <button onClick={handleSave} disabled={!nombre || alumnoIds.length === 0 || dias.length === 0 || saving} className="btn-primary flex-1">
-                {saving ? "Guardando..." : editandoId ? "Guardar Cambios" : "Asignar Rutina" + (alumnoIds.length > 1 ? ` (${alumnoIds.length} alumnos)` : "")}
+              <button onClick={handleSave} disabled={!nombre || (!noAssign && alumnoIds.length === 0) || dias.length === 0 || saving} className="btn-primary flex-1">
+                {saving ? "Guardando..." : editandoId ? "Guardar Cambios" : noAssign ? "Guardar (sin asignar)" : "Asignar Rutina" + (alumnoIds.length > 1 ? ` (${alumnoIds.length} alumnos)` : "")}
               </button>
             </div>
           </div>

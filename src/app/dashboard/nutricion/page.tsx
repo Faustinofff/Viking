@@ -46,8 +46,13 @@ export default function NutricionPage() {
 
   const alumnos = useAppStore((s) => s.alumnos);
   const planes = useAppStore((s) => s.planesNutricionales);
+  const unassignedPlans = useAppStore((s) => s.unassignedPlans);
   const asignarPlan = useAppStore((s) => s.asignarPlanNutricional);
   const eliminarPlan = useAppStore((s) => s.eliminarPlanNutricional);
+  const saveUnassignedPlanStore = useAppStore((s) => s.saveUnassignedPlan);
+  const assignUnassignedPlan = useAppStore((s) => s.assignUnassignedPlan);
+  const unassignPlan = useAppStore((s) => s.unassignPlan);
+  const deleteUnassignedPlan = useAppStore((s) => s.deleteUnassignedPlan);
   const { confirm, ToastUI } = useConfirmToast();
 
   const draft = useRef(useAppStore.getState().pageDrafts.nutricion ?? {}).current;
@@ -55,9 +60,12 @@ export default function NutricionPage() {
   const [showBuilder, setShowBuilder] = useState(draft.showBuilder ?? false);
   const [editandoId, setEditandoId] = useState<string | null>(draft.editandoId ?? null);
   const [expandidoId, setExpandidoId] = useState<string | null>(null);
+  const [showAssignPicker, setShowAssignPicker] = useState<string | null>(null);
   const [nombre, setNombre] = useState(draft.nombre ?? "");
   const [alumnoIds, setAlumnoIds] = useState<string[]>(draft.alumnoIds ?? (alumnoIdParam ? [alumnoIdParam] : []));
+  const [noAssign, setNoAssign] = useState(draft.noAssign ?? false);
   const [grupos, setGrupos] = useState<GrupoDias[]>(draft.grupos ?? []);
+  const [saving, setSaving] = useState(false);
 
   // Days already used across all groups
   const diasUsados = useMemo(() =>
@@ -151,19 +159,37 @@ export default function NutricionPage() {
     : planes;
 
   const handleSave = async () => {
-    if (!nombre.trim() || alumnoIds.length === 0 || grupos.length === 0) return;
+    if (!nombre.trim() || grupos.length === 0) return;
+    if (!noAssign && alumnoIds.length === 0) return;
     const dias = gruposADias();
-    for (const id of alumnoIds) {
-      await asignarPlan({ coachId: (useAppStore.getState().usuarioActual?.id) ?? "", nombre: nombre.trim(), alumnoId: id, dias, activo: true });
+    const coachId = (useAppStore.getState().usuarioActual?.id) ?? "";
+    setSaving(true);
+    try {
+      if (noAssign) {
+        await saveUnassignedPlanStore({ coachId, nombre: nombre.trim(), alumnoId: "", dias, activo: true });
+        setShowBuilder(false);
+        setEditandoId(null);
+        setGrupos([]);
+        setNombre("");
+        setAlumnoIds([]);
+        setNoAssign(false);
+      } else {
+        for (const id of alumnoIds) {
+          await asignarPlan({ coachId, nombre: nombre.trim(), alumnoId: id, dias, activo: true });
+        }
+        if (editandoId) {
+          await eliminarPlan(editandoId);
+        }
+        setNombre("");
+        setAlumnoIds([]);
+        setNoAssign(false);
+        setGrupos([]);
+        setEditandoId(null);
+        setShowBuilder(false);
+      }
+    } finally {
+      setSaving(false);
     }
-    if (editandoId) {
-      await eliminarPlan(editandoId);
-    }
-    setNombre("");
-    setAlumnoIds([]);
-    setGrupos([]);
-    setEditandoId(null);
-    setShowBuilder(false);
   };
 
   const exportPlanExcel = useCallback((p: PlanNutricional, alumnosList: typeof alumnos) => {
@@ -205,6 +231,65 @@ export default function NutricionPage() {
 
       <input className="input max-w-md" placeholder="Buscar alumno..." value={busquedaAlumno} onChange={(e) => setBusquedaAlumno(e.target.value)} />
 
+      {/* Unassigned Plans */}
+      {unassignedPlans.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-white">Planes Guardados (sin asignar)</h2>
+          <div className="grid gap-3">
+            {unassignedPlans.map((p) => (
+              <div key={p.id} className="card-hover" onClick={() => setExpandidoId(expandidoId === p.id ? null : p.id)}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-semibold">{p.nombre}</h3>
+                    <p className="text-sm text-white/40">{p.dias.length} días · {p.dias.reduce((s, d) => s + d.comidas.length, 0)} comidas</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <div className="relative">
+                      <button onClick={() => setShowAssignPicker(showAssignPicker === p.id ? null : p.id)} className="btn-ghost text-xs">Asignar a...</button>
+                      {showAssignPicker === p.id && (
+                        <div className="absolute right-0 top-full mt-1 z-50 w-56 bg-surface border border-white/[0.08] rounded-xl shadow-xl overflow-hidden">
+                          <div className="max-h-40 overflow-y-auto p-1">
+                            {alumnos.length === 0 && <p className="text-xs text-white/30 px-3 py-2">No hay alumnos</p>}
+                            {alumnos.map((a) => (
+                              <button key={a.id} onClick={async () => { await assignUnassignedPlan(p.id, a.id); setShowAssignPicker(null); }}
+                                className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg transition-colors">
+                                {a.nombre}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <button onClick={async () => { if (await confirm("¿Eliminar este plan guardado?")) deleteUnassignedPlan(p.id); }} className="btn-danger text-xs !px-2 !py-1">✕</button>
+                  </div>
+                </div>
+                {expandidoId === p.id && (
+                  <div className="mt-4 space-y-4 border-t border-white/[0.06] pt-4">
+                    {p.dias.map((dia) => (
+                      <div key={dia.id}>
+                        <p className="text-xs font-semibold text-accent uppercase tracking-wider mb-2 capitalize">{dia.diaSemana}</p>
+                        <div className="space-y-2">
+                          {dia.comidas.map((c) => (
+                            <div key={c.id} className="bg-white/[0.03] rounded-lg px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">{c.tipo.replace("_", " ")}</span>
+                                {c.nombre && <span className="text-xs text-white/50">· {c.nombre}</span>}
+                              </div>
+                              <p className="text-sm text-white/70 mt-0.5">{c.alimentos.join(", ")}</p>
+                              {c.instrucciones && <p className="text-xs text-white/30 mt-0.5">{c.instrucciones}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {planesFiltrados.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-white">Planes Asignados</h2>
@@ -222,6 +307,7 @@ export default function NutricionPage() {
                     <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => exportPlanExcel(p, alumnos)} className="btn-ghost text-xs">📥 Excel</button>
                       <button onClick={() => abrirEditor(p)} className="btn-ghost text-xs">Editar</button>
+                      <button onClick={async () => { if (await confirm("¿Desasignar este plan?")) unassignPlan(p.id); }} className="btn-ghost text-xs">Desasignar</button>
                       <button onClick={async () => { if (await confirm("¿Eliminar este plan nutricional?")) eliminarPlan(p.id); }} className="btn-danger text-xs !px-2 !py-1">✕</button>
                     </div>
                   </div>
@@ -287,6 +373,10 @@ export default function NutricionPage() {
                     </label>
                   ))}
                 </div>
+                <label className="flex items-center gap-2 mt-2 px-1">
+                  <input type="checkbox" checked={noAssign} onChange={(e) => { setNoAssign(e.target.checked); if (e.target.checked) setAlumnoIds([]); }} className="accent-accent" />
+                  <span className="text-sm text-white/60">No asignar por ahora (guardar como borrador)</span>
+                </label>
               </div>
             </div>
 
@@ -340,8 +430,8 @@ export default function NutricionPage() {
 
             <div className="flex gap-2 pt-4 border-t border-white/[0.06]">
               <button onClick={() => { setShowBuilder(false); setEditandoId(null); setGrupos([]); }} className="btn-secondary flex-1">Cancelar</button>
-              <button onClick={handleSave} disabled={!nombre || alumnoIds.length === 0 || grupos.length === 0} className="btn-primary flex-1">
-                {editandoId ? "Guardar Cambios" : "Asignar Plan" + (alumnoIds.length > 1 ? ` (${alumnoIds.length} alumnos)` : "")}
+              <button onClick={handleSave} disabled={!nombre || (!noAssign && alumnoIds.length === 0) || grupos.length === 0 || saving} className="btn-primary flex-1">
+                {saving ? "Guardando..." : editandoId ? "Guardar Cambios" : noAssign ? "Guardar (sin asignar)" : "Asignar Plan" + (alumnoIds.length > 1 ? ` (${alumnoIds.length} alumnos)` : "")}
               </button>
             </div>
           </div>
