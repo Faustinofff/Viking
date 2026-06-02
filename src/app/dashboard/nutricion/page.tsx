@@ -67,6 +67,14 @@ export default function NutricionPage() {
   const unassignPlan = useAppStore((s) => s.unassignPlan);
   const deleteUnassignedPlan = useAppStore((s) => s.deleteUnassignedPlan);
   const { confirm, ToastUI } = useConfirmToast();
+  const syncCoachData = useAppStore((s) => s.syncCoachData);
+
+  const [syncing, setSyncing] = useState(false);
+  const handleSync = async () => {
+    setSyncing(true);
+    await syncCoachData();
+    setSyncing(false);
+  };
 
   const draft = useRef(useAppStore.getState().pageDrafts.nutricion ?? {}).current;
 
@@ -233,7 +241,12 @@ export default function NutricionPage() {
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Planes Nutricionales</h1>
           <p className="text-white/40 mt-1">Asigná qué debe comer cada alumno según su objetivo.</p>
         </div>
-        <button onClick={() => setShowBuilder(true)} className="btn-primary">+ Nuevo Plan</button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleSync} disabled={syncing} className="btn-ghost text-sm !px-2" title="Sincronizar datos">
+            <span className={`inline-block ${syncing ? "animate-spin" : ""}`}>⟳</span>
+          </button>
+          <button onClick={() => setShowBuilder(true)} className="btn-primary">+ Nuevo Plan</button>
+        </div>
       </div>
 
       <input className="input max-w-md" placeholder="Buscar alumno..." value={busquedaAlumno} onChange={(e) => setBusquedaAlumno(e.target.value)} />

@@ -39,6 +39,14 @@ export default function RutinasPage() {
 
   const eliminarRutina = useAppStore((s) => s.eliminarRutina);
   const { confirm, ToastUI } = useConfirmToast();
+  const syncCoachData = useAppStore((s) => s.syncCoachData);
+
+  const [syncing, setSyncing] = useState(false);
+  const handleSync = async () => {
+    setSyncing(true);
+    await syncCoachData();
+    setSyncing(false);
+  };
 
   const draft = useRef(useAppStore.getState().pageDrafts.rutinas ?? {}).current;
 
@@ -312,7 +320,12 @@ export default function RutinasPage() {
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Rutinas</h1>
           <p className="text-white/40 mt-1">Creá y asigná rutinas de entrenamiento a tus alumnos.</p>
         </div>
-        <button onClick={() => { resetForm(); setShowBuilder(true); }} className="btn-primary">+ Nueva Rutina</button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleSync} disabled={syncing} className="btn-ghost text-sm !px-2" title="Sincronizar datos">
+            <span className={`inline-block ${syncing ? "animate-spin" : ""}`}>⟳</span>
+          </button>
+          <button onClick={() => { resetForm(); setShowBuilder(true); }} className="btn-primary">+ Nueva Rutina</button>
+        </div>
       </div>
 
       <input className="input max-w-md" placeholder="Buscar alumno..." value={busquedaAlumno} onChange={(e) => setBusquedaAlumno(e.target.value)} />
