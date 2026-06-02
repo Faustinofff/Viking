@@ -263,17 +263,17 @@ export default function AgendaPage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 sm:p-6" onClick={() => setShowModal(false)}>
-          <div className="card w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+          <div className="card w-full max-w-md p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-white mb-4">{isEditing ? "Editar Sesión" : "Nueva Sesión"}</h2>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="label block mb-1.5">Fecha</label>
-                <input type="date" className="input w-full min-w-0" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} required={!isEditing} disabled={isEditing} />
+                <input type="date" className="input" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} required={!isEditing} disabled={isEditing} style={{ minWidth: 0 }} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label block mb-1.5">Hora</label>
-                  <input type="time" className="input w-full min-w-0" value={hora} onChange={(e) => setHora(e.target.value)} required />
+                  <input type="time" className="input" value={hora} onChange={(e) => setHora(e.target.value)} required style={{ minWidth: 0 }} />
                 </div>
                 <div>
                   <label className="label block mb-1.5">Grupo Muscular</label>
