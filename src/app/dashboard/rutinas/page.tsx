@@ -432,12 +432,13 @@ export default function RutinasPage() {
                           upd({ [field]: val, [arrKey]: arr });
                         };
                         return (
-                        <div key={ej.id} className="flex items-start gap-2 bg-white/[0.04] rounded-lg px-3 py-2 border border-white/[0.05]">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{ej.ejercicioNombre}</p>
-                            <p className="text-[10px] text-white/30">{ej.grupoMuscular}</p>
-                            {/* Week tabs */}
-                            <div className="flex gap-1 mt-1.5">
+                        <div key={ej.id} className="flex flex-col sm:flex-row sm:items-start gap-2 bg-white/[0.04] rounded-lg px-3 py-2 border border-white/[0.05]">
+                          <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-white truncate">{ej.ejercicioNombre}</p>
+                              <p className="text-[10px] text-white/30">{ej.grupoMuscular}</p>
+                            </div>
+                            <div className="flex gap-1 mt-1.5 sm:mt-0">
                               {[0, 1, 2, 3].map((w) => (
                                 <button key={w} type="button" onClick={() => setSw(w)}
                                   className={`text-[10px] px-2 py-0.5 rounded transition-all ${sw === w ? "bg-accent text-bg-primary font-semibold" : "bg-white/[0.06] text-white/40 hover:text-white/70"}`}>
@@ -446,8 +447,8 @@ export default function RutinasPage() {
                               ))}
                             </div>
                           </div>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-1.5 sm:flex-wrap sm:justify-end">
-                            <div className="flex items-center gap-1.5">
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <input type="text" inputMode="numeric" className="input !w-12 !text-center !text-xs !py-1.5"
                                 value={(ej.seriesPorSemana ?? [ej.series, ej.series, ej.series, ej.series])[sw]}
                                 onChange={(e) => { const v = e.target.value; const n = v === "" ? 0 : parseInt(v); if (!isNaN(n)) updWeek("series", "seriesPorSemana", n); }} />
@@ -460,22 +461,20 @@ export default function RutinasPage() {
                                 value={(ej.descansoPorSemana ?? [ej.descansoSegundos, ej.descansoSegundos, ej.descansoSegundos, ej.descansoSegundos])[sw]}
                                 onChange={(e) => { const v = e.target.value; const n = v === "" ? 0 : parseInt(v); if (!isNaN(n)) updWeek("descansoSegundos", "descansoPorSemana", n); }} />
                               <span className="text-[10px] text-white/30">s</span>
+                              <button onClick={() => setDias(dias.map((d) => d.id === dia.id ? { ...d, ejercicios: d.ejercicios.filter((ex) => ex.id !== ej.id) } : d))}
+                                className="text-white/20 hover:text-red-400 text-xs ml-auto sm:ml-1">✕</button>
                             </div>
                             <div className="flex items-center gap-1.5">
-                              {ej.videoUrl && <a href={ej.videoUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent" title={ej.videoUrl}>▶</a>}
-                              <input className="input !w-28 !text-[10px] !py-1.5" placeholder="URL video" value={ej.videoUrl ?? ""}
+                              {ej.videoUrl && <a href={ej.videoUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent shrink-0" title={ej.videoUrl}>▶</a>}
+                              <input className="input flex-1 min-w-0 !text-[10px] !py-1.5" placeholder="URL video" value={ej.videoUrl ?? ""}
                                 onChange={(e) => upd({ videoUrl: e.target.value })} />
                               <button onClick={() => setNotasAbiertas((prev) => { const next = new Set(prev); if (next.has(ej.id)) next.delete(ej.id); else next.add(ej.id); return next; })}
-                                className={`text-xs px-1.5 py-1 rounded transition-all ${(ej.notasPorSemana ?? ["", "", "", ""])[sw] ? "text-accent bg-accent/10" : "text-white/30 hover:text-white/60"}`} title="Indicaciones del ejercicio">📝</button>
-                              <button onClick={() => setDias(dias.map((d) => d.id === dia.id ? { ...d, ejercicios: d.ejercicios.filter((ex) => ex.id !== ej.id) } : d))}
-                                className="text-white/20 hover:text-red-400 text-xs">✕</button>
+                                className={`text-xs px-1.5 py-1 rounded shrink-0 transition-all ${(ej.notasPorSemana ?? ["", "", "", ""])[sw] ? "text-accent bg-accent/10" : "text-white/30 hover:text-white/60"}`} title="Indicaciones del ejercicio">📝</button>
                             </div>
                             {notasAbiertas.has(ej.id) && (
-                              <div className="w-full">
-                                <textarea className="input !text-xs !py-1.5 w-full resize-none" rows={2} placeholder="Ej: mantener codo pegado al cuerpo..."
-                                  value={(ej.notasPorSemana ?? ["", "", "", ""])[sw]}
-                                  onChange={(e) => updWeek("notas", "notasPorSemana", e.target.value)} />
-                              </div>
+                              <textarea className="input !text-xs !py-1.5 w-full resize-none" rows={2} placeholder="Ej: mantener codo pegado al cuerpo..."
+                                value={(ej.notasPorSemana ?? ["", "", "", ""])[sw]}
+                                onChange={(e) => updWeek("notas", "notasPorSemana", e.target.value)} />
                             )}
                           </div>
                         </div>

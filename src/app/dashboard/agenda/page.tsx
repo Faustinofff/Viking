@@ -265,12 +265,12 @@ export default function AgendaPage() {
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="label block mb-1.5">Fecha</label>
-                <input type="date" className="input" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} required={!isEditing} disabled={isEditing} />
+                <input type="date" className="input min-w-0" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} required={!isEditing} disabled={isEditing} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label block mb-1.5">Hora</label>
-                  <input type="time" className="input" value={hora} onChange={(e) => setHora(e.target.value)} required />
+                  <input type="time" className="input min-w-0" value={hora} onChange={(e) => setHora(e.target.value)} required />
                 </div>
                 <div>
                   <label className="label block mb-1.5">Grupo Muscular</label>
