@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
+import InstallPrompt from "@/components/install-prompt";
 
 export const metadata: Metadata = {
   title: "Viking — Plataforma de Entrenamiento",
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" className="dark">
       <body>
         <AuthProvider>{children}</AuthProvider>
+        <InstallPrompt />
       </body>
     </html>
   );
