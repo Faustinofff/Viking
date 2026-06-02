@@ -43,7 +43,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   return (
     <div className="min-h-screen bg-bg-primary flex flex-col">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+      <header className="flex items-center justify-between px-5 border-b border-white/[0.06]" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 10px))", paddingBottom: "1rem" }}>
         <div className="flex items-center gap-2.5">
           <img src="/Viking.png" alt="Viking" className="w-16 h-16 object-contain" />
           <span className="text-white font-bold">Viking</span>

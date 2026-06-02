@@ -112,7 +112,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Mobile header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center h-14 px-3 bg-bg-secondary/95 backdrop-blur-xl border-b border-white/[0.06]">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center h-14 px-3 bg-bg-secondary/95 backdrop-blur-xl border-b border-white/[0.06]" style={{ paddingTop: "env(safe-area-inset-top, 0px)", height: "calc(3.5rem + env(safe-area-inset-top, 0px))" }}>
         <div className="flex items-center gap-2 flex-1">
           <button onClick={() => setMobileMenuOpen(true)} className="text-white/60 hover:text-white p-1" aria-label="Abrir menú">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -134,7 +134,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="md:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
           <aside className="absolute left-0 top-0 bottom-0 w-64 bg-bg-secondary flex flex-col border-r border-white/[0.06] shadow-2xl">
-            <div className="flex items-center justify-between h-14 px-4 border-b border-white/[0.06]">
+            <div className="flex items-center justify-between px-4 border-b border-white/[0.06]" style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top, 10px))", paddingBottom: "0.75rem", height: "calc(3.5rem + env(safe-area-inset-top, 0px))" }}>
               <div className="flex items-center gap-2.5">
                 <img src="/Viking.png" alt="Viking" className="w-10 h-10 object-contain" />
                 <span className="text-white font-bold">Viking</span>
