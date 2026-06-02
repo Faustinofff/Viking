@@ -35,6 +35,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className="dark">
+      <head>
+        <link rel="preload" href="/app-icon.png" as="image" />
+        <link rel="preload" href="/app-icon.png" as="image" crossOrigin="anonymous" />
+      </head>
       <body>
         <AuthProvider>{children}</AuthProvider>
         <InstallPrompt />
