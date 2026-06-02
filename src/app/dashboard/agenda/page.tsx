@@ -69,6 +69,7 @@ export default function AgendaPage() {
   const [hora, setHora] = useState("18:00");
   const [grupoMuscular, setGrupoMuscular] = useState("");
   const [alumnoIds, setAlumnoIds] = useState<string[]>([]);
+  const [alumnoSearch, setAlumnoSearch] = useState("");
   const [repetirDiario, setRepetirDiario] = useState(false);
 
   const weeks = buildCalendar(currentYear, currentMonth);
@@ -91,6 +92,7 @@ export default function AgendaPage() {
     setHora("18:00");
     setGrupoMuscular("");
     setAlumnoIds([]);
+    setAlumnoSearch("");
     setRepetirDiario(false);
     setShowModal(true);
   };
@@ -102,6 +104,7 @@ export default function AgendaPage() {
     setHora(s.hora);
     setGrupoMuscular(s.grupoMuscular);
     setAlumnoIds(s.alumnoIds);
+    setAlumnoSearch("");
     setRepetirDiario(false);
     setShowModal(true);
   };
@@ -259,32 +262,33 @@ export default function AgendaPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-6" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 sm:p-6" onClick={() => setShowModal(false)}>
           <div className="card w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-white mb-4">{isEditing ? "Editar Sesión" : "Nueva Sesión"}</h2>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="label block mb-1.5">Fecha</label>
-                <input type="date" className="input min-w-0" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} required={!isEditing} disabled={isEditing} />
+                <input type="date" className="input w-full min-w-0" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} required={!isEditing} disabled={isEditing} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label block mb-1.5">Hora</label>
-                  <input type="time" className="input min-w-0" value={hora} onChange={(e) => setHora(e.target.value)} required />
+                  <input type="time" className="input w-full min-w-0" value={hora} onChange={(e) => setHora(e.target.value)} required />
                 </div>
                 <div>
                   <label className="label block mb-1.5">Grupo Muscular</label>
-                  <input className="input" placeholder="Ej: Espalda y Bíceps" value={grupoMuscular} onChange={(e) => setGrupoMuscular(e.target.value)} required />
+                  <input className="input w-full" placeholder="Ej: Espalda y Bíceps" value={grupoMuscular} onChange={(e) => setGrupoMuscular(e.target.value)} required />
                 </div>
               </div>
               <div>
                 <label className="label block mb-1.5">Título</label>
-                <input className="input" placeholder="Ej: Entreno Juan + Pedro" value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
+                <input className="input w-full" placeholder="Ej: Entreno Juan + Pedro" value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
               </div>
               <div>
                 <label className="label block mb-1.5">Alumnos</label>
-                <div className="flex flex-wrap gap-2">
-                  {alumnos.map((a) => (
+                <input className="input w-full text-sm mb-2" placeholder="Buscar alumno..." value={alumnoSearch} onChange={(e) => setAlumnoSearch(e.target.value)} />
+                <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                  {alumnos.filter((a) => a.nombre.toLowerCase().includes(alumnoSearch.toLowerCase())).map((a) => (
                     <button key={a.id} type="button" onClick={() => setAlumnoIds((prev) => prev.includes(a.id) ? prev.filter((id) => id !== a.id) : [...prev, a.id])}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                         alumnoIds.includes(a.id) ? "bg-accent/10 border-accent/30 text-accent" : "border-white/[0.08] text-white/50 hover:border-white/20"
