@@ -340,7 +340,7 @@ export default function RutinasPage() {
                 <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
                   <h3 className="text-white font-semibold truncate min-w-0">{r.nombre}</h3>
                   <div className="flex items-center gap-1.5 justify-end" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-[10px] !px-1.5 !py-1">📥</button>
+                    <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-[10px] !px-1.5 !py-1"><img src="/excel.png" alt="Excel" className="w-3.5 h-3.5 inline-block align-middle" /></button>
                     <button onClick={() => { resetForm(); setNombre(r.nombre); setDias(r.dias); setIndicacionesSemanales(r.indicacionesSemanales ?? ["", "", "", ""]); setEditandoId(r.id); setNoAssign(true); setShowBuilder(true); }} className="btn-ghost text-[10px] !px-1.5 !py-1">Editar</button>
                     <button onClick={() => setShowAssignPicker(showAssignPicker === r.id ? null : r.id)} className="text-[10px] font-semibold bg-accent text-bg-primary px-2 py-1 rounded-lg hover:brightness-110 transition-all whitespace-nowrap">Asignar</button>
                     <button onClick={async () => { if (await confirm("¿Eliminar esta rutina guardada?")) deleteUnassignedRoutine(r.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>
@@ -410,7 +410,7 @@ export default function RutinasPage() {
                   <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
                     <h3 className="text-white font-semibold truncate min-w-0">{r.nombre}</h3>
                     <div className="flex items-center gap-1.5 justify-end" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-[10px] !px-1.5 !py-1">📥</button>
+                      <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-[10px] !px-1.5 !py-1"><img src="/excel.png" alt="Excel" className="w-3.5 h-3.5 inline-block align-middle" /></button>
                       <button onClick={() => abrirEditor(r)} className="btn-ghost text-[10px] !px-1.5 !py-1">Editar</button>
                       <button onClick={async () => { if (await confirm("¿Desasignar esta rutina?")) unassignRoutine(r.id); }} className="btn-ghost text-[10px] !px-1.5 !py-1">Desasignar</button>
                       <button onClick={async () => { if (await confirm("¿Eliminar esta rutina?")) eliminarRutina(r.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>

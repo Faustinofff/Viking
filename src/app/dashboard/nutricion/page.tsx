@@ -261,7 +261,7 @@ export default function NutricionPage() {
                   <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
                     <h3 className="text-white font-semibold truncate min-w-0">{p.nombre}</h3>
                     <div className="flex items-center gap-1.5 justify-end" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => exportPlanExcel(p, alumnos)} className="btn-ghost text-[10px] !px-1.5 !py-1">📥</button>
+                      <button onClick={() => exportPlanExcel(p, alumnos)} className="btn-ghost text-[10px] !px-1.5 !py-1"><img src="/excel.png" alt="Excel" className="w-3.5 h-3.5 inline-block align-middle" /></button>
                       <button onClick={() => { setNombre(p.nombre); setGrupos(planToGrupos(p)); setEditandoId(p.id); setNoAssign(true); setShowBuilder(true); }} className="btn-ghost text-[10px] !px-1.5 !py-1">Editar</button>
                       <button onClick={() => setShowAssignPicker(showAssignPicker === p.id ? null : p.id)} className="text-[10px] font-semibold bg-accent text-bg-primary px-2 py-1 rounded-lg hover:brightness-110 transition-all whitespace-nowrap">Asignar</button>
                       <button onClick={async () => { if (await confirm("¿Eliminar este plan guardado?")) deleteUnassignedPlan(p.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>
@@ -331,7 +331,7 @@ export default function NutricionPage() {
                   <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
                     <h3 className="text-white font-semibold truncate min-w-0">{p.nombre}</h3>
                     <div className="flex items-center gap-1.5 justify-end" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => exportPlanExcel(p, alumnos)} className="btn-ghost text-[10px] !px-1.5 !py-1">📥</button>
+                      <button onClick={() => exportPlanExcel(p, alumnos)} className="btn-ghost text-[10px] !px-1.5 !py-1"><img src="/excel.png" alt="Excel" className="w-3.5 h-3.5 inline-block align-middle" /></button>
                       <button onClick={() => abrirEditor(p)} className="btn-ghost text-[10px] !px-1.5 !py-1">Editar</button>
                       <button onClick={async () => { if (await confirm("¿Desasignar este plan?")) unassignPlan(p.id); }} className="btn-ghost text-[10px] !px-1.5 !py-1">Desasignar</button>
                       <button onClick={async () => { if (await confirm("¿Eliminar este plan nutricional?")) eliminarPlan(p.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>
