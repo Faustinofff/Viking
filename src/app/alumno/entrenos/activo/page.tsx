@@ -205,8 +205,10 @@ export default function ActiveWorkoutPage() {
     if (!sesionId || !currentWeekEj) return;
     const peso = parseFloat(pesosInput[`${currentWeekEj.ejercicioId}_${currentSet}`] ?? "0");
     completarSerie(sesionId, currentWeekEj.ejercicioId, currentSet, peso || undefined, currentWeekEj.reps);
-    setRestTimer(currentWeekEj.descansoSegundos);
-    setRestActive(true);
+    setTimeout(() => {
+      setRestTimer(currentWeekEj.descansoSegundos);
+      setRestActive(true);
+    }, 100);
   }, [sesionId, currentWeekEj, currentSet, pesosInput, completarSerie]);
 
   const skipRest = useCallback(() => {
@@ -353,7 +355,7 @@ export default function ActiveWorkoutPage() {
                       : isActive && !restActive
                       ? "bg-white/[0.06] border-accent/40"
                       : "bg-white/[0.03] border-white/[0.06]"
-                  } ${restActive && isActive ? "opacity-40" : ""}`}
+                  } ${restActive && isActive && !completada ? "opacity-40" : ""}`}
                 >
                   <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
                     completada ? "bg-accent border-accent" : "border-white/20"
