@@ -201,7 +201,8 @@ export default function RutinasPage() {
 
   const exportRutinaExcel = useCallback((r: Rutina, alumnosList: typeof alumnos) => {
     const a = alumnosList.find((al) => al.id === r.alumnoId);
-    const fileName = `${r.nombre.replace(/[^a-zA-Z0-9_ ]/g, "")}_${a?.nombre?.replace(/[^a-zA-Z0-9_ ]/g, "") ?? "alumno"}.xls`;
+    const ext = /iPad|iPhone|iPod/.test(navigator.userAgent) ? ".xlsx" : ".xls";
+    const fileName = `${r.nombre.replace(/[^a-zA-Z0-9_ ]/g, "")}_${a?.nombre?.replace(/[^a-zA-Z0-9_ ]/g, "") ?? "alumno"}${ext}`;
     const th = (label: string, bg = "#1e293b") => `<th style="background:${bg};color:#fff;padding:6px 8px;font-weight:600;border:1px solid #334155;font-size:11px">${label}</th>`;
     const td = (val: string | number, opts = "") => `<td style="padding:4px 6px;border:1px solid #e2e8f0;font-size:11px"${opts}>${val}</td>`;
     const sep = () => `<td style="width:20px;border:0;background:transparent"></td>`;

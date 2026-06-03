@@ -209,7 +209,8 @@ export default function NutricionPage() {
 
   const exportPlanExcel = useCallback((p: PlanNutricional, alumnosList: typeof alumnos) => {
     const a = alumnosList.find((al) => al.id === p.alumnoId);
-    const fileName = `${p.nombre.replace(/[^a-zA-Z0-9_ ]/g, "")}_${a?.nombre?.replace(/[^a-zA-Z0-9_ ]/g, "") ?? "alumno"}.xls`;
+    const ext = /iPad|iPhone|iPod/.test(navigator.userAgent) ? ".xlsx" : ".xls";
+    const fileName = `${p.nombre.replace(/[^a-zA-Z0-9_ ]/g, "")}_${a?.nombre?.replace(/[^a-zA-Z0-9_ ]/g, "") ?? "alumno"}${ext}`;
     const th = (label: string) => `<th style="background:#1e293b;color:#fff;padding:8px 12px;font-weight:600;border:1px solid #334155;font-size:13px">${label}</th>`;
     const td = (val: string, opts = "") => `<td style="padding:6px 10px;border:1px solid #e2e8f0;font-size:12px"${opts}>${val.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</td>`;
     let rows = "";
