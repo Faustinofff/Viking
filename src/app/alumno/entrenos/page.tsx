@@ -155,7 +155,7 @@ export default function StudentEntrenosPage() {
             const completado = semanas.length > 0;
             return (
             <Link key={dia.id} href={currentWeek === null ? "#" : `/alumno/entrenos/activo?rutinaId=${rutina.id}&diaId=${dia.id}`} onClick={(e) => { if (currentWeek === null) { e.preventDefault(); setWeekModalRuta(rutina.id); setWeekModalDia(dia.id); } }} className="card-hover block mb-2">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${completado ? "bg-accent border-accent" : "border-white/20"}`}>
                     {completado && <span className="text-bg-primary text-[10px] font-bold">✓</span>}
@@ -165,20 +165,27 @@ export default function StudentEntrenosPage() {
                     <p className="text-sm text-white/40 capitalize">{dia.diaSemana}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   {rutina.indicacionesSemanales?.some((s) => s.trim()) && (
                     <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIndicacionesModal({ rutina, dia }); }}
                       className="text-[10px] bg-white/[0.05] hover:bg-white/[0.1] text-white/50 hover:text-white/80 rounded-lg px-2 py-1 transition-all border border-white/[0.06]">
                       Indicaciones semanales
                     </button>
                   )}
-                  {(semanas.length > 0) ? (
-                    <span className="text-xs text-accent/70 font-medium">Semana{semanas.length > 1 ? "s" : ""} {semanas.join(" y ")}</span>
+                  {semanas.length > 0 ? (
+                    <span className="text-xs text-white/40">→</span>
                   ) : (
                     <span className="text-white/20">→</span>
                   )}
                 </div>
               </div>
+              {semanas.length > 0 && (
+                <div className="mb-2">
+                  <span className="text-xs text-accent/70 font-medium bg-accent/[0.06] px-2.5 py-1 rounded-full">
+                    Semana{semanas.length > 1 ? "s" : ""} {(semanas.length > 2 ? semanas.slice(0, -1).join(", ") + " y " + semanas[semanas.length - 1] : semanas.join(" y "))} completada{semanas.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+              )}
               <div className="space-y-1.5">
                   {(function() { const weekIdx = (currentWeek ?? 1) - 1; return dia.ejercicios.map((ej) => {
                     const s = ejercicioWeekValue(ej, "series", ej.series, weekIdx);
