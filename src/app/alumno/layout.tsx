@@ -41,9 +41,9 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   };
 
   return (
-    <div className="min-h-screen bg-bg-primary flex flex-col">
+    <div className="h-screen bg-bg-primary flex flex-col">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-5 border-b border-white/[0.06]" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 10px))", paddingBottom: "1rem" }}>
+      <header className="shrink-0 flex items-center justify-between px-5 border-b border-white/[0.06]" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 10px))", paddingBottom: "1rem" }}>
         <div className="flex items-center gap-2.5">
           <img src="/Viking.png" alt="Viking" className="w-16 h-16 object-contain" />
           <span className="text-white font-bold">Viking</span>
@@ -77,10 +77,10 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto pb-20">{children}</main>
+      <main className="flex-1 overflow-y-auto">{children}</main>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-bg-secondary/95 backdrop-blur-xl border-t border-white/[0.06]">
+      <nav className="shrink-0 bg-bg-secondary/95 backdrop-blur-xl border-t border-white/[0.06]">
         <div className="flex items-center justify-around max-w-lg mx-auto px-1 py-2">
           {NAV.map((item) => {
             const active = isActive(item.href);
