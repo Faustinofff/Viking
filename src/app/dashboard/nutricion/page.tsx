@@ -333,7 +333,7 @@ export default function NutricionPage() {
                     <div className="flex items-center gap-1.5 justify-end" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => exportPlanExcel(p, alumnos)} className="btn-ghost text-[10px] !px-1.5 !py-1"><img src="/excel.png" alt="Excel" className="w-3.5 h-3.5 inline-block align-middle" /></button>
                       <button onClick={() => abrirEditor(p)} className="btn-ghost text-[10px] !px-1.5 !py-1">Editar</button>
-                      <button onClick={async () => { if (await confirm("¿Desasignar este plan?")) unassignPlan(p.id); }} className="btn-ghost text-[10px] !px-1.5 !py-1">Desasignar</button>
+                      <button onClick={async () => { if (await confirm("¿Desasignar este plan?")) unassignPlan(p.id); }} className="text-[10px] font-semibold bg-red-500/90 text-white px-2 py-1 rounded-lg hover:brightness-110 transition-all whitespace-nowrap">Desasignar</button>
                       <button onClick={async () => { if (await confirm("¿Eliminar este plan nutricional?")) eliminarPlan(p.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>
                     </div>
                     <p className="text-sm text-white/40 truncate col-span-2">Para {alumno?.nombre ?? "?"} · {p.dias.length} días · {totalComidas} comidas</p>

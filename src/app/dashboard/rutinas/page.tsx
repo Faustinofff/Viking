@@ -412,7 +412,7 @@ export default function RutinasPage() {
                     <div className="flex items-center gap-1.5 justify-end" onClick={(e) => e.stopPropagation()}>
                       <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-[10px] !px-1.5 !py-1"><img src="/excel.png" alt="Excel" className="w-3.5 h-3.5 inline-block align-middle" /></button>
                       <button onClick={() => abrirEditor(r)} className="btn-ghost text-[10px] !px-1.5 !py-1">Editar</button>
-                      <button onClick={async () => { if (await confirm("¿Desasignar esta rutina?")) unassignRoutine(r.id); }} className="btn-ghost text-[10px] !px-1.5 !py-1">Desasignar</button>
+                      <button onClick={async () => { if (await confirm("¿Desasignar esta rutina?")) unassignRoutine(r.id); }} className="text-[10px] font-semibold bg-red-500/90 text-white px-2 py-1 rounded-lg hover:brightness-110 transition-all whitespace-nowrap">Desasignar</button>
                       <button onClick={async () => { if (await confirm("¿Eliminar esta rutina?")) eliminarRutina(r.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>
                     </div>
                     <p className="text-sm text-white/40 truncate col-span-2">Para {a?.nombre ?? "?"} · {r.dias.length} días · {r.dias.reduce((s, d) => s + d.ejercicios.length, 0)} ejercicios</p>
