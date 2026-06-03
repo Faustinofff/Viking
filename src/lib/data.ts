@@ -852,4 +852,17 @@ export async function getCoachStudentWeeklyStats(
   return { completedDays, totalDays, percentage: totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0 };
 }
 
+// ─── Student Current Week ─────────────────────────────────────
+
+export async function getStudentCurrentWeek(studentId: string): Promise<number | null> {
+  const { data } = await readProfileBlob(studentId);
+  return data.current_week ?? null;
+}
+
+export async function saveStudentCurrentWeek(studentId: string, week: number): Promise<void> {
+  const { data, originalUrl } = await readProfileBlob(studentId);
+  data.current_week = week;
+  await saveProfileBlob(studentId, data, originalUrl);
+}
+
 

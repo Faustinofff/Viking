@@ -42,6 +42,8 @@ import {
   saveCoachSubscription,
   getPremium,
   savePremium,
+  getStudentCurrentWeek,
+  saveStudentCurrentWeek,
   PLANES_PREMIUM,
   type PremiumPlan,
   type PremiumData,
@@ -516,6 +518,11 @@ interface AppState {
   contratarPremium: (plan: PremiumPlan) => Promise<void>;
   getLimiteAlumnos: () => number;
 
+  // Current Week
+  currentWeek: number | null;
+  loadCurrentWeek: () => Promise<void>;
+  setCurrentWeek: (week: number) => Promise<void>;
+
   // Page draft state — survives SPA navigation because Zustand store is module-singleton
   pageDrafts: Record<string, any>;
   setPageDraft: (page: string, data: any) => void;
@@ -557,6 +564,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   ejerciciosPersonalizados: [],
   premium: null,
   premiumCargado: false,
+  currentWeek: null,
   unassignedRoutines: loadUnassignedRoutines(),
   unassignedPlans: loadUnassignedPlans(),
 
@@ -1103,6 +1111,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     } catch (e) { console.error("sync water:", e); }
 
+    // Current week
+    try {
+      const week = await getStudentCurrentWeek(studentId);
+      set({ currentWeek: week });
+    } catch {}
+
     // Profile + coach + phone + agenda (most critical, separate from supabase tables)
     try {
       let resolvedCoachId = "";
@@ -1373,7 +1387,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const id = `se_${Date.now()}`;
     const rutina = get().rutinas.find((r) => r.id === rutinaId);
     const dia = rutina?.dias.find((d) => d.id === diaRutinaId);
-    const weekIdx = getCurrentWeekIndex(rutina?.creadoEn);
+    const weekIdx = (get().currentWeek ?? 1) - 1;
     const series = dia?.ejercicios.flatMap((e) =>
       Array.from({ length: ejercicioWeekValue(e, "series", e.series, weekIdx) }, (_, i) => ({
         ejercicioId: e.ejercicioId,
@@ -1611,6 +1625,26 @@ export const useAppStore = create<AppState>((set, get) => ({
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? "Error al crear pago");
     window.location.href = data.init_point;
+  },
+
+  // ─── Current Week ───────────────────────────────────────────
+
+  loadCurrentWeek: async () => {
+    const studentId = get().usuarioActual?.id;
+    if (!studentId) return;
+    try {
+      const week = await getStudentCurrentWeek(studentId);
+      set({ currentWeek: week });
+    } catch {}
+  },
+
+  setCurrentWeek: async (week) => {
+    const studentId = get().usuarioActual?.id;
+    if (!studentId) return;
+    try {
+      await saveStudentCurrentWeek(studentId, week);
+      set({ currentWeek: week });
+    } catch {}
   },
 
   // ─── Unassigned Routines & Plans ──────────────────────────────

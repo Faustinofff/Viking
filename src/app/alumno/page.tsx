@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAppStore, type Rutina } from "@/lib/store";
-import { getStudentWorkoutPlans } from "@/lib/data";
+import { getStudentWorkoutPlans, ejercicioWeekValue } from "@/lib/data";
 
 const MEAL_CHECK_KEY = "viking_meal_checks";
 
@@ -26,11 +26,12 @@ export default function StudentDashboard() {
   const registrosAgua = useAppStore((s) => s.registrosAgua);
   const [rutinas, setRutinas] = useState<Rutina[]>([]);
   const [checkedMeals, setCheckedMeals] = useState<Set<string>>(loadChecks);
+  const currentWeek = useAppStore((s) => s.currentWeek);
 
   useEffect(() => {
     if (!usuario?.id) return;
     getStudentWorkoutPlans(usuario.id).then((plans) => {
-      const parsed: Rutina[] = plans.map((p: any) => ({
+            const parsed: Rutina[] = plans.map((p: any) => ({
         id: p.id, coachId: p.coach_id ?? "", nombre: p.name, descripcion: p.description ?? "",
         alumnoId: usuario.id, mes: 1, anio: 2026, activa: true, creadoEn: p.created_at,
         dias: (p.workout_days ?? []).map((d: any) => ({
@@ -38,15 +39,20 @@ export default function StudentDashboard() {
           diaSemana: d.week_day === "monday" ? "lunes" : d.week_day === "tuesday" ? "martes" : d.week_day === "wednesday" ? "miercoles" : d.week_day === "thursday" ? "jueves" : d.week_day === "friday" ? "viernes" : d.week_day === "saturday" ? "sabado" : "domingo",
           ejercicios: (d.workout_exercises ?? []).map((we: any) => {
             let nombre = "", grupo = "", videoUrl = "", notas = we.notes ?? "";
+            let seriesPorSemana = null, repsPorSemana = null, descansoPorSemana = null, notasPorSemana = null;
             if (typeof notas === "object" && notas !== null) {
-              nombre = notas.n ?? ""; grupo = notas.g ?? ""; videoUrl = notas.v ?? ""; notas = notas.c ?? "";
+              nombre = notas.n ?? ""; grupo = notas.g ?? ""; videoUrl = notas.v ?? "";
+              seriesPorSemana = notas.sps ?? null; repsPorSemana = notas.rps ?? null;
+              descansoPorSemana = notas.dps ?? null; notasPorSemana = notas.nps ?? null;
+              notas = notas.c ?? "";
             } else {
-              try { const m = JSON.parse(notas || "{}"); if (m.n) { nombre = m.n; grupo = m.g; videoUrl = m.v ?? ""; notas = m.c ?? ""; } } catch {}
+              try { const m = JSON.parse(notas || "{}"); if (m.n) { nombre = m.n; grupo = m.g; videoUrl = m.v ?? ""; seriesPorSemana = m.sps ?? null; repsPorSemana = m.rps ?? null; descansoPorSemana = m.dps ?? null; notasPorSemana = m.nps ?? null; notas = m.c ?? ""; } } catch {}
             }
             return {
               id: we.id, ejercicioId: we.exercise_id, ejercicioNombre: nombre, grupoMuscular: grupo,
               series: (we.exercise_sets ?? []).length, reps: (we.exercise_sets ?? [])[0]?.reps ?? 0,
               descansoSegundos: (we.exercise_sets ?? [])[0]?.rest_seconds ?? 90, notas, videoUrl,
+              seriesPorSemana, repsPorSemana, descansoPorSemana, notasPorSemana,
             };
           }),
         })),
@@ -121,7 +127,7 @@ export default function StudentDashboard() {
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <p className="text-lg font-bold text-white">{entrenoHoy.nombre}</p>
-                    <p className="text-sm text-white/40 capitalize">{entrenoHoy.diaSemana}</p>
+                    <p className="text-sm text-white/40 capitalize">{entrenoHoy.diaSemana} · Semana {currentWeek ?? 1}/4</p>
                   </div>
                   {sesionActiva ? (
                     <span className="badge-green">En curso</span>
@@ -130,15 +136,20 @@ export default function StudentDashboard() {
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  {entrenoHoy.ejercicios.map((ej) => (
+                  {entrenoHoy.ejercicios.map((ej) => {
+                    const weekIdx = (currentWeek ?? 1) - 1;
+                    const s = ejercicioWeekValue(ej, "series", ej.series, weekIdx);
+                    const r = ejercicioWeekValue(ej, "reps", ej.reps, weekIdx);
+                    return (
                     <div key={ej.id} className="flex items-center justify-between text-sm bg-white/[0.03] rounded-lg px-3 py-2">
                       <span className="text-white/70">{ej.ejercicioNombre}</span>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-white/30 text-xs">{ej.series}×{ej.reps}</span>
+                        <span className="text-white/30 text-xs">{s}×{r}</span>
                         {ej.videoUrl && <a href={ej.videoUrl} target="_blank" rel="noopener noreferrer" className="bg-accent/10 text-accent font-medium rounded-lg px-2 py-1 text-[10px] hover:bg-accent/20 transition-all border border-accent/20" onClick={(e) => e.stopPropagation()}>Tutorial</a>}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </Link>
             ) : (

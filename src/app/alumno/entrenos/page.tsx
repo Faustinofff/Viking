@@ -1,21 +1,29 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAppStore, type Rutina } from "@/lib/store";
-import { getStudentWorkoutPlans, getCompletionsBatch, getCurrentWeekIndex, ejercicioWeekValue, parseIndicacionesSemanales } from "@/lib/data";
+import { getStudentWorkoutPlans, getCompletionsBatch, getStudentCurrentWeek, saveStudentCurrentWeek, ejercicioWeekValue, parseIndicacionesSemanales } from "@/lib/data";
 
 export default function StudentEntrenosPage() {
+  const router = useRouter();
   const usuario = useAppStore((s) => s.usuarioActual);
   const sesionesEntreno = useAppStore((s) => s.sesionesEntreno);
+  const currentWeek = useAppStore((s) => s.currentWeek);
+  const loadCurrentWeek = useAppStore((s) => s.loadCurrentWeek);
+  const setCurrentWeekStore = useAppStore((s) => s.setCurrentWeek);
   const [rutinas, setRutinas] = useState<Rutina[]>([]);
   const [completions, setCompletions] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [indicacionesModal, setIndicacionesModal] = useState<{ rutina: Rutina; dia: any } | null>(null);
+  const [weekModalRuta, setWeekModalRuta] = useState<string | null>(null);
+  const [weekModalDia, setWeekModalDia] = useState<string | null>(null);
 
   useEffect(() => {
     if (!usuario?.id) return;
     const load = async () => {
       try {
+        await loadCurrentWeek();
         const plans = await getStudentWorkoutPlans(usuario.id);
         const comps = await getCompletionsBatch(usuario.id);
         setCompletions(comps);
@@ -136,12 +144,12 @@ export default function StudentEntrenosPage() {
         <div key={rutina.id}>
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold text-accent">{rutina.nombre}</p>
-            <p className="text-xs text-white/30">Semana {getCurrentWeekIndex(rutina.creadoEn) + 1}/4</p>
+            <p className="text-xs text-white/30">Semana {(currentWeek ?? 1)}/4</p>
           </div>
           {rutina.dias.map((dia) => {
             const completado = fullCompletions[dia.id];
             return (
-            <Link key={dia.id} href={completado ? "#" : `/alumno/entrenos/activo?rutinaId=${rutina.id}&diaId=${dia.id}`} className={`card-hover block mb-2 ${completado ? "opacity-60 pointer-events-none" : ""}`}>
+            <Link key={dia.id} href={completado || currentWeek === null ? "#" : `/alumno/entrenos/activo?rutinaId=${rutina.id}&diaId=${dia.id}`} onClick={(e) => { if (currentWeek === null && !completado) { e.preventDefault(); setWeekModalRuta(rutina.id); setWeekModalDia(dia.id); } }} className={`card-hover block mb-2 ${completado ? "opacity-60 pointer-events-none" : ""}`}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${completado ? "bg-accent border-accent" : "border-white/20"}`}>
@@ -167,7 +175,7 @@ export default function StudentEntrenosPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                  {(function() { const weekIdx = getCurrentWeekIndex(rutina.creadoEn); return dia.ejercicios.map((ej) => {
+                  {(function() { const weekIdx = (currentWeek ?? 1) - 1; return dia.ejercicios.map((ej) => {
                     const s = ejercicioWeekValue(ej, "series", ej.series, weekIdx);
                     const r = ejercicioWeekValue(ej, "reps", ej.reps, weekIdx);
                     const d = ejercicioWeekValue(ej, "descanso", ej.descansoSegundos, weekIdx);
@@ -210,6 +218,23 @@ export default function StudentEntrenosPage() {
               })}
             </div>
             <button onClick={() => setIndicacionesModal(null)} className="btn-primary w-full mt-4">Cerrar</button>
+          </div>
+        </div>
+      )}
+      {(weekModalRuta && weekModalDia) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+          <div className="card max-w-sm w-full text-center">
+            <p className="text-lg font-bold text-white mb-1">¿En qué semana vas?</p>
+            <p className="text-xs text-white/40 mb-5">Seleccioná la semana actual de tu rutina</p>
+            <div className="grid grid-cols-4 gap-3 mb-5">
+              {[1, 2, 3, 4].map((w) => (
+                <button key={w} onClick={async () => { await setCurrentWeekStore(w); setWeekModalRuta(null); setWeekModalDia(null); router.push(`/alumno/entrenos/activo?rutinaId=${weekModalRuta}&diaId=${weekModalDia}`); }}
+                  className="py-3 rounded-xl font-bold transition-all bg-white/[0.06] text-white hover:bg-white/[0.12]">
+                  {w}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => { setWeekModalRuta(null); setWeekModalDia(null); }} className="text-sm text-white/40 hover:text-white/60">Cancelar</button>
           </div>
         </div>
       )}

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAppStore, type Rutina } from "@/lib/store";
-import { getStudentWorkoutPlans, getCurrentWeekIndex, ejercicioWeekValue, parseIndicacionesSemanales } from "@/lib/data";
+import { getStudentWorkoutPlans, getStudentCurrentWeek, saveStudentCurrentWeek, ejercicioWeekValue, parseIndicacionesSemanales } from "@/lib/data";
 
 export default function ActiveWorkoutPage() {
   const router = useRouter();
@@ -16,15 +16,21 @@ export default function ActiveWorkoutPage() {
   const iniciarSesionEntreno = useAppStore((s) => s.iniciarSesionEntreno);
   const completarSerie = useAppStore((s) => s.completarSerie);
   const completarEntreno = useAppStore((s) => s.completarEntreno);
+  const currentWeek = useAppStore((s) => s.currentWeek);
+  const loadCurrentWeek = useAppStore((s) => s.loadCurrentWeek);
+  const setCurrentWeekStore = useAppStore((s) => s.setCurrentWeek);
 
   const [rutina, setRutina] = useState<Rutina | null>(null);
   const [dia, setDia] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  const [showWeekSelector, setShowWeekSelector] = useState(false);
+
   useEffect(() => {
     if (!usuario?.id) return;
     const load = async () => {
       try {
+        await loadCurrentWeek();
         const plans = await getStudentWorkoutPlans(usuario.id);
         const DAY_ORDER: Record<string, number> = { monday: 0, tuesday: 1, wednesday: 2, thursday: 3, friday: 4, saturday: 5, sunday: 6 };
         const parsed: Rutina[] = plans.map((p: any) => ({
@@ -99,6 +105,13 @@ export default function ActiveWorkoutPage() {
     load();
   }, [usuario?.id]);
 
+  // Show week selector if not set
+  useEffect(() => {
+    if (!loading && currentWeek === null) {
+      setShowWeekSelector(true);
+    }
+  }, [loading, currentWeek]);
+
   const alumnoId = usuario?.id ?? "";
   const sesionActiva = useMemo(
     () => sesionesEntreno.find((s) => s.alumnoId === alumnoId && !s.completada),
@@ -118,7 +131,7 @@ export default function ActiveWorkoutPage() {
 
   const currentEjercicio = dia?.ejercicios[currentEjIndex];
   const allEjercicios = dia?.ejercicios ?? [];
-  const weekIdx = useMemo(() => getCurrentWeekIndex(rutina?.creadoEn), [rutina?.creadoEn]);
+  const weekIdx = useMemo(() => (currentWeek ?? 1) - 1, [currentWeek]);
   const weekEjercicios = useMemo(() => allEjercicios.map((ej: any) => ({
     ...ej,
     series: ejercicioWeekValue(ej, "series", ej.series, weekIdx),
@@ -261,7 +274,10 @@ export default function ActiveWorkoutPage() {
         <Link href="/alumno/entrenos" className="text-sm text-white/30 hover:text-white/50">← Salir</Link>
         <div className="text-center">
           <p className="text-base font-bold text-white">{dia.nombre}</p>
-          <p className="text-xs text-white/40">Semana {weekIdx + 1}/4 · {completedSets}/{totalSets} series</p>
+          <p className="text-xs text-white/40">
+            Semana {weekIdx + 1}/4 · {completedSets}/{totalSets} series
+            <button onClick={() => setShowWeekSelector(true)} className="ml-2 text-accent hover:text-accent/80 underline">Cambiar semana</button>
+          </p>
         </div>
         <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
           <span className="text-sm font-bold text-accent">{Math.round(progress)}%</span>
@@ -426,6 +442,26 @@ export default function ActiveWorkoutPage() {
             <p className="text-xs font-semibold text-accent uppercase tracking-wider mb-3">Indicación semanal</p>
             <p className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed mb-6">{weekToast}</p>
             <button onClick={() => setWeekToast(null)} className="btn-primary w-full py-2.5 text-sm">Entendido</button>
+          </div>
+        </div>
+      )}
+
+      {showWeekSelector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+          <div className="card max-w-sm w-full text-center">
+            <p className="text-lg font-bold text-white mb-1">¿En qué semana vas?</p>
+            <p className="text-xs text-white/40 mb-5">Seleccioná la semana actual de tu rutina</p>
+            <div className="grid grid-cols-4 gap-3 mb-5">
+              {[1, 2, 3, 4].map((w) => (
+                <button key={w} onClick={async () => { await setCurrentWeekStore(w); setShowWeekSelector(false); }}
+                  className={`py-3 rounded-xl font-bold transition-all ${currentWeek === w ? "bg-accent text-bg-primary" : "bg-white/[0.06] text-white hover:bg-white/[0.12]"}`}>
+                  {w}
+                </button>
+              ))}
+            </div>
+            {currentWeek !== null && (
+              <button onClick={() => setShowWeekSelector(false)} className="text-sm text-white/40 hover:text-white/60">Cancelar</button>
+            )}
           </div>
         </div>
       )}
