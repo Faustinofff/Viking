@@ -63,6 +63,8 @@ export default function CoachDashboard() {
   const agenda = useAppStore((s) => s.agenda);
   const rawActividades = useAppStore((s) => s.actividades);
   const actividades = rawActividades.filter((a) => a.tipo !== "agua");
+  const rutinas = useAppStore((s) => s.rutinas);
+  const sesionesEntreno = useAppStore((s) => s.sesionesEntreno);
 
   useEffect(() => { useAppStore.getState().syncCoachData(); }, []);
 
@@ -73,6 +75,49 @@ export default function CoachDashboard() {
     const hoy = dias[new Date().getDay()];
     return s.diaSemana === hoy;
   });
+
+  // Real adherence calculation
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+  weekStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+
+  const lastWeekStart = new Date(weekStart);
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+  const lastWeekEnd = new Date(weekStart);
+
+  let totalPlannedThisWeek = 0;
+  let totalCompletedThisWeek = 0;
+  let totalCompletedLastWeek = 0;
+  let totalPlannedLastWeek = 0;
+
+  for (const alumno of alumnos) {
+    const activeRoutines = rutinas.filter((r) => r.alumnoId === alumno.id && r.activa);
+    for (const r of activeRoutines) {
+      totalPlannedThisWeek += r.dias.length;
+      totalPlannedLastWeek += r.dias.length;
+    }
+    const completedThis = sesionesEntreno.filter(
+      (s) => s.alumnoId === alumno.id && s.completada && new Date(s.fecha) >= weekStart && new Date(s.fecha) < weekEnd
+    ).length;
+    const completedLast = sesionesEntreno.filter(
+      (s) => s.alumnoId === alumno.id && s.completada && new Date(s.fecha) >= lastWeekStart && new Date(s.fecha) < lastWeekEnd
+    ).length;
+    totalCompletedThisWeek += completedThis;
+    totalCompletedLastWeek += completedLast;
+  }
+
+  const adherencePct = totalPlannedThisWeek > 0
+    ? Math.round((totalCompletedThisWeek / totalPlannedThisWeek) * 100)
+    : 0;
+  const lastWeekPct = totalPlannedLastWeek > 0
+    ? Math.round((totalCompletedLastWeek / totalPlannedLastWeek) * 100)
+    : 0;
+  const change = adherencePct - lastWeekPct;
+  const changeText = totalPlannedThisWeek === 0 && totalPlannedLastWeek === 0
+    ? "sin datos"
+    : `${change >= 0 ? "+" : ""}${change}% vs semana pasada`;
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
@@ -94,7 +139,7 @@ export default function CoachDashboard() {
           { label: "Alumnos", value: totalAlumnos, change: "totales", color: "text-accent" },
           { label: "Redes", value: totalRedes, change: "grupos", color: "text-blue-400" },
           { label: "Sesiones Hoy", value: sesionesHoy.length, change: "programadas", color: "text-yellow-500" },
-          { label: "Adherencia Prom.", value: "87%", change: "+5% este mes", color: "text-accent" },
+          { label: "Adherencia Prom.", value: `${adherencePct}%`, change: changeText, color: "text-accent" },
         ].map((s) => (
           <div key={s.label} className="card">
             <p className="text-xs text-white/40 font-medium uppercase tracking-wider">{s.label}</p>
