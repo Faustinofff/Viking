@@ -24,8 +24,9 @@ export default function StudentEntrenosPage() {
     const load = async () => {
       try {
         await loadCurrentWeek();
+        const week = useAppStore.getState().currentWeek;
         const plans = await getStudentWorkoutPlans(usuario.id);
-        const comps = await getCompletionsBatch(usuario.id, currentWeek ?? undefined);
+        const comps = await getCompletionsBatch(usuario.id, week ?? undefined);
         setCompletions(comps);
         const DAY_ORDER: Record<string, number> = { monday: 0, tuesday: 1, wednesday: 2, thursday: 3, friday: 4, saturday: 5, sunday: 6 };
         const parsed: Rutina[] = plans.map((p: any) => {
@@ -79,6 +80,12 @@ export default function StudentEntrenosPage() {
     load();
   }, [usuario?.id]);
 
+  // Re-fetch completions when current week changes
+  useEffect(() => {
+    if (!usuario?.id || currentWeek === null || rutinas.length === 0) return;
+    getCompletionsBatch(usuario.id, currentWeek).then(setCompletions).catch(() => {});
+  }, [usuario?.id, currentWeek]);
+
   // Debug: log raw exercise data
   useEffect(() => {
     const totalEj = rutinas.reduce((s, r) => s + r.dias.reduce((s2, d) => s2 + d.ejercicios.length, 0), 0);
@@ -89,12 +96,7 @@ export default function StudentEntrenosPage() {
   }, [rutinas]);
 
   if (!usuario) return null;
-  // Merge blob completions with store sessions so completed days show checkmark even if blob lags
-  const storeCompletions: Record<string, boolean> = {};
-  sesionesEntreno.forEach((s) => {
-    if (s.alumnoId === usuario.id && s.completada) storeCompletions[s.diaRutinaId] = true;
-  });
-  const fullCompletions = { ...completions, ...storeCompletions };
+  const fullCompletions = completions;
 
   const sesionActiva = sesionesEntreno.find((s) =>
     s.alumnoId === usuario.id
@@ -149,7 +151,7 @@ export default function StudentEntrenosPage() {
           {rutina.dias.map((dia) => {
             const completado = fullCompletions[dia.id];
             return (
-            <Link key={dia.id} href={completado || currentWeek === null ? "#" : `/alumno/entrenos/activo?rutinaId=${rutina.id}&diaId=${dia.id}`} onClick={(e) => { if (currentWeek === null && !completado) { e.preventDefault(); setWeekModalRuta(rutina.id); setWeekModalDia(dia.id); } }} className={`card-hover block mb-2 ${completado ? "opacity-60 pointer-events-none" : ""}`}>
+            <Link key={dia.id} href={currentWeek === null ? "#" : `/alumno/entrenos/activo?rutinaId=${rutina.id}&diaId=${dia.id}`} onClick={(e) => { if (currentWeek === null) { e.preventDefault(); setWeekModalRuta(rutina.id); setWeekModalDia(dia.id); } }} className={`card-hover block mb-2 ${completado ? "opacity-40" : ""}`}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${completado ? "bg-accent border-accent" : "border-white/20"}`}>
