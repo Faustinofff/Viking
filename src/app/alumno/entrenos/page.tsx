@@ -25,7 +25,7 @@ export default function StudentEntrenosPage() {
       try {
         await loadCurrentWeek();
         const plans = await getStudentWorkoutPlans(usuario.id);
-        const comps = await getCompletionsBatch(usuario.id);
+        const comps = await getCompletionsBatch(usuario.id, currentWeek ?? undefined);
         setCompletions(comps);
         const DAY_ORDER: Record<string, number> = { monday: 0, tuesday: 1, wednesday: 2, thursday: 3, friday: 4, saturday: 5, sunday: 6 };
         const parsed: Rutina[] = plans.map((p: any) => {

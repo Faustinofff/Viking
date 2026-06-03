@@ -201,14 +201,6 @@ export default function ActiveWorkoutPage() {
   );
   const progress = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
-  // Auto-complete if all series done but session not marked complete
-  useEffect(() => {
-    if (!sesion || !sesionId || sesion.completada) return;
-    if (totalSets > 0 && completedSets >= totalSets) {
-      completarEntreno(sesionId);
-    }
-  }, [sesionId, sesion?.completada, totalSets, completedSets]);
-
   const completarSetActual = useCallback(() => {
     if (!sesionId || !currentWeekEj) return;
     const peso = parseFloat(pesosInput[`${currentWeekEj.ejercicioId}_${currentSet}`] ?? "0");
@@ -224,7 +216,13 @@ export default function ActiveWorkoutPage() {
 
   const avanzar = useCallback(() => {
     setRestTimer(null);
-    if (!currentWeekEj) return;
+    if (!currentWeekEj || !sesionId) return;
+    const alreadyCompleted = sesion?.series.some(
+      (s) => s.ejercicioId === currentWeekEj.ejercicioId && s.serie === currentSet && s.completada
+    );
+    if (!alreadyCompleted) {
+      completarSerie(sesionId, currentWeekEj.ejercicioId, currentSet, undefined, currentWeekEj.reps);
+    }
     if (currentSet < currentWeekEj.series) {
       setCurrentSet((s) => s + 1);
     } else {
@@ -233,14 +231,14 @@ export default function ActiveWorkoutPage() {
         setCurrentEjIndex((i) => i + 1);
         setCurrentSet(1);
       } else {
-        if (sesionId) completarEntreno(sesionId);
+        completarEntreno(sesionId);
       }
     }
-  }, [currentWeekEj, currentSet, currentEjIndex, allEjercicios.length, sesionId, completarEntreno]);
+  }, [currentWeekEj, currentSet, currentEjIndex, allEjercicios.length, sesionId, sesion, completarSerie, completarEntreno]);
 
   const isLastSet = currentWeekEj ? currentSet >= currentWeekEj.series : false;
   const isLastEjercicio = currentEjIndex >= allEjercicios.length - 1;
-  const isWorkoutComplete = completedSets >= totalSets && totalSets > 0;
+  const isWorkoutComplete = sesion?.completada ?? false;
 
   if (loading) {
     return (

@@ -1427,7 +1427,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!sesion) return;
     try {
       const { saveWorkoutCompletion } = await import("./data");
-      await saveWorkoutCompletion(sesion.alumnoId, sesion.diaRutinaId, sesion.series);
+      await saveWorkoutCompletion(sesion.alumnoId, sesion.diaRutinaId, sesion.series, state.currentWeek ?? undefined);
     } catch {}
     const alumnoNombre = state.alumnos.find((a) => a.id === sesion.alumnoId)?.nombre ?? "";
     const diaNombre = state.rutinas.flatMap((r) => r.dias).find((d) => d.id === sesion.diaRutinaId)?.nombre ?? "";
@@ -1475,13 +1475,14 @@ export const useAppStore = create<AppState>((set, get) => ({
           const weekNum = Math.ceil((dayOfYear + start.getDay() + 1) / 7);
           return `${d.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
         })();
+        const routineWeek = state.currentWeek ?? 1;
         if (targetCoachId) {
           fetch("/api/activities", {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
             body: JSON.stringify({
               activity: { id: actividadId, tipo: "entreno", alumnoId: sesion.alumnoId, alumnoNombre, mensaje: msg, timestamp, coachId: targetCoachId },
-              completion: { weekKey: `${sesion.diaRutinaId}_${weekCode}` },
+              completion: { weekKey: `${sesion.diaRutinaId}_w${routineWeek}_${weekCode}` },
             }),
           }).catch(() => {});
         }

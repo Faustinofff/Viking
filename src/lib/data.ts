@@ -575,27 +575,32 @@ function getWeekCode(date?: Date): string {
 export async function saveWorkoutCompletion(
   userId: string,
   dayId: string,
-  sets: { ejercicioId: string; serie: number; completada: boolean; pesoUsado?: number; repsHechas?: number }[]
+  sets: { ejercicioId: string; serie: number; completada: boolean; pesoUsado?: number; repsHechas?: number }[],
+  routineWeek?: number
 ) {
   const { data, originalUrl } = await readProfileBlob(userId);
   const completions = data.completions ?? {};
   const weekCode = getWeekCode();
-  completions[`${dayId}_${weekCode}`] = { completed: true, completedAt: new Date().toISOString(), sets };
+  const weekKey = routineWeek ? `${dayId}_w${routineWeek}_${weekCode}` : `${dayId}_${weekCode}`;
+  completions[weekKey] = { completed: true, completedAt: new Date().toISOString(), sets };
   data.completions = completions;
   await saveProfileBlob(userId, data, originalUrl);
 }
 
 export async function getCompletionsBatch(
-  userId: string
+  userId: string,
+  routineWeek?: number
 ): Promise<Record<string, boolean>> {
   if (!userId) return {};
   const { data } = await readProfileBlob(userId);
   const weekCode = getWeekCode();
+  const prefix = routineWeek ? `${routineWeek}` : "";
   const result: Record<string, boolean> = {};
   const completions = data.completions ?? {};
   for (const [key, val] of Object.entries(completions)) {
-    if (key.endsWith(`_${weekCode}`)) {
-      const dayId = key.slice(0, -(weekCode.length + 1));
+    const suffix = routineWeek ? `_w${routineWeek}_${weekCode}` : `_${weekCode}`;
+    if (key.endsWith(suffix)) {
+      const dayId = key.slice(0, -suffix.length);
       result[dayId] = (val as any).completed;
     }
   }
