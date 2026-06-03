@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppStore, type Rutina } from "@/lib/store";
-import { getStudentWorkoutPlans, getCompletionsBatch, getStudentCurrentWeek, saveStudentCurrentWeek, ejercicioWeekValue, parseIndicacionesSemanales } from "@/lib/data";
+import { getStudentWorkoutPlans, getCompletionsBatch, getWeeksCompletadas, getStudentCurrentWeek, saveStudentCurrentWeek, ejercicioWeekValue, parseIndicacionesSemanales } from "@/lib/data";
 
 export default function StudentEntrenosPage() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function StudentEntrenosPage() {
   const setCurrentWeekStore = useAppStore((s) => s.setCurrentWeek);
   const [rutinas, setRutinas] = useState<Rutina[]>([]);
   const [completions, setCompletions] = useState<Record<string, boolean>>({});
+  const [weeksCompletadas, setWeeksCompletadas] = useState<Record<string, number[]>>({});
   const [loading, setLoading] = useState(true);
   const [indicacionesModal, setIndicacionesModal] = useState<{ rutina: Rutina; dia: any } | null>(null);
   const [weekModalRuta, setWeekModalRuta] = useState<string | null>(null);
@@ -28,6 +29,7 @@ export default function StudentEntrenosPage() {
         const plans = await getStudentWorkoutPlans(usuario.id);
         const comps = await getCompletionsBatch(usuario.id, week ?? undefined);
         setCompletions(comps);
+        getWeeksCompletadas(usuario.id).then(setWeeksCompletadas).catch(() => {});
         const DAY_ORDER: Record<string, number> = { monday: 0, tuesday: 1, wednesday: 2, thursday: 3, friday: 4, saturday: 5, sunday: 6 };
         const parsed: Rutina[] = plans.map((p: any) => {
           const dias = (p.workout_days ?? []).sort((a: any, b: any) => (DAY_ORDER[a.week_day] ?? 99) - (DAY_ORDER[b.week_day] ?? 99)).map((d: any) => {
@@ -149,9 +151,10 @@ export default function StudentEntrenosPage() {
             <p className="text-xs text-white/30">Semana {(currentWeek ?? 1)}/4</p>
           </div>
           {rutina.dias.map((dia) => {
-            const completado = fullCompletions[dia.id];
+            const semanas = (weeksCompletadas[dia.id] ?? []).sort((a, b) => a - b);
+            const completado = semanas.length > 0;
             return (
-            <Link key={dia.id} href={currentWeek === null ? "#" : `/alumno/entrenos/activo?rutinaId=${rutina.id}&diaId=${dia.id}`} onClick={(e) => { if (currentWeek === null) { e.preventDefault(); setWeekModalRuta(rutina.id); setWeekModalDia(dia.id); } }} className={`card-hover block mb-2 ${completado ? "opacity-40" : ""}`}>
+            <Link key={dia.id} href={currentWeek === null ? "#" : `/alumno/entrenos/activo?rutinaId=${rutina.id}&diaId=${dia.id}`} onClick={(e) => { if (currentWeek === null) { e.preventDefault(); setWeekModalRuta(rutina.id); setWeekModalDia(dia.id); } }} className="card-hover block mb-2">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${completado ? "bg-accent border-accent" : "border-white/20"}`}>
@@ -169,8 +172,8 @@ export default function StudentEntrenosPage() {
                       Indicaciones semanales
                     </button>
                   )}
-                  {completado ? (
-                    <span className="text-xs text-accent font-medium">Completado</span>
+                  {(semanas.length > 0) ? (
+                    <span className="text-xs text-accent/70 font-medium">Semana{semanas.length > 1 ? "s" : ""} {semanas.join(" y ")}</span>
                   ) : (
                     <span className="text-white/20">→</span>
                   )}

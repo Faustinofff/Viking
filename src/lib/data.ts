@@ -607,6 +607,26 @@ export async function getCompletionsBatch(
   return result;
 }
 
+export async function getWeeksCompletadas(
+  userId: string
+): Promise<Record<string, number[]>> {
+  if (!userId) return {};
+  const { data } = await readProfileBlob(userId);
+  const completions = data.completions ?? {};
+  const result: Record<string, number[]> = {};
+  for (const key of Object.keys(completions)) {
+    // key format: dayId_w[weekNum]_YYYY-Www
+    const match = key.match(/^(.+)_w(\d+)_\d{4}-W\d{2}$/);
+    if (match) {
+      const dayId = match[1];
+      const weekNum = parseInt(match[2], 10);
+      if (!result[dayId]) result[dayId] = [];
+      if (!result[dayId].includes(weekNum)) result[dayId].push(weekNum);
+    }
+  }
+  return result;
+}
+
 export async function removeStudentFromCoach(coachId: string, studentId: string) {
   const { data: plans } = await supabase
     .from("workout_plans")
