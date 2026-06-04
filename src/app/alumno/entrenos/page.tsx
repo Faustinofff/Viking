@@ -167,7 +167,7 @@ export default function StudentEntrenosPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-xs text-accent font-semibold bg-accent/[0.12] px-3 py-1.5 rounded-lg border border-accent/30">Comenzar</span>
+                  <span className="text-xs font-bold bg-accent text-bg-primary px-3 py-1.5 rounded-lg">Comenzar</span>
                 </div>
               </div>
               {semanas.length > 0 && (
