@@ -167,17 +167,7 @@ export default function StudentEntrenosPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {rutina.indicacionesSemanales?.some((s) => s.trim()) && (
-                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIndicacionesModal({ rutina, dia }); }}
-                      className="text-[10px] bg-white/[0.05] hover:bg-white/[0.1] text-white/50 hover:text-white/80 rounded-lg px-2 py-1 transition-all border border-white/[0.06]">
-                      Indicaciones semanales
-                    </button>
-                  )}
-                  {semanas.length > 0 ? (
-                    <span className="text-xs text-white/40">→</span>
-                  ) : (
-                    <span className="text-white/20">→</span>
-                  )}
+                  <span className="text-xs text-accent font-semibold bg-accent/[0.12] px-3 py-1.5 rounded-lg border border-accent/30">Comenzar</span>
                 </div>
               </div>
               {semanas.length > 0 && (
