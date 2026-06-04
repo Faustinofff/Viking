@@ -19,6 +19,7 @@ export default function StudentEntrenosPage() {
   const [indicacionesModal, setIndicacionesModal] = useState<{ rutina: Rutina; dia: any } | null>(null);
   const [weekModalRuta, setWeekModalRuta] = useState<string | null>(null);
   const [weekModalDia, setWeekModalDia] = useState<string | null>(null);
+  const [weekModalSelected, setWeekModalSelected] = useState<number>(1);
 
   useEffect(() => {
     if (!usuario?.id) return;
@@ -154,7 +155,7 @@ export default function StudentEntrenosPage() {
             const semanas = (weeksCompletadas[dia.id] ?? []).sort((a, b) => a - b);
             const completado = semanas.length > 0;
             return (
-            <Link key={dia.id} href={currentWeek === null ? "#" : `/alumno/entrenos/activo?rutinaId=${rutina.id}&diaId=${dia.id}`} onClick={(e) => { if (currentWeek === null) { e.preventDefault(); setWeekModalRuta(rutina.id); setWeekModalDia(dia.id); } }} className="card-hover block mb-2">
+            <Link key={dia.id} href="#" onClick={(e) => { e.preventDefault(); setWeekModalRuta(rutina.id); setWeekModalDia(dia.id); setWeekModalSelected(currentWeek ?? 1); }} className="card-hover block mb-2">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${completado ? "bg-accent border-accent" : "border-white/20"}`}>
@@ -237,15 +238,17 @@ export default function StudentEntrenosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
           <div className="card max-w-sm w-full text-center">
             <p className="text-lg font-bold text-white mb-1">¿En qué semana vas?</p>
-            <p className="text-xs text-white/40 mb-5">Seleccioná la semana actual de tu rutina</p>
+            <p className="text-xs text-white/40 mb-5">Elegí la semana para ver tu entreno</p>
             <div className="grid grid-cols-4 gap-3 mb-5">
               {[1, 2, 3, 4].map((w) => (
-                <button key={w} onClick={async () => { await setCurrentWeekStore(w); setWeekModalRuta(null); setWeekModalDia(null); router.push(`/alumno/entrenos/activo?rutinaId=${weekModalRuta}&diaId=${weekModalDia}`); }}
-                  className="py-3 rounded-xl font-bold transition-all bg-white/[0.06] text-white hover:bg-white/[0.12]">
+                <button key={w} onClick={() => setWeekModalSelected(w)}
+                  className={`py-3 rounded-xl font-bold transition-all ${weekModalSelected === w ? "bg-accent text-bg-primary" : "bg-white/[0.06] text-white hover:bg-white/[0.12]"}`}>
                   {w}
                 </button>
               ))}
             </div>
+            <button onClick={async () => { await setCurrentWeekStore(weekModalSelected); const r = weekModalRuta; const d = weekModalDia; setWeekModalRuta(null); setWeekModalDia(null); router.push(`/alumno/entrenos/activo?rutinaId=${r}&diaId=${d}`); }}
+              className="btn-primary w-full mb-2">Aceptar</button>
             <button onClick={() => { setWeekModalRuta(null); setWeekModalDia(null); }} className="text-sm text-white/40 hover:text-white/60">Cancelar</button>
           </div>
         </div>

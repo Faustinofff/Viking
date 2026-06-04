@@ -124,6 +124,7 @@ export default function ActiveWorkoutPage() {
   const [restTimer, setRestTimer] = useState<number | null>(null);
   const [restActive, setRestActive] = useState(false);
   const [ejCompletados, setEjCompletados] = useState<Set<number>>(new Set());
+  const [setsCompletadosLocal, setSetsCompletadosLocal] = useState<Set<string>>(new Set());
   const [pesosInput, setPesosInput] = useState<Record<string, string>>({});
   const [verEspecs, setVerEspecs] = useState(false);
   const [verSemanales, setVerSemanales] = useState(false);
@@ -157,6 +158,12 @@ export default function ActiveWorkoutPage() {
   // Restore current position from existing session
   useEffect(() => {
     if (!sesion || !allEjercicios.length) return;
+    // Populate local completed sets from session
+    const local = new Set<string>();
+    sesion.series.filter((s) => s.completada).forEach((s) => {
+      local.add(`${s.ejercicioId}_${s.serie}`);
+    });
+    setSetsCompletadosLocal(local);
     const completados: number[] = [];
       allEjercicios.forEach((ej: any, idx: number) => {
       const we = weekEjercicios[idx];
@@ -203,12 +210,12 @@ export default function ActiveWorkoutPage() {
 
   const completarSetActual = useCallback(() => {
     if (!sesionId || !currentWeekEj) return;
+    const key = `${currentWeekEj.ejercicioId}_${currentSet}`;
+    setSetsCompletadosLocal((prev) => new Set(prev).add(key));
     const peso = parseFloat(pesosInput[`${currentWeekEj.ejercicioId}_${currentSet}`] ?? "0");
     completarSerie(sesionId, currentWeekEj.ejercicioId, currentSet, peso || undefined, currentWeekEj.reps);
-    setTimeout(() => {
-      setRestTimer(currentWeekEj.descansoSegundos);
-      setRestActive(true);
-    }, 100);
+    setRestTimer(currentWeekEj.descansoSegundos);
+    setRestActive(true);
   }, [sesionId, currentWeekEj, currentSet, pesosInput, completarSerie]);
 
   const skipRest = useCallback(() => {
@@ -219,6 +226,8 @@ export default function ActiveWorkoutPage() {
   const avanzar = useCallback(() => {
     setRestTimer(null);
     if (!currentWeekEj || !sesionId) return;
+    const key = `${currentWeekEj.ejercicioId}_${currentSet}`;
+    setSetsCompletadosLocal((prev) => new Set(prev).add(key));
     const alreadyCompleted = sesion?.series.some(
       (s) => s.ejercicioId === currentWeekEj.ejercicioId && s.serie === currentSet && s.completada
     );
@@ -341,9 +350,11 @@ export default function ActiveWorkoutPage() {
 
           <div className="space-y-2 mb-4">
             {Array.from({ length: currentWeekEj.series }, (_, i) => i + 1).map((serieNum) => {
-              const completada = sesion?.series.some(
-                (s) => s.ejercicioId === currentWeekEj.ejercicioId && s.serie === serieNum && s.completada
-              ) ?? false;
+              const completada = (
+                sesion?.series.some(
+                  (s) => s.ejercicioId === currentWeekEj.ejercicioId && s.serie === serieNum && s.completada
+                ) ?? false
+              ) || setsCompletadosLocal.has(`${currentWeekEj.ejercicioId}_${serieNum}`);
               const isActive = serieNum === currentSet;
 
               return (
