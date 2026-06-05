@@ -180,6 +180,7 @@ export default function NutricionPage() {
       if (noAssign) {
         if (editandoId) {
           deleteUnassignedPlan(editandoId);
+          await eliminarPlan(editandoId);
         }
         await saveUnassignedPlanStore({ coachId, nombre: nombre.trim(), alumnoId: "", dias, activo: true });
         setShowBuilder(false);

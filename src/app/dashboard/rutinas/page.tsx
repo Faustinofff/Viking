@@ -158,6 +158,7 @@ export default function RutinasPage() {
       if (noAssign) {
         if (editandoId) {
           deleteUnassignedRoutine(editandoId);
+          await eliminarRutina(editandoId);
         }
         await saveUnassignedRoutine({ coachId, nombre: nombre.trim(), alumnoId: "", mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi });
         setShowBuilder(false);
