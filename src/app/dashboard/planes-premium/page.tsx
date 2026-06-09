@@ -13,12 +13,14 @@ export default function PlanesPremiumPage() {
   const [error, setError] = useState("");
   const [exito, setExito] = useState("");
   const [isDev, setIsDev] = useState(false);
+  const [isTest, setIsTest] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [esperandoPago, setEsperandoPago] = useState(false);
 
   useEffect(() => {
-    setIsDev(window.location.hostname === "localhost");
     const params = new URLSearchParams(window.location.search);
+    setIsDev(window.location.hostname === "localhost" || params.has("dev"));
+    setIsTest(params.has("test"));
     if (params.get("ok") === "true") setExito("Pago aprobado correctamente");
     else if (params.get("ok") === "false") setError("El pago fue rechazado o cancelado");
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
@@ -52,9 +54,9 @@ export default function PlanesPremiumPage() {
     try {
       const plan = PLANES_PREMIUM.find((p) => p.id === planId);
       if (!plan) throw new Error("Plan no válido");
-      if (isDev) {
+      if (isDev || isTest) {
         await contratarPremium(plan);
-        setExito(`Plan ${plan.nombre} activado correctamente`);
+        setExito(`Plan ${plan.nombre} activado correctamente${isTest ? " (modo test)" : ""}`);
         return;
       }
       const res = await fetch("/api/mp/create-preference", {
@@ -161,7 +163,7 @@ export default function PlanesPremiumPage() {
                 disabled={contratando}
                 className="mt-4 w-full py-2.5 rounded-xl text-sm font-medium transition-all bg-accent text-bg-primary hover:bg-accent/90 disabled:opacity-50"
               >
-                {contratando ? "Abriendo Mercado Pago..." : isDev ? "Contratar (prueba)" : "Contratar"}
+                {contratando ? "Abriendo Mercado Pago..." : isDev || isTest ? "Contratar (test)" : "Contratar"}
               </button>
             </div>
           );
