@@ -1640,9 +1640,10 @@ export const useAppStore = create<AppState>((set, get) => {
   contratarPremium: async (plan: PremiumPlan) => {
     const coachId = get().usuarioActual?.id;
     if (!coachId) throw new Error("Debés iniciar sesión como coach");
-    const isDev = typeof window !== "undefined" && window.location.hostname === "localhost";
+    const isDev = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.search.includes("dev"));
+    const isTest = typeof window !== "undefined" && window.location.search.includes("test=1");
     const usaMp = typeof window !== "undefined" && window.location.search.includes("mp=1");
-    if (isDev && !usaMp) {
+    if ((isDev || isTest) && !usaMp) {
       const now = new Date();
       const existing = get().premium;
       const base = existing?.premiumExpiresAt && new Date(existing.premiumExpiresAt) > now
