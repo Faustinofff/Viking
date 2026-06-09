@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Plan no válido" }, { status: 400 });
     }
 
-    const origin = req.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const origin = req.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://viking-web-beta.vercel.app";
     const isDev = origin.includes("localhost") || process.env.NODE_ENV === "development";
 
     const externalRef = coachId ? `${coachId}:${planId}` : planId;
