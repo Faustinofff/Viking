@@ -1,10 +1,10 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { PLANES_PREMIUM, esCoachGratuito } from "@/lib/data";
 
 declare global {
-  interface Window { MercadoPago: any; mpInstance: any; }
+  interface Window { MercadoPago: any; }
 }
 
 export default function PlanesPremiumPage() {
@@ -24,17 +24,17 @@ export default function PlanesPremiumPage() {
     else if (params.get("ok") === "false") setError("El pago fue rechazado o cancelado");
   }, []);
 
-  useEffect(() => {
-    if (window.MercadoPago || !process.env.NEXT_PUBLIC_MP_PUBLIC_KEY) return;
-    const s = document.createElement("script");
-    s.src = "https://sdk.mercadopago.com/js/v2";
-    s.onload = () => {
-      window.mpInstance = new window.MercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY);
-    };
-    document.head.appendChild(s);
-  }, []);
+  const cargarSDK = (): Promise<void> =>
+    new Promise((resolve, reject) => {
+      if (window.MercadoPago) return resolve();
+      const s = document.createElement("script");
+      s.src = "https://sdk.mercadopago.com/js/v2";
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("No se pudo cargar el SDK de Mercado Pago"));
+      document.head.appendChild(s);
+    });
 
-  const abrirCheckoutMP = useCallback(async (planId: string) => {
+  const abrirCheckoutMP = async (planId: string) => {
     setError("");
     setExito("");
     const res = await fetch("/api/mp/create-preference", {
@@ -44,15 +44,14 @@ export default function PlanesPremiumPage() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? "Error al crear pago");
-    if (window.mpInstance) {
-      window.mpInstance.checkout({
-        preference: { id: data.preference_id },
-        autoOpen: true,
-      });
+    if (data.public_key) {
+      await cargarSDK();
+      const mp = new window.MercadoPago(data.public_key);
+      mp.checkout({ preference: { id: data.preference_id }, autoOpen: true });
     } else {
       window.location.href = data.init_point;
     }
-  }, []);
+  };
 
   const handleContratar = async (planId: string) => {
     setCargando(planId);

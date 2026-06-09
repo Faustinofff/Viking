@@ -71,8 +71,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      init_point: isDev ? data.init_point : data.init_point,
+      init_point: data.init_point,
       preference_id: data.id,
+      public_key: process.env.MP_PUBLIC_KEY ?? "",
     });
   } catch (e: any) {
     console.error("create-preference error:", e);
