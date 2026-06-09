@@ -48,8 +48,10 @@ export default function PlanesPremiumPage() {
       await cargarSDK();
       const mp = new window.MercadoPago(data.public_key);
       mp.checkout({ preference: { id: data.preference_id }, autoOpen: true });
+    } else if (data.init_point) {
+      window.open(data.init_point, "_blank", "noopener");
     } else {
-      window.location.href = data.init_point;
+      setError("Error: Mercado Pago no está configurado correctamente");
     }
   };
 
