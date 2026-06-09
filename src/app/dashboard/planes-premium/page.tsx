@@ -1,11 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
-import { PLANES_PREMIUM } from "@/lib/data";
+import { PLANES_PREMIUM, esCoachGratuito } from "@/lib/data";
 
 export default function PlanesPremiumPage() {
+  const usuarioActual = useAppStore((s) => s.usuarioActual);
   const premium = useAppStore((s) => s.premium);
   const contratarPremium = useAppStore((s) => s.contratarPremium);
+  const esGratuito = esCoachGratuito(usuarioActual?.email);
   const [cargando, setCargando] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [exito, setExito] = useState("");
@@ -45,6 +47,19 @@ export default function PlanesPremiumPage() {
         </p>
       </div>
 
+      {/* Coach gratuito */}
+      {esGratuito && (
+        <div className="card border border-green-500/20 bg-green-500/5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 font-bold text-lg">✓</div>
+            <div>
+              <p className="text-lg font-bold text-white">Acceso gratuito vitalicio</p>
+              <p className="text-sm text-white/50">No necesitás contratar ningún plan. Tenés acceso completo al sistema.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Estado actual */}
       {premium && (
         <div className={`card border ${activo ? "border-accent/20" : "border-red-500/20"} ${activo ? "bg-accent/5" : "bg-red-500/5"}`}>
@@ -83,7 +98,8 @@ export default function PlanesPremiumPage() {
       {error && <div className="card bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
       {exito && <div className="card bg-green-500/10 border border-green-500/20 text-green-400 text-sm">{exito}</div>}
 
-      {/* Planes */}
+      {!esGratuito && (
+      /* Planes */
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {PLANES_PREMIUM.map((plan) => {
           const contratando = cargando === plan.id;
@@ -123,6 +139,7 @@ export default function PlanesPremiumPage() {
           );
         })}
       </div>
+      )}
 
       {/* Info */}
       <div className="card bg-white/[0.02] border border-white/5">

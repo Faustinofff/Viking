@@ -754,6 +754,14 @@ export async function getCoachPhone(coachId: string): Promise<string> {
 
 // ─── Premium Plans ─────────────────────────────────────────
 
+/** Emails de coaches que usan el sistema gratis (ej: tu suegro) */
+export const COACH_GRATIS_EMAILS: string[] = ["faustinofiordalisi@gmail.com", "maxi22albaracin@gmail.com"];
+
+export function esCoachGratuito(email?: string | null) {
+  if (!email) return false;
+  return COACH_GRATIS_EMAILS.includes(email);
+}
+
 export interface PremiumPlan {
   id: string;
   nombre: string;

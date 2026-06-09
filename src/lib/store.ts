@@ -45,6 +45,7 @@ import {
   getStudentCurrentWeek,
   saveStudentCurrentWeek,
   PLANES_PREMIUM,
+  esCoachGratuito,
   type PremiumPlan,
   type PremiumData,
   type StudentActivity,
@@ -528,7 +529,17 @@ interface AppState {
   setPageDraft: (page: string, data: any) => void;
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set, get) => {
+  const requierePremium = () => {
+    const { usuarioActual, premium } = get();
+    if (usuarioActual?.rol !== "coach") return;
+    if (esCoachGratuito(usuarioActual?.email)) return;
+    if (premium && new Date(premium.premiumExpiresAt) <= new Date()) {
+      throw new Error("Tu plan premium ha vencido. Contratá un plan para seguir gestionando.");
+    }
+  };
+
+  return {
   // Auth
   usuarioActual: null,
   setUsuario: (u) => set({ usuarioActual: { ...u, telefono: u.telefono || loadTelefono() || undefined } }),
@@ -571,18 +582,22 @@ export const useAppStore = create<AppState>((set, get) => ({
   // ─── Alumnos ──────────────────────────────────────────────
 
   agregarAlumno: async (a) => {
+    requierePremium();
     const student = await findStudentByEmail(a.email);
     if (!student) throw new Error("Alumno no encontrado. Debe registrarse primero con Google.");
     const coachId = get().usuarioActual?.id;
+    const email = get().usuarioActual?.email;
     if (!coachId) throw new Error("Debes iniciar sesión como coach");
-    const premium = get().premium;
-    const premiumActivo = premium && new Date(premium.premiumExpiresAt) > new Date();
-    if (!premiumActivo) {
-      const total = get().alumnos.length;
-      if (total >= 3) {
-        throw new Error(
-          `Límite de 3 alumnos en el plan Gratis. Contratá un plan Premium para agregar más alumnos.`
-        );
+    if (!esCoachGratuito(email)) {
+      const premium = get().premium;
+      const premiumActivo = premium && new Date(premium.premiumExpiresAt) > new Date();
+      if (!premiumActivo) {
+        const total = get().alumnos.length;
+        if (total >= 3) {
+          throw new Error(
+            `Límite de 3 alumnos en el plan Gratis. Contratá un plan Premium para agregar más alumnos.`
+          );
+        }
       }
     }
     await linkStudentToCoach(coachId, student.id);
@@ -604,6 +619,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   eliminarAlumno: async (id) => {
+    requierePremium();
     const coachId = get().usuarioActual?.id;
     if (!coachId) return;
     try {
@@ -679,33 +695,30 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch {}
   },
 
-  getAlumnosPorRed: (redId) => {
-    const red = get().redes.find((r) => r.id === redId);
-    if (!red) return [];
-    return get().alumnos.filter((a) => red.alumnoIds.includes(a.id));
-  },
-
   // ─── Redes ────────────────────────────────────────────────
 
-  agregarRed: (nombre, tipo) =>
+  agregarRed: (nombre, tipo) => {
+    requierePremium();
     set((state) => {
       const nuevas = [...state.redes, { id: `r_${Date.now()}`, coachId: state.usuarioActual?.id ?? "", nombre, tipo, alumnoIds: [] }];
       saveRedes(nuevas);
       const coachId = state.usuarioActual?.id;
       if (coachId) saveRedesForCoach(coachId, nuevas).catch(() => {});
       return { redes: nuevas };
-    }),
-
-  eliminarRed: (id) =>
+    });
+  },
+  eliminarRed: (id) => {
+    requierePremium();
     set((state) => {
       const nuevas = state.redes.filter((r) => r.id !== id);
       saveRedes(nuevas);
       const coachId = state.usuarioActual?.id;
       if (coachId) saveRedesForCoach(coachId, nuevas).catch(() => {});
       return { redes: nuevas };
-    }),
-
-  agregarAlumnoARed: (redId, alumnoId) =>
+    });
+  },
+  agregarAlumnoARed: (redId, alumnoId) => {
+    requierePremium();
     set((state) => {
       const nuevas = state.redes.map((r) =>
         r.id === redId ? { ...r, alumnoIds: [...r.alumnoIds, alumnoId] } : r
@@ -719,11 +732,13 @@ export const useAppStore = create<AppState>((set, get) => ({
           a.id === alumnoId ? { ...a, redId } : a
         ),
       };
-    }),
+    });
+  },
 
   // ─── Rutinas ──────────────────────────────────────────────
 
   asignarRutina: async (r) => {
+    requierePremium();
     const coachId = get().usuarioActual?.id ?? r.coachId;
     const ejercicios = get().ejercicios;
     const plan = await createWorkoutPlan(coachId, r.alumnoId, r.nombre, r.descripcion, r.mes, r.anio, r.dias, ejercicios, r.indicacionesSemanales);
@@ -753,6 +768,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().rutinas.filter((r) => r.alumnoId === alumnoId && r.activa),
 
   eliminarRutina: async (id) => {
+    requierePremium();
     try { await deleteWorkoutPlan(id); } catch {}
     set((state) => ({
       rutinas: state.rutinas.filter((r) => r.id !== id),
@@ -1215,6 +1231,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   // ─── Nutrición ────────────────────────────────────────────
 
   asignarPlanNutricional: async (p) => {
+    requierePremium();
     const coachId = get().usuarioActual?.id ?? p.coachId;
     try {
       const plan = await saveNutritionPlan(coachId, p.alumnoId, p.nombre, p.dias);
@@ -1246,6 +1263,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().planesNutricionales.filter((p) => p.alumnoId === alumnoId && p.activo),
 
   eliminarPlanNutricional: async (id) => {
+    requierePremium();
     try { await deleteWorkoutPlan(id); } catch {}
     set((state) => ({
       planesNutricionales: state.planesNutricionales.filter((p) => p.id !== id),
@@ -1255,6 +1273,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   // ─── Ejercicios Personalizados ─────────────────────────────
 
   agregarEjercicioPersonalizado: (e) => {
+    requierePremium();
     const nuevo = { ...e, id: `ej_${Date.now()}` };
     set((state) => {
       const updated = [...state.ejercicios, nuevo];
@@ -1266,6 +1285,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   eliminarEjercicioPersonalizado: (id: string) => {
+    requierePremium();
     set((state) => {
       const updated = state.ejercicios.filter((e) => e.id !== id);
       const coachId = state.usuarioActual?.id ?? "";
@@ -1278,6 +1298,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   // ─── Agenda ───────────────────────────────────────────────
 
   agregarSesion: (s) => {
+    requierePremium();
     const state = get();
     const id = `ag_${Date.now()}`;
     const alumnoEmails = state.alumnos.filter(a => s.alumnoIds?.includes(a.id)).map(a => a.email).filter(Boolean);
@@ -1289,6 +1310,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   eliminarSesion: (id) => {
+    requierePremium();
     const state = get();
     const coachId = state.usuarioActual?.id ?? "";
     const nueva = state.agenda.filter((s) => s.id !== id);
@@ -1297,6 +1319,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     try { saveAgendaForCoach(coachId, nueva); } catch {}
   },
   editarSesion: (id, updates) => {
+    requierePremium();
     const state = get();
     const coachId = state.usuarioActual?.id ?? "";
     const nueva = state.agenda.map((s) =>
@@ -1536,36 +1559,48 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // ─── Ejercicios propios ───────────────────────────────────
 
-  agregarEjercicioPropio: (e) =>
+  agregarEjercicioPropio: (e) => {
+    requierePremium();
     set((state) => ({
       ejerciciosPersonalizados: [...state.ejerciciosPersonalizados, { ...e, id: `ejp_${Date.now()}` }],
-    })),
-  eliminarEjercicioPropio: (id) =>
+    }));
+  },
+  eliminarEjercicioPropio: (id) => {
+    requierePremium();
     set((state) => ({
       ejerciciosPersonalizados: state.ejerciciosPersonalizados.filter((e) => e.id !== id),
-    })),
+    }));
+  },
 
   // ─── Rutinas propias ──────────────────────────────────────
 
-  agregarRutinaPropia: (r) =>
+  agregarRutinaPropia: (r) => {
+    requierePremium();
     set((state) => ({
       rutinas: [...state.rutinas, { ...r, id: `rut_${Date.now()}`, creadoEn: new Date().toISOString() }],
-    })),
-  eliminarRutinaPropia: (id) =>
+    }));
+  },
+  eliminarRutinaPropia: (id) => {
+    requierePremium();
     set((state) => ({
       rutinas: state.rutinas.filter((r) => r.id !== id),
-    })),
+    }));
+  },
 
   // ─── Planes propios ───────────────────────────────────────
 
-  agregarPlanPropio: (p) =>
+  agregarPlanPropio: (p) => {
+    requierePremium();
     set((state) => ({
       planesNutricionales: [...state.planesNutricionales, { ...p, id: `plan_${Date.now()}`, creadoEn: new Date().toISOString() }],
-    })),
-  eliminarPlanPropio: (id) =>
+    }));
+  },
+  eliminarPlanPropio: (id) => {
+    requierePremium();
     set((state) => ({
       planesNutricionales: state.planesNutricionales.filter((pl) => pl.id !== id),
-    })),
+    }));
+  },
 
   // ─── Helpers ──────────────────────────────────────────────
 
@@ -1576,6 +1611,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   // ─── Premium ─────────────────────────────────────────
 
   getLimiteAlumnos: () => {
+    const user = get().usuarioActual;
+    if (esCoachGratuito(user?.email)) return 9999;
     const premium = get().premium;
     if (premium && new Date(premium.premiumExpiresAt) > new Date()) return 9999;
     return 3;
@@ -1651,6 +1688,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   // ─── Unassigned Routines & Plans ──────────────────────────────
 
   saveUnassignedRoutine: async (r) => {
+    requierePremium();
     const coachId = get().usuarioActual?.id ?? r.coachId;
     const state = get();
     const nueva: Rutina = { ...r, id: `rut_prop_${Date.now()}`, creadoEn: new Date().toISOString() };
@@ -1661,6 +1699,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deleteUnassignedRoutine: (id) => {
+    requierePremium();
     const state = get();
     const nuevas = state.unassignedRoutines.filter((r) => r.id !== id);
     saveUnassignedRoutines(nuevas);
@@ -1678,6 +1717,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   saveUnassignedPlan: async (p) => {
+    requierePremium();
     const coachId = get().usuarioActual?.id ?? p.coachId;
     const state = get();
     const nuevo: PlanNutricional = { ...p, id: `plan_prop_${Date.now()}`, creadoEn: new Date().toISOString() };
@@ -1688,6 +1728,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deleteUnassignedPlan: (id) => {
+    requierePremium();
     const state = get();
     const nuevos = state.unassignedPlans.filter((p) => p.id !== id);
     saveUnassignedPlans(nuevos);
@@ -1727,4 +1768,5 @@ export const useAppStore = create<AppState>((set, get) => ({
     savePageDrafts(next);
     return { pageDrafts: next };
   }),
-}));
+};
+});
