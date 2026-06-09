@@ -9,14 +9,16 @@ export default function PlanesPremiumPage() {
   const contratarPremium = useAppStore((s) => s.contratarPremium);
   const cargarSuscripcion = useAppStore((s) => s.cargarSuscripcion);
   const esGratuito = esCoachGratuito(usuarioActual?.email);
+  const storeGetState = useAppStore.getState;
   const [cargando, setCargando] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [exito, setExito] = useState("");
   const [isDev, setIsDev] = useState(false);
   const [planSeleccionado, setPlanSeleccionado] = useState<any>(null);
   const [publicKey, setPublicKey] = useState("");
-  const [brickListo, setBrickListo] = useState(false);
   const brickContainerRef = useRef<HTMLDivElement>(null);
+  const sdkCargado = useRef(false);
+  const brickRef = useRef<any>(null);
 
   useEffect(() => {
     setIsDev(window.location.hostname === "localhost");
@@ -26,54 +28,73 @@ export default function PlanesPremiumPage() {
   }, []);
 
   useEffect(() => {
-    if (!planSeleccionado || !publicKey || brickListo) return;
+    if (!planSeleccionado || !publicKey || !brickContainerRef.current || brickRef.current) return;
     const container = brickContainerRef.current;
-    if (!container) return;
     container.innerHTML = "";
-    const scriptTag = document.createElement("script");
-    scriptTag.src = "https://sdk.mercadopago.com/js/v2";
-    scriptTag.onload = () => {
-      const mp = new (window as any).MercadoPago(publicKey);
-      const bricksBuilder = mp.bricks();
-      bricksBuilder.create("cardPayment", "mp-card-payment-container", {
-        initialization: { amount: planSeleccionado.precio },
-        customization: {
-          visual: { hideFormTitle: true },
-          paymentMethods: { maxInstallments: 1 },
-        },
-        callbacks: {
-          onSubmit: async (cardFormData: any) => {
-            setError("");
-            setExito("");
-            const res = await fetch("/api/mp/process-payment", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                ...cardFormData,
-                transaction_amount: planSeleccionado.precio,
-                plan_id: planSeleccionado.id,
-                email: usuarioActual?.email,
-              }),
-            });
-            const result = await res.json();
-            if (result.status === "approved") {
-              await cargarSuscripcion();
-              setPlanSeleccionado(null);
-              setBrickListo(false);
-              setExito(`Plan ${planSeleccionado.nombre} activado correctamente`);
-            } else {
-              setError("El pago fue rechazado. Probá con otra tarjeta.");
-            }
-            return result;
+    brickRef.current = null;
+    const plan = planSeleccionado;
+
+    const cargarYDibujar = () => {
+      if (!(window as any).MercadoPago) {
+        setTimeout(cargarYDibujar, 200);
+        return;
+      }
+      try {
+        const mp = new (window as any).MercadoPago(publicKey);
+        const bricksBuilder = mp.bricks();
+        bricksBuilder.create("cardPayment", container.id, {
+          initialization: { amount: plan.precio },
+          customization: { visual: { hideFormTitle: true }, paymentMethods: { maxInstallments: 1 } },
+          callbacks: {
+            onSubmit: async (cardFormData: any) => {
+              try {
+                const email = storeGetState().usuarioActual?.email;
+                const res = await fetch("/api/mp/process-payment", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    ...cardFormData,
+                    transaction_amount: plan.precio,
+                    plan_id: plan.id,
+                    email,
+                  }),
+                });
+                const result = await res.json();
+                if (result.status === "approved") {
+                  await cargarSuscripcion();
+                  setPlanSeleccionado(null);
+                  setExito(`Plan ${plan.nombre} activado correctamente`);
+                } else {
+                  setError("El pago fue rechazado. Probá con otra tarjeta.");
+                }
+                return result;
+              } catch (e: any) {
+                setError(e.message);
+                return { error: e.message };
+              }
+            },
+            onError: (e: any) => {
+              setError("Error al procesar el pago");
+            },
           },
-          onError: (e: any) => {
-            setError("Error al procesar el pago");
-          },
-        },
-      });
+        }).then(() => { brickRef.current = true; }).catch((e: any) => {
+          setError("Error al cargar el formulario de pago");
+        });
+      } catch (e: any) {
+        setError("Error al iniciar Mercado Pago");
+      }
     };
-    document.head.appendChild(scriptTag);
-  }, [planSeleccionado, publicKey, brickListo, usuarioActual?.email, contratarPremium]);
+
+    if (!sdkCargado.current) {
+      const s = document.createElement("script");
+      s.src = "https://sdk.mercadopago.com/js/v2";
+      s.onload = () => { sdkCargado.current = true; cargarYDibujar(); };
+      s.onerror = () => setError("No se pudo cargar el SDK de Mercado Pago");
+      document.head.appendChild(s);
+    } else {
+      cargarYDibujar();
+    }
+  }, [planSeleccionado, publicKey, storeGetState]);
 
   const handleContratar = async (planId: string) => {
     setCargando(planId);
@@ -137,10 +158,7 @@ export default function PlanesPremiumPage() {
               {activo ? (
                 <>
                   <p className="text-lg font-bold text-white mt-1">Plan {premium.planName}</p>
-                  <p className="text-sm text-white/50">
-                    Vence: {expiracion?.toLocaleDateString("es-AR")}
-                    {" · "}{diasRestantes} días restantes
-                  </p>
+                  <p className="text-sm text-white/50">Vence: {expiracion?.toLocaleDateString("es-AR")} · {diasRestantes} días restantes</p>
                   {porVencer && <p className="text-sm text-yellow-400 mt-1">⚠ Tu plan vence pronto</p>}
                 </>
               ) : (
@@ -194,12 +212,12 @@ export default function PlanesPremiumPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm text-white/40">Pagá con tarjeta</p>
+              <p className="text-sm text-white/40">Pagá con tarjeta de crédito o débito</p>
               <p className="text-lg font-bold text-white mt-1">${planSeleccionado.precio.toLocaleString("es-AR")} - {planSeleccionado.nombre}</p>
             </div>
-            <button onClick={() => { setPlanSeleccionado(null); setBrickListo(false); }} className="text-xs text-white/30 hover:text-white/60">Cancelar</button>
+            <button onClick={() => { setPlanSeleccionado(null); brickRef.current = false; }} className="text-xs text-white/30 hover:text-white/60">Cancelar</button>
           </div>
-          <div id="mp-card-payment-container" ref={brickContainerRef} className="min-h-[200px]" />
+          <div id="mp-card-payment-container" ref={brickContainerRef} className="min-h-[220px]" />
         </div>
       )}
 
