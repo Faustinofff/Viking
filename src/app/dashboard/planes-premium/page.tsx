@@ -1,7 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAppStore } from "@/lib/store";
 import { PLANES_PREMIUM, esCoachGratuito } from "@/lib/data";
+
+declare global {
+  interface Window { MercadoPago: any; mpInstance: any; }
+}
 
 export default function PlanesPremiumPage() {
   const usuarioActual = useAppStore((s) => s.usuarioActual);
@@ -13,7 +17,42 @@ export default function PlanesPremiumPage() {
   const [exito, setExito] = useState("");
   const [isDev, setIsDev] = useState(false);
 
-  useEffect(() => { setIsDev(window.location.hostname === "localhost"); }, []);
+  useEffect(() => {
+    setIsDev(window.location.hostname === "localhost");
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("ok") === "true") setExito("Pago aprobado correctamente");
+    else if (params.get("ok") === "false") setError("El pago fue rechazado o cancelado");
+  }, []);
+
+  useEffect(() => {
+    if (window.MercadoPago || !process.env.NEXT_PUBLIC_MP_PUBLIC_KEY) return;
+    const s = document.createElement("script");
+    s.src = "https://sdk.mercadopago.com/js/v2";
+    s.onload = () => {
+      window.mpInstance = new window.MercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY);
+    };
+    document.head.appendChild(s);
+  }, []);
+
+  const abrirCheckoutMP = useCallback(async (planId: string) => {
+    setError("");
+    setExito("");
+    const res = await fetch("/api/mp/create-preference", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Error al crear pago");
+    if (window.mpInstance) {
+      window.mpInstance.checkout({
+        preference: { id: data.preference_id },
+        autoOpen: true,
+      });
+    } else {
+      window.location.href = data.init_point;
+    }
+  }, []);
 
   const handleContratar = async (planId: string) => {
     setCargando(planId);
@@ -22,8 +61,12 @@ export default function PlanesPremiumPage() {
     try {
       const plan = PLANES_PREMIUM.find((p) => p.id === planId);
       if (!plan) throw new Error("Plan no válido");
-      await contratarPremium(plan);
-      setExito(`Plan ${plan.nombre} activado correctamente ✅`);
+      if (isDev) {
+        await contratarPremium(plan);
+        setExito(`Plan ${plan.nombre} activado correctamente`);
+      } else {
+        await abrirCheckoutMP(planId);
+      }
     } catch (e: any) {
       setError(e.message);
     }

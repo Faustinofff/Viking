@@ -18,6 +18,10 @@ export async function POST(req: Request) {
     const origin = req.headers.get("origin") ?? "";
     const isDev = origin.includes("localhost") || process.env.NODE_ENV === "development";
 
+    const successUrl = `${origin}/dashboard/planes-premium?ok=true`;
+    const failureUrl = `${origin}/dashboard/planes-premium?ok=false`;
+    const pendingUrl = `${origin}/dashboard/planes-premium?ok=pending`;
+
     const body: Record<string, any> = {
       items: [{
         title: `Plan ${plan.nombre} - FitVerse`,
@@ -27,11 +31,12 @@ export async function POST(req: Request) {
         unit_price: plan.precio,
       }],
       back_urls: {
-        success: `${origin}/dashboard/planes-premium?ok=true`,
-        failure: `${origin}/dashboard/planes-premium?ok=false`,
-        pending: `${origin}/dashboard/planes-premium?ok=pending`,
+        success: successUrl,
+        failure: failureUrl,
+        pending: pendingUrl,
       },
       auto_return: "approved",
+      binary_mode: true,
       external_reference: planId,
       metadata: {
         plan_id: plan.id,
