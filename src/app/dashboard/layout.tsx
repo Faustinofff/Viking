@@ -23,7 +23,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const usuario = useAppStore((s) => s.usuarioActual);
   const premium = useAppStore((s) => s.premium);
+  const premiumError = useAppStore((s) => s.premiumError);
+  const setPremiumError = useAppStore((s) => s.setPremiumError);
   const planActual = premium ? PLANES_PREMIUM.find((p) => p.id === premium.planId) ?? PLANES_PREMIUM[0] : null;
+
+  useEffect(() => {
+    if (premiumError) {
+      const t = setTimeout(() => setPremiumError(null), 6000);
+      return () => clearTimeout(t);
+    }
+  }, [premiumError]);
   const cerrarSesion = useAppStore((s) => s.cerrarSesion);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -177,7 +186,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       <style>{`@media (max-width:767px){.main-content{padding-top:calc(3.5rem + env(safe-area-inset-top, 0px))!important}}`}</style>
-      <main className="flex-1 overflow-y-auto md:pt-0 pt-14 main-content">{children}</main>
+      <main className="flex-1 overflow-y-auto md:pt-0 pt-14 main-content relative">
+        {premiumError && (
+          <div className="fixed bottom-6 right-6 z-50 max-w-sm card bg-red-500/10 border border-red-500/20 shadow-xl animate-slide-up">
+            <p className="text-sm text-red-400 mb-3">{premiumError}</p>
+            <Link href="/dashboard/planes-premium" onClick={() => setPremiumError(null)}
+              className="text-sm font-medium text-accent hover:text-accent/80 underline">
+              Ver planes
+            </Link>
+          </div>
+        )}
+        {children}
+      </main>
     </div>
   );
 }

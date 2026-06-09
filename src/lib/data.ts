@@ -772,7 +772,7 @@ export interface PremiumPlan {
 }
 
 export const PLANES_PREMIUM: PremiumPlan[] = [
-  { id: "prueba",      nombre: "Prueba (1 día)", dias: 1,  precio: 100,    ahorro: undefined,              destacado: undefined },
+  { id: "prueba",      nombre: "Prueba (1 día)", dias: 1,  precio: 1000,   ahorro: undefined,              destacado: undefined },
   { id: "mensual",     nombre: "Mensual",     dias: 30,  precio: 14999,  ahorro: undefined,                destacado: undefined },
   { id: "trimestral",  nombre: "Trimestral",  dias: 90,  precio: 24999,  ahorro: "Ahorra 17%",             destacado: "Más Popular" },
   { id: "semestral",   nombre: "Semestral",   dias: 180, precio: 44999,  ahorro: "Ahorra 25%",             destacado: undefined },

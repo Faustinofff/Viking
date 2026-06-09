@@ -514,6 +514,8 @@ interface AppState {
   unassignPlan: (planId: string) => Promise<void>;
 
   // Premium
+  premiumError: string | null;
+  setPremiumError: (msg: string | null) => void;
   cargarSuscripcion: () => Promise<void>;
   cambiarPlan: (planId: string) => Promise<void>;
   contratarPremium: (plan: PremiumPlan) => Promise<void>;
@@ -534,8 +536,10 @@ export const useAppStore = create<AppState>((set, get) => {
     const { usuarioActual, premium } = get();
     if (usuarioActual?.rol !== "coach") return;
     if (esCoachGratuito(usuarioActual?.email)) return;
-    if (premium && new Date(premium.premiumExpiresAt) <= new Date()) {
-      throw new Error("Tu plan premium ha vencido. Contratá un plan para seguir gestionando.");
+    if (!premium || new Date(premium.premiumExpiresAt) <= new Date()) {
+      const msg = "Tu plan premium ha vencido. Contratá un plan para seguir gestionando.";
+      set({ premiumError: msg });
+      throw new Error(msg);
     }
   };
 
@@ -575,6 +579,7 @@ export const useAppStore = create<AppState>((set, get) => {
   ejerciciosPersonalizados: [],
   premium: null,
   premiumCargado: false,
+  premiumError: null,
   currentWeek: null,
   unassignedRoutines: loadUnassignedRoutines(),
   unassignedPlans: loadUnassignedPlans(),
@@ -1616,6 +1621,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
   // ─── Premium ─────────────────────────────────────────
 
+  setPremiumError: (msg) => set({ premiumError: msg }),
   getLimiteAlumnos: () => {
     const user = get().usuarioActual;
     if (esCoachGratuito(user?.email)) return 9999;
