@@ -15,15 +15,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Plan no válido" }, { status: 400 });
     }
 
-    const origin = req.headers.get("origin") ?? "";
+    const origin = req.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
     const isDev = origin.includes("localhost") || process.env.NODE_ENV === "development";
-    const baseUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL?.replace(/\/api\/mp\/webhook$/, "") || origin;
 
     const externalRef = coachId ? `${coachId}:${planId}` : planId;
 
-    const successUrl = `${baseUrl}/api/mp/confirm-payment?external_reference=${externalRef}`;
-    const failureUrl = `${baseUrl}/dashboard/planes-premium?ok=false`;
-    const pendingUrl = `${baseUrl}/dashboard/planes-premium?ok=pending`;
+    const successUrl = `${origin}/api/mp/confirm-payment?external_reference=${externalRef}`;
+    const failureUrl = `${origin}/dashboard/planes-premium?ok=false`;
+    const pendingUrl = `${origin}/dashboard/planes-premium?ok=pending`;
 
     const body: Record<string, any> = {
       items: [{
@@ -49,7 +48,7 @@ export async function POST(req: Request) {
       },
     };
 
-    const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || `${baseUrl}/api/mp/webhook`;
+    const webhookUrl = `${origin}/api/mp/webhook`;
     body.notification_url = webhookUrl;
 
     if (isDev) {
