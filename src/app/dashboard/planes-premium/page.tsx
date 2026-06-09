@@ -45,6 +45,7 @@ export default function PlanesPremiumPage() {
         bricksBuilder.create("cardPayment", container.id, {
           initialization: { amount: plan.precio },
           callbacks: {
+            onReady: () => {},
             onSubmit: async (cardFormData: any) => {
               try {
                 const email = storeGetState().usuarioActual?.email;
