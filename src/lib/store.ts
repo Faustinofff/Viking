@@ -695,6 +695,12 @@ export const useAppStore = create<AppState>((set, get) => {
     } catch {}
   },
 
+  getAlumnosPorRed: (redId) => {
+    const red = get().redes.find((r) => r.id === redId);
+    if (!red) return [];
+    return get().alumnos.filter((a) => red.alumnoIds.includes(a.id));
+  },
+
   // ─── Redes ────────────────────────────────────────────────
 
   agregarRed: (nombre, tipo) => {
