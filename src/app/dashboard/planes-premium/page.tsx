@@ -23,6 +23,7 @@ export default function PlanesPremiumPage() {
     setIsTest(params.has("test"));
     if (params.get("ok") === "true") setExito("Pago aprobado correctamente");
     else if (params.get("ok") === "false") setError("El pago fue rechazado o cancelado");
+    cargarSuscripcion();
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
   }, []);
 
