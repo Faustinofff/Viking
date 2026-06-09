@@ -44,7 +44,6 @@ export default function PlanesPremiumPage() {
         const bricksBuilder = mp.bricks();
         bricksBuilder.create("cardPayment", container.id, {
           initialization: { amount: plan.precio },
-          customization: { visual: { hideFormTitle: true }, paymentMethods: { maxInstallments: 1 } },
           callbacks: {
             onSubmit: async (cardFormData: any) => {
               try {
@@ -74,11 +73,13 @@ export default function PlanesPremiumPage() {
               }
             },
             onError: (e: any) => {
-              setError("Error al procesar el pago");
+              console.error("MP onError:", e);
+              setError("Error: " + (e?.message || "Error al procesar el pago"));
             },
           },
         }).then(() => { brickRef.current = true; }).catch((e: any) => {
-          setError("Error al cargar el formulario de pago");
+          console.error("MP create error:", e);
+          setError("Error MP: " + (e?.message || JSON.stringify(e)));
         });
       } catch (e: any) {
         setError("Error al iniciar Mercado Pago");
