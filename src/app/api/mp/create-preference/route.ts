@@ -9,7 +9,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "MP_ACCESS_TOKEN no configurado" }, { status: 500 });
     }
 
-    const { planId } = await req.json();
+    const { planId, coachId } = await req.json();
     const plan = PLANES_PREMIUM.find((p) => p.id === planId);
     if (!plan) {
       return NextResponse.json({ error: "Plan no válido" }, { status: 400 });
@@ -17,10 +17,13 @@ export async function POST(req: Request) {
 
     const origin = req.headers.get("origin") ?? "";
     const isDev = origin.includes("localhost") || process.env.NODE_ENV === "development";
+    const baseUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL?.replace(/\/api\/mp\/webhook$/, "") || origin;
 
-    const successUrl = `${origin}/dashboard/planes-premium?ok=true`;
-    const failureUrl = `${origin}/dashboard/planes-premium?ok=false`;
-    const pendingUrl = `${origin}/dashboard/planes-premium?ok=pending`;
+    const externalRef = coachId ? `${coachId}:${planId}` : planId;
+
+    const successUrl = `${baseUrl}/api/mp/confirm-payment?external_reference=${externalRef}`;
+    const failureUrl = `${baseUrl}/dashboard/planes-premium?ok=false`;
+    const pendingUrl = `${baseUrl}/dashboard/planes-premium?ok=pending`;
 
     const body: Record<string, any> = {
       items: [{
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
       },
       auto_return: "approved",
       binary_mode: true,
-      external_reference: planId,
+      external_reference: externalRef,
       metadata: {
         plan_id: plan.id,
         plan_name: plan.nombre,
@@ -46,7 +49,7 @@ export async function POST(req: Request) {
       },
     };
 
-    const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || `${origin}/api/mp/webhook`;
+    const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || `${baseUrl}/api/mp/webhook`;
     body.notification_url = webhookUrl;
 
     if (isDev) {

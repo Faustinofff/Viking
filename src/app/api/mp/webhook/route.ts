@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { PLANES_PREMIUM, savePremium } from "@/lib/data";
+import { PLANES_PREMIUM } from "@/lib/data";
 import type { PremiumData } from "@/lib/data";
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN ?? "";
@@ -54,22 +54,28 @@ export async function POST(req: Request) {
       const payment = await res.json();
       if (payment.status !== "approved") return NextResponse.json({ ok: true });
 
-      const planId = payment.external_reference ?? payment.metadata?.plan_id;
+      const externalRef = payment.external_reference ?? "";
+      const refParts = externalRef.split(":");
+      const planId = refParts.length >= 2 ? refParts.slice(1).join(":") : (payment.metadata?.plan_id ?? externalRef);
       const plan = PLANES_PREMIUM.find((p) => p.id === planId);
       if (!plan) return NextResponse.json({ ok: true });
 
-      const payerEmail = payment.payer?.email;
-      if (!payerEmail) return NextResponse.json({ ok: true });
+      let coachId: string | null = refParts.length >= 2 ? refParts[0] : null;
+      if (!coachId) {
+        const payerEmail = payment.payer?.email;
+        if (!payerEmail) return NextResponse.json({ ok: true });
+        const { data: coach } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("email", payerEmail)
+          .eq("role", "coach")
+          .maybeSingle();
+        if (!coach) return NextResponse.json({ ok: true });
+        coachId = coach.id;
+      }
 
-      const { data: coach } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", payerEmail)
-        .eq("role", "coach")
-        .maybeSingle();
-      if (!coach) return NextResponse.json({ ok: true });
-
-      const { data: blob, originalUrl } = await readBlob(coach.id);
+      if (!coachId) return NextResponse.json({ ok: true });
+      const { data: blob, originalUrl } = await readBlob(coachId);
       const existingPremium = blob.premium as PremiumData | undefined;
       const newExpiresAt = calcularNuevoVencimiento(
         existingPremium?.premiumExpiresAt ?? null,
@@ -87,8 +93,8 @@ export async function POST(req: Request) {
       };
 
       blob.premium = premium;
-      await saveBlob(coach.id, blob, originalUrl);
-      console.log(`Premium activated for ${payerEmail}: ${plan.nombre} until ${newExpiresAt}`);
+      await saveBlob(coachId, blob, originalUrl);
+      console.log(`Premium activated for coach ${coachId}: ${plan.nombre} until ${newExpiresAt}`);
       return NextResponse.json({ ok: true });
     }
 

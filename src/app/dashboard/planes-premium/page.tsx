@@ -62,7 +62,7 @@ export default function PlanesPremiumPage() {
       const res = await fetch("/api/mp/create-preference", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify({ planId, coachId: usuarioActual?.id }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error al crear pago");
