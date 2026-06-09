@@ -146,6 +146,12 @@ export default function OnboardingPage() {
     );
   }
 
+  const handleSeleccionarRol = async (rol: "coach" | "alumno") => {
+    const u = await getCurrentUser();
+    if (!u) { router.replace("/login"); return; }
+    await finalizar(u, rol, "");
+  };
+
   return (
     <div className="min-h-screen bg-bg-primary flex items-center justify-center p-6">
       <div className="w-full max-w-sm text-center">
@@ -159,6 +165,16 @@ export default function OnboardingPage() {
             {error}
           </div>
         )}
+        <div className="space-y-3 mt-4">
+          <button onClick={() => handleSeleccionarRol("coach")} disabled={loading}
+            className="btn-primary w-full flex items-center justify-center gap-2">
+            {loading ? "Preparando..." : "Soy coach"}
+          </button>
+          <button onClick={() => handleSeleccionarRol("alumno")} disabled={loading}
+            className="btn-primary w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white">
+            Soy alumno
+          </button>
+        </div>
       </div>
     </div>
   );
