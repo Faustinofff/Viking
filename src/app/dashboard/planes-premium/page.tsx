@@ -54,11 +54,6 @@ export default function PlanesPremiumPage() {
     try {
       const plan = PLANES_PREMIUM.find((p) => p.id === planId);
       if (!plan) throw new Error("Plan no válido");
-      if (isDev || isTest) {
-        await contratarPremium(plan);
-        setExito(`Plan ${plan.nombre} activado correctamente${isTest ? " (modo test)" : ""}`);
-        return;
-      }
       const res = await fetch("/api/mp/create-preference", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -66,6 +61,20 @@ export default function PlanesPremiumPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error al crear pago");
+      if (isDev || isTest) {
+        const simRes = await fetch(`/api/mp/confirm-payment?external_reference=${usuarioActual?.id}:${planId}&status=approved&payment_id=sandbox_${Date.now()}`, { redirect: "manual" });
+        if (simRes.status === 302) {
+          await cargarSuscripcion();
+          const p = useAppStore.getState().premium;
+          if (p && new Date(p.premiumExpiresAt) > new Date()) {
+            setExito(`Plan ${plan.nombre} activado correctamente (simulación exitosa)`);
+            return;
+          }
+        }
+        await contratarPremium(plan);
+        setExito(`Plan ${plan.nombre} activado correctamente (fallback test)`);
+        return;
+      }
       window.open(data.init_point, "_blank", "noopener,noreferrer");
       setExito("Se abrió Mercado Pago en otra ventana. Esperando confirmación...");
       iniciarPolling();
@@ -101,7 +110,7 @@ export default function PlanesPremiumPage() {
         </div>
       )}
 
-      {premium && (
+      {premium && !esGratuito && (
         <div className={`card border ${activo ? "border-accent/20 bg-accent/5" : "border-red-500/20 bg-red-500/5"}`}>
           <div className="flex items-center justify-between">
             <div>
