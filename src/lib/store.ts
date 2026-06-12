@@ -555,7 +555,22 @@ export const useAppStore = create<AppState>((set, get) => {
   },
   cerrarSesion: async () => {
     await supabaseSignOut();
-    set({ usuarioActual: null });
+    const storageKeys = [
+      STORAGE_REDES_KEY, STORAGE_AGENDA_KEY, STORAGE_AGUA_KEY,
+      STORAGE_ACTIVIDADES_KEY, STORAGE_TELEFONO_KEY, STORAGE_COACHES_KEY,
+      STORAGE_PESO_KEY, STORAGE_ALUMNOS_PESO_KEY, STORAGE_PAGE_DRAFTS_KEY,
+      STORAGE_UNASSIGNED_ROUTINES_KEY, STORAGE_UNASSIGNED_PLANS_KEY,
+      "viking_last_path",
+    ];
+    for (const k of storageKeys) { try { localStorage.removeItem(k); } catch {} }
+    set({
+      usuarioActual: null, alumnos: [], redes: [], ejercicios: [],
+      rutinas: [], planesNutricionales: [], agenda: [], registrosAgua: [],
+      registrosPeso: [], sesionesEntreno: [], actividades: [], coaches: {},
+      ejerciciosPersonalizados: [], premium: null, premiumCargado: false,
+      unassignedRoutines: [], unassignedPlans: [], currentWeek: null,
+      premiumError: null,
+    });
   },
 
   // Datos iniciales

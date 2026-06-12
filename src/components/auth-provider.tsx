@@ -90,8 +90,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
-        <div className="w-8 h-8 rounded-lg bg-accent animate-pulse" />
+      <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center gap-6">
+        <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden">
+          <div className="h-full bg-accent rounded-full animate-pulse" style={{ width: "60%" }} />
+        </div>
+        <p className="text-white/40 text-sm">Cargando...</p>
       </div>
     );
   }

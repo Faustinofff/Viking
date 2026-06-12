@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import ChatDialog from "@/components/chat";
 
@@ -14,7 +14,6 @@ const NAV = [
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const usuario = useAppStore((s) => s.usuarioActual);
   const cerrarSesion = useAppStore((s) => s.cerrarSesion);
 
@@ -72,7 +71,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             </div>
             <span className="hidden sm:inline">{usuario.nombre}</span>
           </div>
-          <button onClick={async () => { await cerrarSesion(); router.push("/"); }} className="text-white/20 hover:text-red-400 text-xs">Salir</button>
+          <button onClick={async () => { await cerrarSesion(); window.location.href = "/"; }} className="text-white/20 hover:text-red-400 text-xs">Salir</button>
         </div>
       </header>
 

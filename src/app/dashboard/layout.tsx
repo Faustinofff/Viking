@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { PLANES_PREMIUM } from "@/lib/data";
 import ChatDialog from "@/components/chat";
@@ -20,7 +20,6 @@ const NAV = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const usuario = useAppStore((s) => s.usuarioActual);
   const premium = useAppStore((s) => s.premium);
   const premiumError = useAppStore((s) => s.premiumError);
@@ -60,7 +59,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleLogout = async () => {
     await cerrarSesion();
-    router.push("/");
+    window.location.href = "/";
   };
 
   const sidebarContent = (
