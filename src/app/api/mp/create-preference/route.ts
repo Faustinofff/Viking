@@ -39,7 +39,6 @@ export async function POST(req: Request) {
       },
       auto_return: "approved",
       binary_mode: true,
-      processing_modes: ["mercadopago"],
       external_reference: externalRef,
       metadata: {
         plan_id: plan.id,
