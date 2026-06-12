@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import Script from "next/script";
 import { useAppStore } from "@/lib/store";
 import { PLANES_PREMIUM, esCoachGratuito } from "@/lib/data";
 
@@ -16,6 +17,13 @@ export default function PlanesPremiumPage() {
   const [isTest, setIsTest] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [esperandoPago, setEsperandoPago] = useState(false);
+  const [mpSdkReady, setMpSdkReady] = useState(false);
+  const [preferenceId, setPreferenceId] = useState<string | null>(null);
+  const [publicKey, setPublicKey] = useState<string>("");
+  const walletContainer = useRef<HTMLDivElement>(null);
+  const brickInit = useRef(false);
+  const [mostrarBrick, setMostrarBrick] = useState(false);
+  const [planSeleccionado, setPlanSeleccionado] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -26,6 +34,19 @@ export default function PlanesPremiumPage() {
     cargarSuscripcion();
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
   }, []);
+
+  useEffect(() => {
+    if (!mpSdkReady || !preferenceId || !publicKey || !mostrarBrick || brickInit.current) return;
+    brickInit.current = true;
+    try {
+      const mp = new (window as any).MercadoPago(publicKey);
+      mp.brick().wallet(walletContainer.current, {
+        preference_id: preferenceId,
+      });
+    } catch (e: any) {
+      setError("Error al cargar Mercado Pago: " + e.message);
+    }
+  }, [mpSdkReady, preferenceId, publicKey, mostrarBrick]);
 
   const iniciarPolling = () => {
     setEsperandoPago(true);
@@ -38,12 +59,14 @@ export default function PlanesPremiumPage() {
         if (pollingRef.current) clearInterval(pollingRef.current);
         pollingRef.current = null;
         setEsperandoPago(false);
+        setMostrarBrick(false);
+        setPreferenceId(null);
         setExito("Pago aprobado correctamente");
       } else if (intentos > 40) {
         if (pollingRef.current) clearInterval(pollingRef.current);
         pollingRef.current = null;
         setEsperandoPago(false);
-        setExito("Se abrió Mercado Pago. Si ya pagaste, presioná 'Verificar pago'.");
+        setExito("Si ya pagaste, presioná 'Verificar pago'.");
       }
     }, 3000);
   };
@@ -52,6 +75,10 @@ export default function PlanesPremiumPage() {
     setCargando(planId);
     setError("");
     setExito("");
+    setPreferenceId(null);
+    setMostrarBrick(false);
+    setPlanSeleccionado(planId);
+    brickInit.current = false;
     try {
       const plan = PLANES_PREMIUM.find((p) => p.id === planId);
       if (!plan) throw new Error("Plan no válido");
@@ -76,8 +103,14 @@ export default function PlanesPremiumPage() {
         setExito(`Plan ${plan.nombre} activado correctamente (fallback test)`);
         return;
       }
-      window.open(data.init_point, "_blank", "noopener,noreferrer");
-      setExito("Se abrió Mercado Pago en otra ventana. Esperando confirmación...");
+      setPublicKey(data.public_key);
+      setPreferenceId(data.preference_id);
+      if (mpSdkReady) {
+        setMostrarBrick(true);
+      } else {
+        window.location.href = data.init_point;
+        setExito("Redirigiendo a Mercado Pago...");
+      }
       iniciarPolling();
     } catch (e: any) {
       setError(e.message);
@@ -94,6 +127,11 @@ export default function PlanesPremiumPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-8">
+      <Script
+        src="https://sdk.mercadopago.com/js/v2"
+        strategy="afterInteractive"
+        onLoad={() => { setMpSdkReady(true); if (preferenceId) setMostrarBrick(true); }}
+      />
       <div>
         <h1 className="text-3xl font-extrabold text-white tracking-tight">Planes Premium</h1>
         <p className="text-white/40 mt-1">Accedé a funciones avanzadas para potenciar tu negocio fitness.</p>
@@ -120,7 +158,7 @@ export default function PlanesPremiumPage() {
                 <>
                   <p className="text-lg font-bold text-white mt-1">Plan {premium.planName}</p>
                   <p className="text-sm text-white/50">
-                    Vence: {expiracion?.toLocaleDateString("es-AR")} · {diasRestantes} días restantes
+                    Vence: {expiracion?.toLocaleDateString("es-AR")} &middot; {diasRestantes} días restantes
                   </p>
                   {porVencer && <p className="text-sm text-yellow-400 mt-1">⚠ Tu plan vence pronto</p>}
                 </>
@@ -148,10 +186,10 @@ export default function PlanesPremiumPage() {
         </div>
       )}
 
-      {!esGratuito && (
+      {!esGratuito && !mostrarBrick && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {PLANES_PREMIUM.map((plan) => {
-          const contratando = cargando === plan.id;
+          const contratando = cargando === plan.id && !mostrarBrick;
           return (
             <div key={plan.id} className="card flex flex-col relative overflow-hidden transition-all hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5">
               {plan.destacado && (
@@ -173,7 +211,7 @@ export default function PlanesPremiumPage() {
                 disabled={contratando}
                 className="mt-4 w-full py-2.5 rounded-xl text-sm font-medium transition-all bg-accent text-bg-primary hover:bg-accent/90 disabled:opacity-50"
               >
-                {contratando ? "Abriendo Mercado Pago..." : isDev || isTest ? "Contratar (test)" : "Contratar"}
+                {contratando ? "Preparando pago..." : isDev || isTest ? "Contratar (test)" : "Contratar"}
               </button>
             </div>
           );
@@ -181,9 +219,27 @@ export default function PlanesPremiumPage() {
       </div>
       )}
 
+      {mostrarBrick && (
+        <div className="card text-center p-6">
+          <p className="text-white font-semibold mb-1">
+            {PLANES_PREMIUM.find((p) => p.id === planSeleccionado)?.nombre}
+          </p>
+          <p className="text-white/50 text-sm mb-6">Completá el pago con Mercado Pago</p>
+          <div ref={walletContainer} className="flex justify-center" />
+          <p className="text-xs text-white/30 mt-6">
+            Se abrirá Mercado Pago para procesar el pago de forma segura.
+          </p>
+          <button
+            onClick={() => { setMostrarBrick(false); setPreferenceId(null); }}
+            className="mt-4 text-xs text-white/30 hover:text-white/60"
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
+
       <div className="card bg-white/[0.02] border border-white/5">
         <p className="text-xs text-white/30 leading-relaxed">
-          Al contratar, se abre Mercado Pago en una nueva ventana. Cuando termines el pago, volvé a esta página.
           Los pagos son procesados de forma segura por Mercado Pago.
         </p>
       </div>
