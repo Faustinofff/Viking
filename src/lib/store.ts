@@ -555,7 +555,6 @@ export const useAppStore = create<AppState>((set, get) => {
     const telefono = loadTelefono() || undefined;
     set({ usuarioActual: { id, nombre, email, rol, telefono } });
   },
-  _cerrandoSesion: false,
   cerrarSesion: async () => {
     if (get()._cerrandoSesion) return;
     get()._cerrandoSesion = true;
