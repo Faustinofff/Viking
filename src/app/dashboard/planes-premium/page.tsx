@@ -40,7 +40,7 @@ export default function PlanesPremiumPage() {
     brickInit.current = true;
     try {
       const mp = new (window as any).MercadoPago(publicKey);
-      mp.brick().wallet(walletContainer.current, {
+      mp.bricks().wallet(walletContainer.current, {
         preference_id: preferenceId,
       });
     } catch (e: any) {
