@@ -572,9 +572,10 @@ export const useAppStore = create<AppState>((set, get) => {
       registrosPeso: [], sesionesEntreno: [], actividades: [], coaches: {},
       ejerciciosPersonalizados: [], premium: null, premiumCargado: false,
       unassignedRoutines: [], unassignedPlans: [], currentWeek: null,
-      premiumError: null, _cerrandoSesion: false,
+      premiumError: null,
     });
-    supabaseSignOut().catch(() => {});
+    await supabaseSignOut().catch(() => {});
+    set({ _cerrandoSesion: false });
   },
 
   // Datos iniciales
