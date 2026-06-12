@@ -12,16 +12,11 @@ export default function PlanesPremiumPage() {
   const [cargando, setCargando] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [exito, setExito] = useState("");
-  const [isDev, setIsDev] = useState(false);
-  const [isTest, setIsTest] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [esperandoPago, setEsperandoPago] = useState(false);
-  const esPwa = typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setIsDev(window.location.hostname === "localhost" || params.has("dev"));
-    setIsTest(params.has("test"));
     if (params.get("ok") === "true") setExito("Pago aprobado correctamente");
     else if (params.get("ok") === "false") setError("El pago fue rechazado o cancelado");
     cargarSuscripcion();
@@ -49,14 +44,6 @@ export default function PlanesPremiumPage() {
     }, 3000);
   };
 
-  const abrirMercadoPago = (initPoint: string) => {
-    if (esPwa) {
-      window.location.href = "/api/mp/ir?url=" + encodeURIComponent(initPoint);
-    } else {
-      window.location.href = initPoint;
-    }
-  };
-
   const handleContratar = async (planId: string) => {
     setCargando(planId);
     setError("");
@@ -71,6 +58,9 @@ export default function PlanesPremiumPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error al crear pago");
+      const params = new URLSearchParams(window.location.search);
+      const isDev = window.location.hostname === "localhost" || params.has("dev");
+      const isTest = params.has("test");
       if (isDev || isTest) {
         const simRes = await fetch(`/api/mp/confirm-payment?external_reference=${usuarioActual?.id}:${planId}&status=approved&payment_id=sandbox_${Date.now()}`, { redirect: "manual" });
         if (simRes.status === 302) {
@@ -85,9 +75,14 @@ export default function PlanesPremiumPage() {
         setExito(`Plan ${plan.nombre} activado correctamente (fallback test)`);
         return;
       }
-      abrirMercadoPago(data.init_point);
       setExito("Redirigiendo a Mercado Pago...");
       iniciarPolling();
+      const pwa = window.matchMedia("(display-mode: standalone)").matches;
+      if (pwa) {
+        window.location.href = "/api/mp/ir?url=" + encodeURIComponent(data.init_point);
+      } else {
+        window.location.href = data.init_point;
+      }
     } catch (e: any) {
       setError(e.message);
     }
@@ -182,7 +177,7 @@ export default function PlanesPremiumPage() {
                 disabled={contratando}
                 className="mt-4 w-full py-2.5 rounded-xl text-sm font-medium transition-all bg-accent text-bg-primary hover:bg-accent/90 disabled:opacity-50"
               >
-                {contratando ? "Abriendo Mercado Pago..." : isDev || isTest ? "Contratar (test)" : "Contratar"}
+                {contratando ? "Abriendo Mercado Pago..." : "Contratar"}
               </button>
             </div>
           );
