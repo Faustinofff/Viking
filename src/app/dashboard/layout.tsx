@@ -59,7 +59,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleLogout = async () => {
     await cerrarSesion();
-    window.location.href = "/";
+    window.location.href = "/login";
   };
 
   const sidebarContent = (

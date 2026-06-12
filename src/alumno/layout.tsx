@@ -71,7 +71,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             </div>
             <span className="hidden sm:inline">{usuario.nombre}</span>
           </div>
-          <button onClick={async () => { await cerrarSesion(); window.location.href = "/"; }} className="text-white/20 hover:text-red-400 text-xs">Salir</button>
+          <button onClick={async () => { await cerrarSesion(); window.location.href = "/login"; }} className="text-white/20 hover:text-red-400 text-xs">Salir</button>
         </div>
       </header>
 

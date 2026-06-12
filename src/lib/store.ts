@@ -418,6 +418,7 @@ interface AppState {
   setUsuario: (u: Usuario) => void;
   iniciarSesion: (rol: Rol, nombre: string, email: string) => void;
   cerrarSesion: () => void;
+  _cerrandoSesion: boolean;
 
   // Datos
   alumnos: Alumno[];
@@ -546,6 +547,7 @@ export const useAppStore = create<AppState>((set, get) => {
   return {
   // Auth
   usuarioActual: null,
+  _cerrandoSesion: false,
   setUsuario: (u) => set({ usuarioActual: { ...u, telefono: u.telefono || loadTelefono() || undefined } }),
   iniciarSesion: async (rol, nombre, email) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -553,8 +555,10 @@ export const useAppStore = create<AppState>((set, get) => {
     const telefono = loadTelefono() || undefined;
     set({ usuarioActual: { id, nombre, email, rol, telefono } });
   },
+  _cerrandoSesion: false,
   cerrarSesion: async () => {
-    await supabaseSignOut();
+    if (get()._cerrandoSesion) return;
+    get()._cerrandoSesion = true;
     const storageKeys = [
       STORAGE_REDES_KEY, STORAGE_AGENDA_KEY, STORAGE_AGUA_KEY,
       STORAGE_ACTIVIDADES_KEY, STORAGE_TELEFONO_KEY, STORAGE_COACHES_KEY,
@@ -569,8 +573,9 @@ export const useAppStore = create<AppState>((set, get) => {
       registrosPeso: [], sesionesEntreno: [], actividades: [], coaches: {},
       ejerciciosPersonalizados: [], premium: null, premiumCargado: false,
       unassignedRoutines: [], unassignedPlans: [], currentWeek: null,
-      premiumError: null,
+      premiumError: null, _cerrandoSesion: false,
     });
+    supabaseSignOut().catch(() => {});
   },
 
   // Datos iniciales
