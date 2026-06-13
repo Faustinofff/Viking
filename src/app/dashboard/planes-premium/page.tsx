@@ -77,9 +77,10 @@ export default function PlanesPremiumPage() {
       }
       setExito("Redirigiendo a Mercado Pago...");
       iniciarPolling();
-      const pwa = window.matchMedia("(display-mode: standalone)").matches;
-      if (pwa) {
-        window.location.href = "/api/mp/ir?url=" + encodeURIComponent(data.init_point);
+      if (window.matchMedia("(display-mode: standalone)").matches) {
+        if (!window.open(data.init_point, "_blank")) {
+          window.location.href = data.init_point;
+        }
       } else {
         window.location.href = data.init_point;
       }
