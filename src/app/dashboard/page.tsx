@@ -2,9 +2,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/lib/store";
+import { esCoachGratuito } from "@/lib/data";
 
 function SubscriptionWidget() {
   const premium = useAppStore((s) => s.premium);
+  const usuarioActual = useAppStore((s) => s.usuarioActual);
   const [diasRestantes, setDiasRestantes] = useState(0);
   const [activo, setActivo] = useState(false);
 
@@ -17,6 +19,7 @@ function SubscriptionWidget() {
     setActivo(diff > 0);
   }, [premium]);
 
+  if (esCoachGratuito(usuarioActual?.email)) return null;
   if (!premium) return null;
 
   const expiracion = new Date(premium.premiumExpiresAt);

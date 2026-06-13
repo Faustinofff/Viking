@@ -109,7 +109,7 @@ export default function PlanesPremiumPage() {
         <p className="text-white/40 mt-1">Accedé a funciones avanzadas para potenciar tu negocio fitness.</p>
       </div>
 
-      {esGratuito && (
+      {esGratuito ? (
         <div className="card border border-green-500/20 bg-green-500/5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 font-bold text-lg">✓</div>
@@ -119,9 +119,7 @@ export default function PlanesPremiumPage() {
             </div>
           </div>
         </div>
-      )}
-
-      {premium && !esGratuito && (
+      ) : premium ? (
         <div className={`card border ${activo ? "border-accent/20 bg-accent/5" : "border-red-500/20 bg-red-500/5"}`}>
           <div className="flex items-center justify-between">
             <div>
@@ -143,7 +141,7 @@ export default function PlanesPremiumPage() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {error && <div className="card bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
       {exito && !linkPago && (
