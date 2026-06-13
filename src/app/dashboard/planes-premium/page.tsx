@@ -14,6 +14,9 @@ export default function PlanesPremiumPage() {
   const [exito, setExito] = useState("");
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [esperandoPago, setEsperandoPago] = useState(false);
+  const [linkPago, setLinkPago] = useState<string | null>(null);
+  const [planPagando, setPlanPagando] = useState<string | null>(null);
+  const enPwa = typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -34,6 +37,7 @@ export default function PlanesPremiumPage() {
         if (pollingRef.current) clearInterval(pollingRef.current);
         pollingRef.current = null;
         setEsperandoPago(false);
+        setLinkPago(null);
         setExito("Pago aprobado correctamente");
       } else if (intentos > 40) {
         if (pollingRef.current) clearInterval(pollingRef.current);
@@ -48,6 +52,7 @@ export default function PlanesPremiumPage() {
     setCargando(planId);
     setError("");
     setExito("");
+    setLinkPago(null);
     try {
       const plan = PLANES_PREMIUM.find((p) => p.id === planId);
       if (!plan) throw new Error("Plan no válido");
@@ -75,19 +80,14 @@ export default function PlanesPremiumPage() {
         setExito(`Plan ${plan.nombre} activado correctamente (fallback test)`);
         return;
       }
-      setExito("Redirigiendo a Mercado Pago...");
-      iniciarPolling();
-      if (window.matchMedia("(display-mode: standalone)").matches) {
-        const a = document.createElement("a");
-        a.href = data.init_point;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+      if (enPwa) {
+        setLinkPago(data.init_point);
+        setPlanPagando(plan.nombre);
+        iniciarPolling();
       } else {
         window.location.href = data.init_point;
+        setExito("Redirigiendo a Mercado Pago...");
+        iniciarPolling();
       }
     } catch (e: any) {
       setError(e.message);
@@ -146,7 +146,7 @@ export default function PlanesPremiumPage() {
       )}
 
       {error && <div className="card bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
-      {exito && (
+      {exito && !linkPago && (
         <div className="card bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
           {exito}
           {!esperandoPago && exito.includes("Verificar") && (
@@ -158,7 +158,23 @@ export default function PlanesPremiumPage() {
         </div>
       )}
 
-      {!esGratuito && (
+      {linkPago && (
+        <div className="card text-center p-6 border-accent/20 bg-accent/5">
+          <p className="text-white font-semibold mb-1">{planPagando}</p>
+          <p className="text-sm text-white/50 mb-4">Tocá el botón para pagar con Mercado Pago</p>
+          <a
+            href={linkPago}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block w-full py-3 rounded-xl text-sm font-semibold text-center transition-all bg-accent text-bg-primary hover:bg-accent/90 active:scale-[0.98]"
+          >
+            Ir a Mercado Pago
+          </a>
+          {esperandoPago && <p className="text-xs text-white/30 mt-3">Esperando confirmación del pago...</p>}
+        </div>
+      )}
+
+      {!esGratuito && !linkPago && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {PLANES_PREMIUM.map((plan) => {
           const contratando = cargando === plan.id;
@@ -183,7 +199,7 @@ export default function PlanesPremiumPage() {
                 disabled={contratando}
                 className="mt-4 w-full py-2.5 rounded-xl text-sm font-medium transition-all bg-accent text-bg-primary hover:bg-accent/90 disabled:opacity-50"
               >
-                {contratando ? "Abriendo Mercado Pago..." : "Contratar"}
+                {contratando ? "Preparando pago..." : "Contratar"}
               </button>
             </div>
           );
@@ -193,7 +209,7 @@ export default function PlanesPremiumPage() {
 
       <div className="card bg-white/[0.02] border border-white/5">
         <p className="text-xs text-white/30 leading-relaxed">
-          Al contratar, serás redirigido a Mercado Pago para procesar el pago de forma segura.
+          Los pagos son procesados de forma segura por Mercado Pago.
         </p>
       </div>
     </div>
