@@ -6,6 +6,12 @@ import { useAppStore } from "@/lib/store";
 import { PLANES_PREMIUM } from "@/lib/data";
 import ChatDialog from "@/components/chat";
 
+const BOTTOM_NAV = [
+  { href: "/dashboard", label: "Dashboard", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
+  { href: "/dashboard/alumnos", label: "Alumnos", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+  { href: "/dashboard/agenda", label: "Agenda", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="16" cy="16" r="2"/></svg> },
+];
+
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
   { href: "/dashboard/redes", label: "Redes", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> },
@@ -127,13 +133,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
           <img src="/Viking.png" alt="Viking" className="w-9 h-9 object-contain" />
         </div>
-        <div className="flex-1 flex justify-center">
-          <ChatDialog header />
-        </div>
-        <div className="flex-1 flex items-center justify-end">
+        <div className="flex items-center gap-3">
           <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-medium text-accent">
             {usuario.nombre[0]}
           </div>
+          <button onClick={handleLogout} className="text-white/20 hover:text-red-400 text-xs">Salir</button>
         </div>
       </div>
 
@@ -184,8 +188,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
 
-      <style>{`@media (max-width:767px){.main-content{padding-top:calc(3.5rem + env(safe-area-inset-top, 0px))!important}}`}</style>
-      <main className="flex-1 overflow-y-auto md:pt-0 pt-14 main-content relative">
+      {/* Mobile bottom nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-bg-secondary/95 backdrop-blur-xl border-t border-white/[0.06]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        <div className="flex items-center justify-around max-w-lg mx-auto px-1 py-1.5">
+          {BOTTOM_NAV.map((item) => {
+            const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            return (
+              <Link key={item.href} href={item.href}
+                className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-all ${
+                  active ? "text-accent" : "text-white/30 hover:text-white/50"
+                }`}
+              >
+                <span className="text-lg">{item.icon}</span>
+                <span className="text-[10px] font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+          <ChatDialog mobile />
+        </div>
+      </nav>
+
+      <style>{`@media (max-width:767px){.main-content{padding-top:calc(3.5rem + env(safe-area-inset-top, 0px))!important;padding-bottom:calc(4rem + env(safe-area-inset-bottom, 0px))!important}}`}</style>
+      <main className="flex-1 overflow-y-auto md:pt-0 pt-14 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] main-content relative">
         {premiumError && (
           <div className="fixed bottom-6 right-6 z-50 max-w-sm card bg-red-500/10 border border-red-500/20 shadow-xl animate-slide-up">
             <p className="text-sm text-red-400 mb-3">{premiumError}</p>
