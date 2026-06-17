@@ -17,11 +17,8 @@ export default function AlumnoDetailPage() {
   const sesionesEntreno = useAppStore((s) => s.sesionesEntreno.filter((se) => se.alumnoId === id));
   const actividades = useAppStore((s) => s.actividades.filter((a) => a.alumnoId === id && a.tipo !== "agua"));
   const coaches = useAppStore((s) => s.coaches);
-  const actualizarApodoAlumno = useAppStore((s) => s.actualizarApodoAlumno);
   const [showPesoModal, setShowPesoModal] = useState(false);
   const [nuevoPeso, setNuevoPeso] = useState("");
-  const [editandoApodo, setEditandoApodo] = useState(false);
-  const [apodoInput, setApodoInput] = useState(alumno?.apodo ?? "");
   const [weeklyCompletions, setWeeklyCompletions] = useState<Record<string, boolean>>({});
   const [aguaHoy, setAguaHoy] = useState(0);
 
@@ -102,12 +99,9 @@ export default function AlumnoDetailPage() {
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-accent/15 flex items-center justify-center text-xl sm:text-2xl font-bold text-accent">{alumno.nombre[0]}</div>
             <div>
-              <h1 className="text-xl sm:text-3xl font-extrabold text-white">{alumno.apodo || alumno.nombre}</h1>
-              <p className="text-white/40 text-sm sm:text-base mt-1">
-                {alumno.apodo ? <><span className="text-white/60">{alumno.nombre}</span> · </>}{alumno.email} · {alumno.edad} años
-              </p>
+              <h1 className="text-xl sm:text-3xl font-extrabold text-white">{alumno.nombre}</h1>
+              <p className="text-white/40 text-sm sm:text-base mt-1">{alumno.email} · {alumno.edad} años</p>
             </div>
-            <button onClick={() => { setApodoInput(alumno.apodo ?? ""); setEditandoApodo(true); }} className="text-white/20 hover:text-accent text-xs" title="Cambiar apodo">✏️</button>
           </div>
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             {alumno.telefono && (
@@ -268,25 +262,6 @@ export default function AlumnoDetailPage() {
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setShowPesoModal(false)} className="btn-secondary flex-1">Cancelar</button>
-                <button type="submit" className="btn-primary flex-1">Guardar</button>
-              </div>
-            </form>
-      </div>
-        </div>
-      )}
-
-      {/* Modal Apodo */}
-      {editandoApodo && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-6" onClick={() => setEditandoApodo(false)}>
-          <div className="card w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-white mb-4">Editar apodo</h2>
-            <form onSubmit={(e) => { e.preventDefault(); actualizarApodoAlumno(alumno.id, apodoInput.trim()); setEditandoApodo(false); }} className="space-y-4">
-              <div>
-                <label className="label block mb-1.5">Apodo</label>
-                <input className="input" placeholder="Cómo querés llamarlo" value={apodoInput} onChange={(e) => setApodoInput(e.target.value)} autoFocus />
-              </div>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setEditandoApodo(false)} className="btn-secondary flex-1">Cancelar</button>
                 <button type="submit" className="btn-primary flex-1">Guardar</button>
               </div>
             </form>
