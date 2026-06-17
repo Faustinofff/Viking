@@ -13,12 +13,15 @@ export default function AlumnoDetailPage() {
   const getPlanesAlumno = useAppStore((s) => s.getPlanesAlumno);
   const registrarPeso = useAppStore((s) => s.registrarPeso);
   const registrosAgua = useAppStore((s) => s.registrosAgua);
+  const actualizarApodoAlumno = useAppStore((s) => s.actualizarApodoAlumno);
   const registrosPeso = useAppStore((s) => s.registrosPeso.filter((r) => r.alumnoId === id));
   const sesionesEntreno = useAppStore((s) => s.sesionesEntreno.filter((se) => se.alumnoId === id));
   const actividades = useAppStore((s) => s.actividades.filter((a) => a.alumnoId === id && a.tipo !== "agua"));
   const coaches = useAppStore((s) => s.coaches);
   const [showPesoModal, setShowPesoModal] = useState(false);
   const [nuevoPeso, setNuevoPeso] = useState("");
+  const [editandoApodo, setEditandoApodo] = useState(false);
+  const [apodoInput, setApodoInput] = useState("");
   const [weeklyCompletions, setWeeklyCompletions] = useState<Record<string, boolean>>({});
   const [aguaHoy, setAguaHoy] = useState(0);
 
@@ -99,7 +102,7 @@ export default function AlumnoDetailPage() {
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-accent/15 flex items-center justify-center text-xl sm:text-2xl font-bold text-accent">{alumno.nombre[0]}</div>
             <div>
-              <h1 className="text-xl sm:text-3xl font-extrabold text-white">{alumno.nombre}</h1>
+              <h1 className="text-xl sm:text-3xl font-extrabold text-white">{alumno.apodo || alumno.nombre}</h1>
               <p className="text-white/40 text-sm sm:text-base mt-1">{alumno.email} · {alumno.edad} años</p>
             </div>
           </div>
