@@ -44,6 +44,8 @@ import {
   savePremium,
   getStudentCurrentWeek,
   saveStudentCurrentWeek,
+  saveStudentApodo,
+  loadStudentApodos,
   PLANES_PREMIUM,
   esCoachGratuito,
   type PremiumPlan,
@@ -73,6 +75,7 @@ export interface Alumno {
   coachId: string;
   redId: string;
   nombre: string;
+  apodo?: string;
   email: string;
   telefono?: string;
   edad: number;
@@ -440,6 +443,7 @@ interface AppState {
   agregarAlumno: (a: Omit<Alumno, "id" | "creadoEn">) => Promise<void>;
   eliminarAlumno: (id: string) => Promise<void>;
   actualizarPesoAlumno: (alumnoId: string, peso: number) => Promise<void>;
+  actualizarApodoAlumno: (alumnoId: string, apodo: string) => Promise<void>;
   getAlumnosPorRed: (redId: string) => Alumno[];
 
   // Acciones Red
@@ -631,6 +635,9 @@ export const useAppStore = create<AppState>((set, get) => {
       id: student.id,
       creadoEn: new Date().toISOString(),
     };
+    if (a.apodo) {
+      saveStudentApodo(coachId, student.id, a.apodo).catch(() => {});
+    }
     set((state) => {
       const nuevasRedes = state.redes.map((r) =>
         r.id === a.redId ? { ...r, alumnoIds: [...r.alumnoIds, student.id] } : r
@@ -677,7 +684,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
   actualizarPesoAlumno: async (alumnoId, peso) => {
     const state = get();
-    const alumnoNombre = state.alumnos.find((a) => a.id === alumnoId)?.nombre ?? "";
+    const alumnoNombre = state.alumnos.find((a) => a.id === alumnoId) ? (a.apodo || a.nombre) : "";
     const actividadId = `act_${Date.now()}`;
     const timestamp = new Date().toISOString();
     const mensaje = `actualizó su peso: ${peso}kg`;
@@ -718,6 +725,13 @@ export const useAppStore = create<AppState>((set, get) => {
         }
       }
     } catch {}
+  },
+
+  actualizarApodoAlumno: async (alumnoId, apodo) => {
+    const coachId = get().usuarioActual?.id;
+    if (!coachId) return;
+    set({ alumnos: get().alumnos.map((a) => a.id === alumnoId ? { ...a, apodo } : a) });
+    await saveStudentApodo(coachId, alumnoId, apodo);
   },
 
   getAlumnosPorRed: (redId) => {
@@ -779,7 +793,8 @@ export const useAppStore = create<AppState>((set, get) => {
       creadoEn: new Date().toISOString(),
     };
     const state = get();
-    const alumnoNombre = state.alumnos.find((a) => a.id === r.alumnoId)?.nombre ?? "";
+    const alumno = state.alumnos.find((a) => a.id === r.alumnoId);
+    const alumnoNombre = alumno ? (alumno.apodo || alumno.nombre) : "";
     const actividadId = `act_${Date.now()}`;
     const timestamp = new Date().toISOString();
     const mensaje = `recibió nueva rutina: ${r.nombre}`;
@@ -811,6 +826,7 @@ export const useAppStore = create<AppState>((set, get) => {
     if (!coachId) return;
     try {
       const students = await getCoachStudents(coachId);
+      const apodos = await loadStudentApodos(coachId);
       const existingIds = new Set(get().alumnos.map((a) => a.id));
       const redesActuales = get().redes;
       const newAlumnos = students
@@ -822,6 +838,7 @@ export const useAppStore = create<AppState>((set, get) => {
             coachId,
             redId: redMatch?.id ?? "",
             nombre: s.nombre,
+            apodo: apodos[s.id] ?? undefined,
             email: s.email,
             edad: 0,
             peso: 0,
@@ -830,10 +847,10 @@ export const useAppStore = create<AppState>((set, get) => {
             creadoEn: new Date().toISOString(),
           } as Alumno;
         });
-      // Update existing students' names/emails from Supabase
+      // Update existing students' names/emails/apodos from Supabase + blob
       const updatedAlumnos = get().alumnos.map((a) => {
         const match = students.find((s) => s.id === a.id);
-        if (match) return { ...a, nombre: match.nombre, email: match.email };
+        if (match) return { ...a, nombre: match.nombre, email: match.email, apodo: apodos[match.id] ?? a.apodo };
         return a;
       });
       if (newAlumnos.length > 0 || updatedAlumnos.some((a, i) => a !== get().alumnos[i])) {
@@ -1272,7 +1289,8 @@ export const useAppStore = create<AppState>((set, get) => {
         creadoEn: new Date().toISOString(),
       };
       const state = get();
-      const alumnoNombre = state.alumnos.find((a) => a.id === p.alumnoId)?.nombre ?? "";
+      const _alumno = state.alumnos.find((al) => al.id === p.alumnoId);
+      const alumnoNombre = _alumno ? (_alumno.apodo || _alumno.nombre) : "";
       const actividadId = `act_${Date.now()}`;
       const timestamp = new Date().toISOString();
       const mensaje = `recibió nuevo plan nutricional: ${p.nombre}`;
@@ -1380,7 +1398,7 @@ export const useAppStore = create<AppState>((set, get) => {
         { id: `agua_${Date.now()}`, alumnoId, vasos, fecha: hoy },
       ];
     }
-    const alumnoNombre = state.alumnos.find((a) => a.id === alumnoId)?.nombre ?? "";
+    const alumnoNombre = state.alumnos.find((a) => a.id === alumnoId) ? (a.apodo || a.nombre) : "";
     const actividadId = `act_${Date.now()}`;
     const timestamp = new Date().toISOString();
     const mensaje = `tomó ${vasos} vaso(s) de agua`;
@@ -1483,7 +1501,8 @@ export const useAppStore = create<AppState>((set, get) => {
       const { saveWorkoutCompletion } = await import("./data");
       await saveWorkoutCompletion(sesion.alumnoId, sesion.diaRutinaId, sesion.series, state.currentWeek ?? undefined);
     } catch {}
-    const alumnoNombre = state.alumnos.find((a) => a.id === sesion.alumnoId)?.nombre ?? "";
+    const _alumno = state.alumnos.find((a) => a.id === sesion.alumnoId);
+    const alumnoNombre = _alumno ? (_alumno.apodo || _alumno.nombre) : "";
     const diaNombre = state.rutinas.flatMap((r) => r.dias).find((d) => d.id === sesion.diaRutinaId)?.nombre ?? "";
     const hoy = new Date();
     const fechaStr = `${hoy.getDate()} de ${hoy.toLocaleDateString("es-AR", { month: "long" })}`;

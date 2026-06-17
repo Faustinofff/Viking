@@ -842,6 +842,19 @@ export async function getCoachCompletionsBatch(
   return {};
 }
 
+// ─── Apodos (Nicknames) ────────────────────────────────────
+
+export async function saveStudentApodo(coachId: string, studentId: string, apodo: string) {
+  const { data, originalUrl } = await readProfileBlob(coachId);
+  data.apodos = { ...(data.apodos ?? {}), [studentId]: apodo };
+  await saveProfileBlob(coachId, data, originalUrl);
+}
+
+export async function loadStudentApodos(coachId: string): Promise<Record<string, string>> {
+  const { data } = await readProfileBlob(coachId);
+  return data.apodos ?? {};
+}
+
 // ─── Payment Tracking ──────────────────────────────────────
 
 function getMonthKey(): string {

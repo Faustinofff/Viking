@@ -94,6 +94,7 @@ export default function AlumnosPage() {
 
   const filtered = alumnos.filter((a) =>
     a.nombre.toLowerCase().includes(search.toLowerCase()) ||
+    (a.apodo && a.apodo.toLowerCase().includes(search.toLowerCase())) ||
     a.email.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -267,13 +268,13 @@ export default function AlumnosPage() {
                 return (
                   <tr key={a.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => setExpandidoId(isExpanded ? null : a.id)}>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-accent/15 flex items-center justify-center text-sm font-medium text-accent">{a.nombre[0]}</div>
-                        <div>
-                          <p className="text-sm font-medium text-white">{a.nombre}</p>
-                          <p className="text-xs text-white/40">{a.edad} años · {a.peso} kg</p>
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-accent/15 flex items-center justify-center text-sm font-medium text-accent">{(a.apodo || a.nombre)[0]}</div>
+                          <div>
+                            <p className="text-sm font-medium text-white">{a.apodo || a.nombre}</p>
+                            <p className="text-xs text-white/40">{a.nombre} · {a.edad} años · {a.peso} kg</p>
+                          </div>
                         </div>
-                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-white/50">{getRedNombre(a.redId)}</td>
                     <td className="px-6 py-4">
@@ -332,10 +333,10 @@ export default function AlumnosPage() {
           return (
             <div key={a.id} className="card !p-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center text-base font-bold text-accent shrink-0">{a.nombre[0]}</div>
+                <div className="w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center text-base font-bold text-accent shrink-0">{(a.apodo || a.nombre)[0]}</div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white truncate">{a.nombre}</p>
-                  <p className="text-xs text-white/40 truncate">{a.edad} años · {a.peso} kg · {getRedNombre(a.redId)}</p>
+                  <p className="font-semibold text-white truncate">{a.apodo || a.nombre}</p>
+                  <p className="text-xs text-white/40 truncate">{a.nombre} · {a.edad} años · {a.peso} kg · {getRedNombre(a.redId)}</p>
                 </div>
                 <span className="badge-green text-[10px] shrink-0">{a.objetivo}</span>
               </div>
@@ -392,13 +393,13 @@ export default function AlumnosPage() {
             return (
               <>
                 <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-accent/15 flex items-center justify-center text-lg font-bold text-accent">{a.nombre[0]}</div>
-                    <div>
-                      <h2 className="text-lg font-bold text-white">{a.nombre}</h2>
-                      <p className="text-xs text-white/40">{a.email}</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-accent/15 flex items-center justify-center text-lg font-bold text-accent">{(a.apodo || a.nombre)[0]}</div>
+                      <div>
+                        <h2 className="text-lg font-bold text-white">{a.apodo || a.nombre}</h2>
+                        <p className="text-xs text-white/40">{a.nombre} · {a.email}</p>
+                      </div>
                     </div>
-                  </div>
                   <Link href={`/dashboard/alumnos/${a.id}`} className="btn-secondary text-xs">Perfil completo</Link>
                 </div>
 

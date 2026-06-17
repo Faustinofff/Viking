@@ -19,6 +19,7 @@ export default function RedDetailPage() {
   // New student form
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
+  const [apodo, setApodo] = useState("");
   const [edad, setEdad] = useState("");
   const [peso, setPeso] = useState("");
   const [objetivo, setObjetivo] = useState<"definicion" | "hipertrofia" | "volumen" | "fuerza" | "mantenimiento">("hipertrofia");
@@ -44,6 +45,7 @@ export default function RedDetailPage() {
         coachId: red.coachId,
         redId: red.id,
         nombre: nombre.trim(),
+        apodo: apodo.trim() || undefined,
         email: email.trim(),
         edad: parseInt(edad),
         peso: parseFloat(peso),
@@ -56,6 +58,7 @@ export default function RedDetailPage() {
       return;
     }
     setNombre("");
+    setApodo("");
     setEmail("");
     setEdad("");
     setPeso("");
@@ -138,10 +141,10 @@ export default function RedDetailPage() {
                   <tr key={a.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
                     <td className="px-6 py-4">
                       <Link href={`/dashboard/alumnos/${a.id}`} className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-accent/15 flex items-center justify-center text-sm font-medium text-accent">{a.nombre[0]}</div>
+                        <div className="w-9 h-9 rounded-full bg-accent/15 flex items-center justify-center text-sm font-medium text-accent">{(a.apodo || a.nombre)[0]}</div>
                         <div>
-                          <p className="text-sm font-medium text-white">{a.nombre}</p>
-                          <p className="text-xs text-white/40">{a.email}</p>
+                          <p className="text-sm font-medium text-white">{a.apodo || a.nombre}</p>
+                          <p className="text-xs text-white/40">{a.nombre} · {a.email}</p>
                         </div>
                       </Link>
                     </td>
@@ -172,6 +175,10 @@ export default function RedDetailPage() {
                 <div className="col-span-2">
                   <label className="label block mb-1">Nombre</label>
                   <input className="input" placeholder="Nombre completo" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+                </div>
+                <div className="col-span-2">
+                  <label className="label block mb-1">Apodo (opcional)</label>
+                  <input className="input" placeholder="Cómo querés llamarlo" value={apodo} onChange={(e) => setApodo(e.target.value)} />
                 </div>
                 <div className="col-span-2">
                   <label className="label block mb-1">Email</label>
@@ -223,10 +230,10 @@ export default function RedDetailPage() {
                 {alumnosDisponibles.map((a) => (
                   <div key={a.id} className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/[0.04] transition-colors cursor-pointer" onClick={() => { handleAddExisting(a.id); setShowExistingModal(false); }}>
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-accent/15 flex items-center justify-center text-sm font-medium text-accent">{a.nombre[0]}</div>
+                      <div className="w-9 h-9 rounded-full bg-accent/15 flex items-center justify-center text-sm font-medium text-accent">{(a.apodo || a.nombre)[0]}</div>
                       <div>
-                        <p className="text-sm font-medium text-white">{a.nombre}</p>
-                        <p className="text-xs text-white/40">{a.email}</p>
+                        <p className="text-sm font-medium text-white">{a.apodo || a.nombre}</p>
+                        <p className="text-xs text-white/40">{a.nombre} · {a.email}</p>
                       </div>
                     </div>
                     <span className="text-xs text-accent font-semibold">+ Agregar</span>

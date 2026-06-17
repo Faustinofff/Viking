@@ -241,8 +241,8 @@ export default function AgendaPage() {
                       const a = alumnos.find((al) => al.id === aid);
                       return (
                         <div key={aid} className="w-7 h-7 rounded-full bg-white/[0.08] border-2 border-bg-secondary flex items-center justify-center text-[10px] font-medium text-white/60"
-                          title={a?.nombre}>
-                          {a?.nombre?.[0] ?? "?"}
+                          title={a?.apodo || a?.nombre}>
+                          {(a?.apodo || a?.nombre)?.[0] ?? "?"}
                         </div>
                       );
                     })}
@@ -294,7 +294,7 @@ export default function AgendaPage() {
                         alumnoIds.includes(a.id) ? "bg-accent/10 border-accent/30 text-accent" : "border-white/[0.08] text-white/50 hover:border-white/20"
                       }`}
                     >
-                      {a.nombre.split(" ")[0]}
+                      {(a.apodo || a.nombre).split(" ")[0]}
                     </button>
                   ))}
                 </div>

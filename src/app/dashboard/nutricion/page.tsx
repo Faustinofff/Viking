@@ -313,7 +313,7 @@ export default function NutricionPage() {
               {alumnos.filter((a) => a.nombre.toLowerCase().includes(assignSearch.toLowerCase())).map((a) => (
                 <button key={a.id} onClick={async () => { await assignUnassignedPlan(showAssignPicker, a.id); setShowAssignPicker(null); setAssignSearch(""); }}
                   className="w-full text-left px-3 py-2.5 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg transition-colors">
-                  {a.nombre}
+                  {a.apodo || a.nombre}
                 </button>
               ))}
             </div>
@@ -338,7 +338,7 @@ export default function NutricionPage() {
                       <button onClick={async () => { if (await confirm("¿Desasignar este plan?")) unassignPlan(p.id); }} className="text-[10px] font-semibold bg-red-500/90 text-white px-2 py-1 rounded-lg hover:brightness-110 transition-all whitespace-nowrap">Desasignar</button>
                       <button onClick={async () => { if (await confirm("¿Eliminar este plan nutricional?")) eliminarPlan(p.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>
                     </div>
-                    <p className="text-sm text-white/40 truncate col-span-2">Para {alumno?.nombre ?? "?"} · {p.dias.length} días · {totalComidas} comidas</p>
+                    <p className="text-sm text-white/40 truncate col-span-2">Para {alumno?.apodo || alumno?.nombre ?? "?"} · {p.dias.length} días · {totalComidas} comidas</p>
                   </div>
                   {expandidoId === p.id && (
                     <div className="mt-4 space-y-4 border-t border-white/[0.06] pt-4">
@@ -398,7 +398,7 @@ export default function NutricionPage() {
                   {alumnos.map((a) => (
                     <label key={a.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/[0.06] cursor-pointer text-sm">
                       <input type="checkbox" checked={alumnoIds.includes(a.id)} onChange={() => setAlumnoIds(alumnoIds.includes(a.id) ? alumnoIds.filter((id) => id !== a.id) : [...alumnoIds, a.id])} className="accent-accent" />
-                      <span className="text-white/80">{a.nombre}</span>
+                      <span className="text-white/80">{a.apodo || a.nombre}</span>
                     </label>
                   ))}
                 </div>

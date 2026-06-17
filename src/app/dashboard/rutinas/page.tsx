@@ -417,7 +417,7 @@ export default function RutinasPage() {
                       <button onClick={async () => { if (await confirm("¿Desasignar esta rutina?")) unassignRoutine(r.id); }} className="text-[10px] font-semibold bg-red-500/90 text-white px-2 py-1 rounded-lg hover:brightness-110 transition-all whitespace-nowrap">Desasignar</button>
                       <button onClick={async () => { if (await confirm("¿Eliminar esta rutina?")) eliminarRutina(r.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>
                     </div>
-                    <p className="text-sm text-white/40 truncate col-span-2">Para {a?.nombre ?? "?"} · {r.dias.length} días · {r.dias.reduce((s, d) => s + d.ejercicios.length, 0)} ejercicios</p>
+                    <p className="text-sm text-white/40 truncate col-span-2">Para {a?.apodo || a?.nombre ?? "?"} · {r.dias.length} días · {r.dias.reduce((s, d) => s + d.ejercicios.length, 0)} ejercicios</p>
                   </div>
                   {expandidoId === r.id && (
                     <div className="mt-4 space-y-3 border-t border-white/[0.06] pt-4">
@@ -490,7 +490,7 @@ export default function RutinasPage() {
                   {alumnos.filter((a) => a.nombre.toLowerCase().includes(alumnoSearch.toLowerCase())).map((a) => (
                     <label key={a.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/[0.06] cursor-pointer text-sm">
                       <input type="checkbox" checked={alumnoIds.includes(a.id)} onChange={() => setAlumnoIds(alumnoIds.includes(a.id) ? alumnoIds.filter((id) => id !== a.id) : [...alumnoIds, a.id])} className="accent-accent" />
-                      <span className="text-white/80">{a.nombre}</span>
+                      <span className="text-white/80">{a.apodo || a.nombre}</span>
                     </label>
                   ))}
                 </div>

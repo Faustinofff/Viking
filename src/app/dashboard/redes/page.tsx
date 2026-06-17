@@ -48,8 +48,8 @@ export default function RedesPage() {
                   const a = useAppStore.getState().alumnos.find((al) => al.id === aid);
                   return a ? (
                     <span key={aid} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.04] text-xs text-white/50">
-                      <span className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-medium text-accent">{a.nombre[0]}</span>
-                      {a.nombre.split(" ")[0]}
+                      <span className="w-4 h-4 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-medium text-accent">{(a.apodo || a.nombre)[0]}</span>
+                      {(a.apodo || a.nombre).split(" ")[0]}
                     </span>
                   ) : null;
                 })}
