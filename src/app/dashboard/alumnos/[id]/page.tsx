@@ -272,6 +272,8 @@ export default function AlumnoDetailPage() {
               </div>
             </form>
       </div>
+        </div>
+      )}
 
       {/* Modal Apodo */}
       {editandoApodo && (
