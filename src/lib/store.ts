@@ -684,7 +684,8 @@ export const useAppStore = create<AppState>((set, get) => {
 
   actualizarPesoAlumno: async (alumnoId, peso) => {
     const state = get();
-    const alumnoNombre = state.alumnos.find((a) => a.id === alumnoId) ? (a.apodo || a.nombre) : "";
+    const _a = state.alumnos.find((a) => a.id === alumnoId);
+    const alumnoNombre = _a ? (_a.apodo || _a.nombre) : "";
     const actividadId = `act_${Date.now()}`;
     const timestamp = new Date().toISOString();
     const mensaje = `actualizó su peso: ${peso}kg`;
@@ -1398,7 +1399,8 @@ export const useAppStore = create<AppState>((set, get) => {
         { id: `agua_${Date.now()}`, alumnoId, vasos, fecha: hoy },
       ];
     }
-    const alumnoNombre = state.alumnos.find((a) => a.id === alumnoId) ? (a.apodo || a.nombre) : "";
+    const _a = state.alumnos.find((a) => a.id === alumnoId);
+    const alumnoNombre = _a ? (_a.apodo || _a.nombre) : "";
     const actividadId = `act_${Date.now()}`;
     const timestamp = new Date().toISOString();
     const mensaje = `tomó ${vasos} vaso(s) de agua`;
