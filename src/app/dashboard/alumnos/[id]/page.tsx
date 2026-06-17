@@ -105,6 +105,7 @@ export default function AlumnoDetailPage() {
               <h1 className="text-xl sm:text-3xl font-extrabold text-white">{alumno.apodo || alumno.nombre}</h1>
               <p className="text-white/40 text-sm sm:text-base mt-1">{alumno.email} · {alumno.edad} años</p>
             </div>
+            <button onClick={() => { setApodoInput(alumno.apodo ?? ""); setEditandoApodo(true); }} className="text-white/20 hover:text-accent text-xs self-start mt-1 shrink-0" title="Cambiar apodo">✏️</button>
           </div>
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             {alumno.telefono && (
@@ -265,6 +266,25 @@ export default function AlumnoDetailPage() {
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setShowPesoModal(false)} className="btn-secondary flex-1">Cancelar</button>
+                <button type="submit" className="btn-primary flex-1">Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Apodo */}
+      {editandoApodo && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-6" onClick={() => setEditandoApodo(false)}>
+          <div className="card w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-white mb-4">Editar apodo</h2>
+            <form onSubmit={(e) => { e.preventDefault(); actualizarApodoAlumno(alumno.id, apodoInput.trim()); setEditandoApodo(false); }} className="space-y-4">
+              <div>
+                <label className="label block mb-1.5">Apodo</label>
+                <input className="input" placeholder="Cómo querés llamarlo" value={apodoInput} onChange={(e) => setApodoInput(e.target.value)} autoFocus />
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setEditandoApodo(false)} className="btn-secondary flex-1">Cancelar</button>
                 <button type="submit" className="btn-primary flex-1">Guardar</button>
               </div>
             </form>
