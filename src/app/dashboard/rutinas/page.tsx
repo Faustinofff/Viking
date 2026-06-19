@@ -201,6 +201,7 @@ export default function RutinasPage() {
   const muscleGroups = [...new Set(ejercicios.map((e) => e.grupoMuscular))];
 
   const exportRutinaExcel = useCallback((r: Rutina, alumnosList: typeof alumnos) => {
+    if (window.innerWidth < 768) { alert("La funcionalidad para exportar a excel funciona unicamente en computadora"); return; }
     const a = alumnosList.find((al) => al.id === r.alumnoId);
     const ext = /iPad|iPhone|iPod/.test(navigator.userAgent) ? ".xlsx" : ".xls";
     const fileName = `${r.nombre.replace(/[^a-zA-Z0-9_ ]/g, "")}_${a?.nombre?.replace(/[^a-zA-Z0-9_ ]/g, "") ?? "alumno"}${ext}`;
