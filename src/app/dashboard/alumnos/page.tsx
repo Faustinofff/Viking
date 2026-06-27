@@ -239,7 +239,7 @@ export default function AlumnosPage() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleNuevoMes} className="btn-ghost text-xs md:text-sm shrink-0 whitespace-nowrap">📅 Comenzar nuevo mes</button>
-          <input className="input flex-1 md:max-w-xs text-xs md:text-sm" placeholder="Buscar alumno..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="input flex-1 md:max-w-xs text-sm" placeholder="Buscar alumno..." value={search} onChange={(e) => setSearch(e.target.value)} />
           <Link href="/dashboard/redes" className="btn-primary text-xs md:text-sm shrink-0 whitespace-nowrap">+ Agregar</Link>
         </div>
       </div>
