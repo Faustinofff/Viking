@@ -47,7 +47,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUsuario({ id: user.id, nombre, email: user.email ?? "", rol });
         } else if (pathname !== "/auth/onboarding") {
           router.replace("/auth/onboarding");
-          return;
         }
       }
       setLoading(false);
