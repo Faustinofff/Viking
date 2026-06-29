@@ -108,7 +108,7 @@ export default function EjerciciosPage() {
                         </a>
                       )}
                       <button onClick={() => { setEditTutorialId(ej.id); setEditTutorialUrl(ejercicioTutoriales[ej.id] ?? ""); }}
-                        className="text-white/20 hover:text-accent text-[10px] whitespace-nowrap">
+                        className="bg-accent/10 text-accent border border-accent/20 hover:bg-accent/20 text-[11px] !px-2.5 !py-1 rounded-lg whitespace-nowrap font-medium">
                         {hasTutorial ? "Editar Tutorial" : "+ Tutorial"}
                       </button>
                       {ej.id.startsWith("ej_") && (
