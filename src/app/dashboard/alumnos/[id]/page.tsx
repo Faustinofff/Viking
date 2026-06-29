@@ -105,7 +105,7 @@ export default function AlumnoDetailPage() {
               <h1 className="text-xl sm:text-3xl font-extrabold text-white">{alumno.apodo || alumno.nombre}</h1>
               <p className="text-white/40 text-sm sm:text-base mt-1">{alumno.email} · {alumno.edad} años</p>
             </div>
-            <button onClick={() => { setApodoInput(alumno.apodo ?? ""); setEditandoApodo(true); }} className="text-white/20 hover:text-accent text-xs self-start mt-1 shrink-0" title="Cambiar apodo">✏️</button>
+            <button onClick={() => { setApodoInput(alumno.apodo ?? ""); setEditandoApodo(true); }} className="bg-accent/10 text-accent border border-accent/20 hover:bg-accent/20 text-xs !px-2.5 !py-1 rounded-lg shrink-0 font-medium" title="Cambiar apodo">✏️ Apodo</button>
           </div>
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             {alumno.telefono && (
