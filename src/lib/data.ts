@@ -855,6 +855,19 @@ export async function loadStudentApodos(coachId: string): Promise<Record<string,
   return data.apodos ?? {};
 }
 
+// ─── Ejercicio Tutoriales (per-coach) ─────────────────────
+
+export async function saveEjercicioTutorial(coachId: string, ejercicioId: string, videoUrl: string) {
+  const { data, originalUrl } = await readProfileBlob(coachId);
+  data.ejercicioTutoriales = { ...(data.ejercicioTutoriales ?? {}), [ejercicioId]: videoUrl };
+  await saveProfileBlob(coachId, data, originalUrl);
+}
+
+export async function loadEjercicioTutoriales(coachId: string): Promise<Record<string, string>> {
+  const { data } = await readProfileBlob(coachId);
+  return data.ejercicioTutoriales ?? {};
+}
+
 // ─── Payment Tracking ──────────────────────────────────────
 
 function getMonthKey(): string {

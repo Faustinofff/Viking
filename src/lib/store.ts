@@ -46,6 +46,8 @@ import {
   saveStudentCurrentWeek,
   saveStudentApodo,
   loadStudentApodos,
+  saveEjercicioTutorial,
+  loadEjercicioTutoriales,
   PLANES_PREMIUM,
   esCoachGratuito,
   type PremiumPlan,
@@ -440,6 +442,8 @@ interface AppState {
   premiumCargado: boolean;
   unassignedRoutines: Rutina[];
   unassignedPlans: PlanNutricional[];
+  ejercicioTutoriales: Record<string, string>;  // ejercicioId → videoUrl
+  setEjercicioTutorial: (ejercicioId: string, videoUrl: string) => Promise<void>;
   agregarAlumno: (a: Omit<Alumno, "id" | "creadoEn">) => Promise<void>;
   eliminarAlumno: (id: string) => Promise<void>;
   actualizarPesoAlumno: (alumnoId: string, peso: number) => Promise<void>;
@@ -466,7 +470,7 @@ interface AppState {
   eliminarPlanNutricional: (id: string) => Promise<void>;
 
   // Acciones Ejercicios
-  agregarEjercicioPersonalizado: (e: Omit<Ejercicio, "id">) => void;
+  agregarEjercicioPersonalizado: (e: Omit<Ejercicio, "id">) => Ejercicio;
   eliminarEjercicioPersonalizado: (id: string) => void;
 
   // Acciones Agenda
@@ -576,7 +580,7 @@ export const useAppStore = create<AppState>((set, get) => {
       registrosPeso: [], sesionesEntreno: [], actividades: [], coaches: {},
       ejerciciosPersonalizados: [], premium: null, premiumCargado: false,
       unassignedRoutines: [], unassignedPlans: [], currentWeek: null,
-      premiumError: null,
+      premiumError: null, ejercicioTutoriales: {},
     });
     await supabaseSignOut().catch(() => {});
     set({ _cerrandoSesion: false });
@@ -607,6 +611,7 @@ export const useAppStore = create<AppState>((set, get) => {
   currentWeek: null,
   unassignedRoutines: loadUnassignedRoutines(),
   unassignedPlans: loadUnassignedPlans(),
+  ejercicioTutoriales: {},
 
   // ─── Alumnos ──────────────────────────────────────────────
 
@@ -977,6 +982,12 @@ export const useAppStore = create<AppState>((set, get) => {
         }
       } catch {}
 
+      // Load ejercicio tutoriales from blob
+      try {
+        const tutoriales = await loadEjercicioTutoriales(coachId);
+        set({ ejercicioTutoriales: tutoriales });
+      } catch {}
+
       // Sync agenda between localStorage and Supabase blob (MERGE by ID)
       try {
         const localAgenda = get().agenda;
@@ -1332,6 +1343,7 @@ export const useAppStore = create<AppState>((set, get) => {
       saveCoachExercises(coachId, personalizados).catch(() => {});
       return { ejercicios: updated };
     });
+    return nuevo;
   },
 
   eliminarEjercicioPersonalizado: (id: string) => {
@@ -1343,6 +1355,13 @@ export const useAppStore = create<AppState>((set, get) => {
       saveCoachExercises(coachId, personalizados).catch(() => {});
       return { ejercicios: updated };
     });
+  },
+
+  setEjercicioTutorial: async (ejercicioId, videoUrl) => {
+    const coachId = get().usuarioActual?.id;
+    if (!coachId) return;
+    set((state) => ({ ejercicioTutoriales: { ...state.ejercicioTutoriales, [ejercicioId]: videoUrl } }));
+    await saveEjercicioTutorial(coachId, ejercicioId, videoUrl);
   },
 
   // ─── Agenda ───────────────────────────────────────────────

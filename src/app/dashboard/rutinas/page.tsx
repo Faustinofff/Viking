@@ -90,11 +90,14 @@ export default function RutinasPage() {
   const [notasAbiertas, setNotasAbiertas] = useState<Set<string>>(new Set(draft.notasAbiertas ?? []));
   const [semanaActiva, setSemanaActiva] = useState<Record<string, number>>(draft.semanaActiva ?? {});
 
+  const setEjercicioTutorial = useAppStore((s) => s.setEjercicioTutorial);
+
   // Custom exercise modal
   const [showCustomEj, setShowCustomEj] = useState(draft.showCustomEj ?? false);
   const [customNombre, setCustomNombre] = useState(draft.customNombre ?? "");
   const [customMuscle, setCustomMuscle] = useState(draft.customMuscle ?? "Pecho");
   const [customEquipment, setCustomEquipment] = useState(draft.customEquipment ?? "Bodyweight");
+  const [customTutorial, setCustomTutorial] = useState("");
 
   const filteredEjercicios = ejercicios.filter((e) => {
     const matchName = e.nombre.toLowerCase().includes(searchText.toLowerCase());
@@ -121,6 +124,8 @@ export default function RutinasPage() {
     setSearchText("");
   };
 
+  const ejercicioTutoriales = useAppStore((s) => s.ejercicioTutoriales);
+
   const crearEjercicioRutina = (ej: { id: string; nombre: string; grupoMuscular: string }) => {
     const s = 4, r = 10, ds = 90;
     return {
@@ -128,7 +133,7 @@ export default function RutinasPage() {
       ejercicioId: ej.id,
       ejercicioNombre: ej.nombre,
       grupoMuscular: ej.grupoMuscular,
-      series: s, reps: r, descansoSegundos: ds, videoUrl: "",
+      series: s, reps: r, descansoSegundos: ds, videoUrl: ejercicioTutoriales[ej.id] ?? "",
       seriesPorSemana: [s, s, s, s],
       repsPorSemana: [r, r, r, r],
       descansoPorSemana: [ds, ds, ds, ds],
@@ -139,8 +144,12 @@ export default function RutinasPage() {
   const handleCreateCustomExercise = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customNombre.trim()) return;
-    agregarEjercicioPersonalizado({ nombre: customNombre.trim(), grupoMuscular: customMuscle, equipo: customEquipment });
+    const ej = agregarEjercicioPersonalizado({ nombre: customNombre.trim(), grupoMuscular: customMuscle, equipo: customEquipment });
+    if (customTutorial.trim()) {
+      setEjercicioTutorial(ej.id, customTutorial.trim());
+    }
     setCustomNombre("");
+    setCustomTutorial("");
     setShowCustomEj(false);
   };
 
@@ -704,6 +713,13 @@ export default function RutinasPage() {
                     <option key={eq} value={eq}>{eq}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="label block mb-1.5">Tutorial <span className="text-white/20">(opcional)</span></label>
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-white/30 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  <input className="input flex-1" placeholder="https://youtube.com/..." value={customTutorial} onChange={(e) => setCustomTutorial(e.target.value)} />
+                </div>
               </div>
               <div className="flex gap-2 pt-2">
                 <button type="button" onClick={() => setShowCustomEj(false)} className="btn-secondary flex-1">Cancelar</button>
