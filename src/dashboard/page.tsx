@@ -142,7 +142,7 @@ export default function CoachDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white/80">
-                    <span className="font-medium text-white">{act.alumnoNombre}</span>{" "}
+                    <span className="font-medium text-white">{(() => { const al = alumnos.find((al) => al.id === act.alumnoId); return al?.apodo || al?.nombre || act.alumnoNombre; })()}</span>{" "}
                     {act.mensaje}
                   </p>
                   <p className="text-xs text-white/30 mt-0.5">
