@@ -3,6 +3,17 @@ import { useState } from "react";
 
 const SECCIONES = [
   {
+    id: "agregar-alumnos",
+    titulo: "Cómo agregar a mis alumnos?",
+    pasos: [
+      "Andá a la sección de Alumnos y presioná 'Agregar'.",
+      "Seleccioná o creá la red de entrenamiento del alumno (ej: 'Alumnos de Sportclub').",
+      "Presioná '+ Nuevo Alumno'.",
+      "Completá los datos del alumno y agregalo usando el mail con el que se registró en Viking.",
+      "Importante: Tu alumno debe iniciar sesión en Viking primero. El mail que usó para acceder es el que tenés que poner para agregarlo.",
+    ],
+  },
+  {
     id: "crear-rutinas",
     titulo: "Cómo crear rutinas?",
     pasos: [
