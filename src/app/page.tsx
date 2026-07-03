@@ -1,19 +1,97 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
+
+function FadeIn({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className={className} style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(24px)", transition: `opacity 0.7s ease-out, transform 0.7s ease-out`, transitionDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  );
+}
+
+function LaptopFrame({ src, alt }: { src: string; alt: string }) {
+  return (
+    <div className="relative mx-auto w-full max-w-3xl">
+      <div className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-white/[0.1] bg-bg-secondary shadow-2xl shadow-black/60">
+        <div className="h-7 sm:h-9 bg-zinc-900/80 flex items-center gap-1.5 px-4 border-b border-white/[0.06]">
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500/60" />
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-500/60" />
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-500/60" />
+        </div>
+        <img src={src} alt={alt} className="w-full h-auto block" loading="lazy" />
+      </div>
+    </div>
+  );
+}
+
+function PhoneFrame({ src, alt, large = false }: { src: string; alt: string; large?: boolean }) {
+  return (
+    <div className={`relative mx-auto ${large ? "max-w-[320px] sm:max-w-[380px]" : "max-w-[260px] sm:max-w-[300px]"}`}>
+      <div className="relative rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden border-2 border-white/[0.1] bg-black shadow-2xl shadow-black/50">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[100px] sm:w-[140px] h-6 sm:h-7 bg-black rounded-b-2xl z-10 flex items-end justify-center pb-0.5">
+          <div className="w-2 h-2 rounded-full bg-white/20 mb-0.5" />
+        </div>
+        <img src={src} alt={alt} className="w-full h-auto block" loading="lazy" />
+      </div>
+    </div>
+  );
+}
+
+const coachShots = [
+  { src: "/images/landing/coach-dashboard.webp", title: "Panel de control", desc: "Todo tu negocio en un vistazo: actividad, alumnos, redes y progreso en tiempo real." },
+  { src: "/images/landing/coach-students.webp", title: "Gestión de alumnos", desc: "Administrá pagos, estados y perfiles. Cada alumno con su plan personalizado." },
+  { src: "/images/landing/coach-routine-builder.webp", title: "Creador de rutinas", desc: "Armá entrenamientos con ejercicios, series, repeticiones y descansos en segundos." },
+  { src: "/images/landing/coach-nutrition-builder.webp", title: "Plan nutricional", desc: "Diseñá planes de comidas por día ajustados al objetivo de cada alumno." },
+  { src: "/images/landing/coach-networks.webp", title: "Redes de entrenamiento", desc: "Organizá alumnos presenciales y online en grupos. Todo desde un mismo lugar." },
+  { src: "/images/landing/coach-ai.webp", title: "Asistente IA", desc: "Ideas de ejercicios, planificación y respuestas al instante. Tu copiloto personal." },
+];
+
+const studentShots = [
+  { src: "/images/landing/student-home.webp", title: "Inicio del alumno", desc: "Rutina de hoy, nutrición, peso, agua y progreso semanal en una sola pantalla." },
+  { src: "/images/landing/student-workouts.webp", title: "Entrenos diarios", desc: "Cada día con su entrenamiento listo. Solo abrí y empezá." },
+  { src: "/images/landing/student-session.webp", title: "Sesión de entrenamiento", desc: "Ejercicio guiado con video, timer de descanso automático, tutorial y notas del coach.", large: true },
+  { src: "/images/landing/student-nutrition.webp", title: "Nutrición diaria", desc: "El plan de comidas del día siempre disponible. Sabé qué comer en cada momento." },
+  { src: "/images/landing/student-progress.webp", title: "Progreso automático", desc: "Peso, agua y entrenos completados. Cada actualización se refleja al instante en el coach." },
+  { src: "/images/landing/student-ai.webp", title: "Asistente IA", desc: "Consultá dudas de entrenamiento, ejercicios o nutrición. Respuestas al instante." },
+];
+
+const traditional = ["Excel / PDF", "WhatsApp", "Rutinas perdidas", "Seguimiento manual", "Sin app para alumnos", "Escribí uno por uno"];
+const viking = ["Plataforma profesional", "App guiada para alumnos", "Todo organizado por alumno", "Progreso automático", "Experiencia premium", "Comunicación en un clic"];
+
+const benefits = [
+  { icon: "🚀", title: "Más imagen profesional", desc: "Dale a tus alumnos una plataforma premium que eleva tu servicio por encima de la competencia." },
+  { icon: "⭐", title: "Mejor experiencia para el alumno", desc: "Entrenamientos guiados, videos, temporizador y plan nutricional en una app que les encanta usar." },
+  { icon: "⚡", title: "Menos trabajo administrativo", desc: "Olvidate de Excel, PDFs y cadenas de WhatsApp. Todo sincronizado y automático." },
+  { icon: "🎯", title: "Más tiempo para entrenar", desc: "Automatizá lo repetitivo y dedicale más tiempo a lo que importa: entrenar a tus alumnos." },
+];
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-bg-primary flex flex-col">
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-4 md:px-8 py-3 md:py-5 max-w-6xl mx-auto w-full">
-        <div className="flex items-center gap-2.5">
-          <img src="/Viking.png" alt="Viking" className="w-16 h-16 md:w-28 md:h-28 object-contain" />
-          <span className="text-white font-bold text-lg md:text-xl">Viking</span>
-        </div>
-        <div className="hidden md:flex gap-3">
+      {/* ─── NAV ─── */}
+      <nav className="relative z-50 flex items-center justify-between px-4 md:px-8 py-3 md:py-5 max-w-6xl mx-auto w-full">
+        <Link href="/" className="flex items-center gap-2.5">
+          <img src="/Viking.png" alt="Viking" className="w-10 h-10 md:w-12 md:h-12 object-contain" />
+          <span className="text-white font-bold text-lg md:text-xl tracking-tight">Viking</span>
+        </Link>
+        <div className="hidden md:flex items-center gap-3">
           <Link href="/login" className="btn-ghost text-sm">Iniciar Sesión</Link>
           <Link href="/login" className="btn-primary text-sm">Comenzar</Link>
         </div>
@@ -22,66 +100,192 @@ export default function LandingPage() {
         </button>
       </nav>
       {menuOpen && (
-        <div className="md:hidden flex flex-col items-center gap-3 px-4 pb-6 border-b border-white/[0.06] bg-bg-primary">
+        <div className="relative z-50 md:hidden flex flex-col items-center gap-3 px-4 pb-6 border-b border-white/[0.06] bg-bg-primary">
           <Link href="/login" className="btn-ghost text-sm w-full text-center" onClick={() => setMenuOpen(false)}>Iniciar Sesión</Link>
           <Link href="/login" className="btn-primary text-sm w-full text-center" onClick={() => setMenuOpen(false)}>Comenzar</Link>
         </div>
       )}
 
-      {/* Hero */}
+      {/* ─── HERO ─── */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 text-center max-w-3xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm mb-8">
-          <span>🚀</span>
-          <span>Plataforma premium para coaches y alumnos</span>
-        </div>
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight tracking-tight">
-          Tu{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-accent/60">
-            red de entrenamiento
-          </span>{" "}
-          inteligente
-        </h1>
-        <p className="text-sm sm:text-lg text-white/50 mt-6 max-w-xl leading-relaxed">
-          Creá rutinas, asigná planes nutricionales, seguí el progreso de tus alumnos 
-          y gestioná tu agenda desde un solo lugar.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 mt-10 w-full sm:w-auto">
-          <Link href="/login" className="btn-primary text-base px-8 py-3 w-full sm:w-auto text-center">
-            Acceder como Coach
-          </Link>
-          <Link href="/login" className="btn-secondary text-base px-8 py-3 w-full sm:w-auto text-center">
-            Acceder como Alumno
-          </Link>
-        </div>
-
-        {/* Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-20 w-full">
-          {[
-            { icon: "📋", title: "Rutinas", desc: "Creá y asigná rutinas con ejercicios, series, repeticiones y descansos" },
-            { icon: "🍽️", title: "Nutrición", desc: "Planes de comidas por día según el objetivo de cada alumno" },
-            { icon: "📊", title: "Progreso", desc: "Seguí peso, agua, adherencia y logros de tus alumnos" },
-          ].map((f) => (
-            <div key={f.title} className="card text-left">
-              <div className="text-2xl mb-3">{f.icon}</div>
-              <h3 className="text-white font-semibold mb-1">{f.title}</h3>
-              <p className="text-sm text-white/40">{f.desc}</p>
-            </div>
-          ))}
-        </div>
+        <FadeIn>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm mb-8">
+            <span>🚀</span>
+            <span>Plataforma premium para coaches y alumnos</span>
+          </div>
+        </FadeIn>
+        <FadeIn delay={100}>
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight tracking-tight">
+            Tu{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-accent/60">
+              red de entrenamiento
+            </span>{" "}
+            inteligente
+          </h1>
+        </FadeIn>
+        <FadeIn delay={200}>
+          <p className="text-sm sm:text-lg text-white/50 mt-6 max-w-xl leading-relaxed">
+            Creá rutinas, asigná planes nutricionales, seguí el progreso de tus alumnos 
+            y gestioná tu agenda desde un solo lugar.
+          </p>
+        </FadeIn>
+        <FadeIn delay={300}>
+          <div className="flex flex-col sm:flex-row gap-4 mt-10 w-full sm:w-auto">
+            <Link href="/login" className="btn-primary text-base px-8 py-3 w-full sm:w-auto text-center">
+              Acceder como Coach
+            </Link>
+            <Link href="/login" className="btn-secondary text-base px-8 py-3 w-full sm:w-auto text-center">
+              Acceder como Alumno
+            </Link>
+          </div>
+        </FadeIn>
       </main>
 
-      <footer className="border-t border-white/[0.06] py-6 md:py-8 px-4 md:px-8">
+      {/* ─── SECTION 2: COACH SHOWCASE ─── */}
+      <section className="py-24 sm:py-32 px-6">
+        <div className="max-w-6xl mx-auto">
+          <FadeIn className="text-center mb-16 sm:mb-24">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+              Todo tu negocio en un solo lugar.
+            </h2>
+            <p className="text-base sm:text-lg text-white/50 mt-4 max-w-2xl mx-auto">
+              Gestioná alumnos, rutinas, alimentación, seguimiento y planificación desde una única plataforma.
+            </p>
+          </FadeIn>
+
+          <div className="space-y-20 sm:space-y-28">
+            {coachShots.map((shot, i) => (
+              <div key={shot.title} className={`flex flex-col ${i % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"} items-center gap-8 lg:gap-16`}>
+                <FadeIn delay={100} className="w-full lg:w-[55%]">
+                  <LaptopFrame src={shot.src} alt={shot.title} />
+                </FadeIn>
+                <FadeIn delay={200} className="w-full lg:w-[45%] text-center lg:text-left">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">{shot.title}</h3>
+                  <p className="text-base sm:text-lg text-white/50 leading-relaxed">{shot.desc}</p>
+                </FadeIn>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── SECTION 3: STUDENT EXPERIENCE ─── */}
+      <section className="py-24 sm:py-32 px-6 border-t border-white/[0.04]">
+        <div className="max-w-6xl mx-auto">
+          <FadeIn className="text-center mb-16 sm:mb-24">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-white leading-tight tracking-tight">
+              Tus alumnos ya no reciben una rutina.
+            </h2>
+            <p className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-accent to-accent/60 mt-2">
+              Reciben una experiencia de entrenamiento.
+            </p>
+          </FadeIn>
+
+          <div className="space-y-20 sm:space-y-28">
+            {studentShots.map((shot, i) => (
+              <div key={shot.title} className={`flex flex-col ${i % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"} items-center gap-8 lg:gap-16 ${shot.large ? "lg:gap-20" : ""}`}>
+                <FadeIn delay={100} className={`w-full ${shot.large ? "lg:w-[60%]" : "lg:w-[50%]"} flex justify-center`}>
+                  <PhoneFrame src={shot.src} alt={shot.title} large={shot.large} />
+                </FadeIn>
+                <FadeIn delay={200} className={`w-full ${shot.large ? "lg:w-[40%]" : "lg:w-[50%]"} text-center lg:text-left`}>
+                  <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">{shot.title}</h3>
+                  <p className="text-base sm:text-lg text-white/50 leading-relaxed">{shot.desc}</p>
+                </FadeIn>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── SECTION 4: COMPARISON ─── */}
+      <section className="py-24 sm:py-32 px-6 border-t border-white/[0.04]">
+        <div className="max-w-5xl mx-auto">
+          <FadeIn className="text-center mb-16">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+              Coaching tradicional vs. Viking
+            </h2>
+          </FadeIn>
+
+          <FadeIn delay={100}>
+            <div className="grid grid-cols-2 gap-0 rounded-2xl overflow-hidden border border-white/[0.06]">
+              <div className="p-6 sm:p-8 bg-white/[0.02]">
+                <h3 className="text-lg sm:text-xl font-bold text-white/30 mb-6">Coaching Tradicional</h3>
+                <ul className="space-y-4">
+                  {traditional.map((item) => (
+                    <li key={item} className="flex items-start gap-3 text-sm sm:text-base text-white/40">
+                      <span className="text-red-400/60 mt-0.5 shrink-0">✕</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="p-6 sm:p-8 bg-accent/[0.03] border-l border-white/[0.06]">
+                <h3 className="text-lg sm:text-xl font-bold text-accent mb-6">Viking</h3>
+                <ul className="space-y-4">
+                  {viking.map((item) => (
+                    <li key={item} className="flex items-start gap-3 text-sm sm:text-base text-white">
+                      <span className="text-accent mt-0.5 shrink-0">✓</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ─── SECTION 5: BENEFITS ─── */}
+      <section className="py-24 sm:py-32 px-6 border-t border-white/[0.04]">
+        <div className="max-w-6xl mx-auto">
+          <FadeIn className="text-center mb-16">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+              Por qué elegir Viking
+            </h2>
+          </FadeIn>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            {benefits.map((b, i) => (
+              <FadeIn key={b.title} delay={i * 100}>
+                <div className="card h-full hover:bg-white/[0.06] transition-all duration-300">
+                  <div className="text-2xl sm:text-3xl mb-4">{b.icon}</div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">{b.title}</h3>
+                  <p className="text-sm sm:text-base text-white/50 leading-relaxed">{b.desc}</p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── SECTION 6: CTA ─── */}
+      <section className="py-24 sm:py-32 px-6 border-t border-white/[0.04]">
+        <FadeIn className="max-w-2xl mx-auto text-center">
+          <h2 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight mb-4">
+            Empezá gratis.
+          </h2>
+          <p className="text-lg sm:text-xl text-white/50 mb-10">
+            Probá Viking gratis hasta 3 alumnos.
+          </p>
+          <Link href="/login" className="btn-primary text-base sm:text-lg px-10 py-4 inline-block">
+            Comenzar ahora
+          </Link>
+        </FadeIn>
+      </section>
+
+      {/* ─── FOOTER ─── */}
+      <footer className="border-t border-white/[0.06] py-8 md:py-10 px-4 md:px-8">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <img src="/Viking.png" alt="Viking" className="w-8 h-8 object-contain opacity-40" />
-            <span className="text-white/20 text-sm">Viking Fit © {new Date().getFullYear()}</span>
+            <img src="/Viking.png" alt="Viking" className="w-6 h-6 object-contain opacity-30" />
+            <span className="text-white/20 text-xs">Viking Fit © {new Date().getFullYear()}</span>
           </div>
           <div className="flex items-center gap-6">
-            <a href="https://instagram.com/viking.app" target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-accent text-sm transition-colors flex items-center gap-1.5">
+            <a href="https://instagram.com/viking.app" target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-accent text-xs sm:text-sm transition-colors flex items-center gap-1.5">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
               @viking.app
             </a>
-            <a href="mailto:fitviking8@gmail.com" className="text-white/30 hover:text-accent text-sm transition-colors flex items-center gap-1.5">
+            <a href="mailto:fitviking8@gmail.com" className="text-white/30 hover:text-accent text-xs sm:text-sm transition-colors flex items-center gap-1.5">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
               fitviking8@gmail.com
             </a>
