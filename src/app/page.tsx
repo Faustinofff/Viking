@@ -24,10 +24,10 @@ function FadeIn({ children, delay = 0, className = "" }: { children: ReactNode; 
   );
 }
 
-function LaptopFrame({ src, alt }: { src: string; alt: string }) {
+function LaptopFrame({ src, alt, onClick }: { src: string; alt: string; onClick?: () => void }) {
   return (
-    <div className="relative mx-auto w-full max-w-3xl">
-      <div className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-white/[0.1] bg-bg-secondary shadow-2xl shadow-black/60">
+    <div className="relative mx-auto w-full max-w-3xl cursor-pointer" onClick={onClick}>
+      <div className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-white/[0.1] bg-bg-secondary shadow-2xl shadow-black/60 transition-transform duration-300 hover:scale-[1.01]">
         <div className="h-7 sm:h-9 bg-zinc-900/80 flex items-center gap-1.5 px-4 border-b border-white/[0.06]">
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500/60" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-500/60" />
@@ -39,14 +39,48 @@ function LaptopFrame({ src, alt }: { src: string; alt: string }) {
   );
 }
 
-function PhoneFrame({ src, alt, large = false }: { src: string; alt: string; large?: boolean }) {
+function PhoneFrame({ src, alt, large = false, onClick }: { src: string; alt: string; large?: boolean; onClick?: () => void }) {
   return (
-    <div className={`relative mx-auto ${large ? "max-w-[320px] sm:max-w-[380px]" : "max-w-[260px] sm:max-w-[300px]"}`}>
-      <div className="relative rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden border-2 border-white/[0.1] bg-black shadow-2xl shadow-black/50">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[100px] sm:w-[140px] h-6 sm:h-7 bg-black rounded-b-2xl z-10 flex items-end justify-center pb-0.5">
-          <div className="w-2 h-2 rounded-full bg-white/20 mb-0.5" />
+    <div className={`relative mx-auto cursor-pointer ${large ? "max-w-[320px] sm:max-w-[380px]" : "max-w-[260px] sm:max-w-[300px]"}`} onClick={onClick}>
+      <div className="rounded-[2rem] sm:rounded-[2.5rem] border-2 border-white/[0.1] bg-black shadow-2xl shadow-black/50 transition-transform duration-300 hover:scale-[1.01]">
+        <div className="p-2 sm:p-3">
+          <img src={src} alt={alt} className="w-full h-auto block rounded-lg" loading="lazy" />
         </div>
-        <img src={src} alt={alt} className="w-full h-auto block" loading="lazy" />
+      </div>
+    </div>
+  );
+}
+
+function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", handler); document.body.style.overflow = ""; };
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-fade-in"
+      onClick={(e) => { if (e.target === ref.current) onClose(); }}
+    >
+      <div className="relative max-w-[95vw] max-h-[95vh] flex items-center justify-center">
+        <button
+          onClick={onClose}
+          className="absolute -top-12 right-0 text-white/40 hover:text-white text-3xl p-2 transition-colors z-10"
+          aria-label="Cerrar"
+        >
+          ✕
+        </button>
+        <img
+          src={src}
+          alt={alt}
+          className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl shadow-2xl"
+          style={{ animation: "fade-in 0.25s ease-out" }}
+        />
       </div>
     </div>
   );
@@ -82,6 +116,7 @@ const benefits = [
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
 
   return (
     <div className="min-h-screen bg-bg-primary flex flex-col">
@@ -157,7 +192,7 @@ export default function LandingPage() {
             {coachShots.map((shot, i) => (
               <div key={shot.title} className={`flex flex-col ${i % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"} items-center gap-8 lg:gap-16`}>
                 <FadeIn delay={100} className="w-full lg:w-[55%]">
-                  <LaptopFrame src={shot.src} alt={shot.title} />
+                  <LaptopFrame src={shot.src} alt={shot.title} onClick={() => setLightbox({ src: shot.src, alt: shot.title })} />
                 </FadeIn>
                 <FadeIn delay={200} className="w-full lg:w-[45%] text-center lg:text-left">
                   <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">{shot.title}</h3>
@@ -185,7 +220,7 @@ export default function LandingPage() {
             {studentShots.map((shot, i) => (
               <div key={shot.title} className={`flex flex-col ${i % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"} items-center gap-8 lg:gap-16 ${shot.large ? "lg:gap-20" : ""}`}>
                 <FadeIn delay={100} className={`w-full ${shot.large ? "lg:w-[60%]" : "lg:w-[50%]"} flex justify-center`}>
-                  <PhoneFrame src={shot.src} alt={shot.title} large={shot.large} />
+                  <PhoneFrame src={shot.src} alt={shot.title} large={shot.large} onClick={() => setLightbox({ src: shot.src, alt: shot.title })} />
                 </FadeIn>
                 <FadeIn delay={200} className={`w-full ${shot.large ? "lg:w-[40%]" : "lg:w-[50%]"} text-center lg:text-left`}>
                   <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">{shot.title}</h3>
@@ -272,6 +307,9 @@ export default function LandingPage() {
           </Link>
         </FadeIn>
       </section>
+
+      {/* ─── LIGHTBOX ─── */}
+      {lightbox && <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
 
       {/* ─── FOOTER ─── */}
       <footer className="border-t border-white/[0.06] py-8 md:py-10 px-4 md:px-8">
