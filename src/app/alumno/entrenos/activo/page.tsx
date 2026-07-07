@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useReducer } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAppStore, type Rutina } from "@/lib/store";
@@ -121,8 +121,10 @@ export default function ActiveWorkoutPage() {
   const [sesionId, setSesionId] = useState<string | null>(null);
   const [currentEjIndex, setCurrentEjIndex] = useState(0);
   const [currentSet, setCurrentSet] = useState(1);
-  const [restTimer, setRestTimer] = useState<number | null>(null);
+  const [restEndTime, setRestEndTime] = useState<number | null>(null);
   const [restActive, setRestActive] = useState(false);
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
+  const restTimer = restEndTime !== null ? Math.max(0, Math.floor((restEndTime - Date.now()) / 1000)) : null;
   const [ejCompletados, setEjCompletados] = useState<Set<number>>(new Set());
   const [setsCompletadosLocal, setSetsCompletadosLocal] = useState<Set<string>>(new Set());
   const [pesosInput, setPesosInput] = useState<Record<string, string>>({});
@@ -190,13 +192,22 @@ export default function ActiveWorkoutPage() {
     setWeekToast(null);
   }, [currentEjIndex]);
 
-  // Rest timer countdown
+  // Rest timer countdown using absolute timestamp
   useEffect(() => {
-    if (!restActive || restTimer === null) return;
-    if (restTimer <= 0) { setRestActive(false); return; }
-    const t = setTimeout(() => setRestTimer(restTimer - 1), 1000);
+    if (!restActive || restEndTime === null) return;
+    if (Date.now() >= restEndTime) { setRestActive(false); return; }
+    const t = setTimeout(() => forceUpdate(), 1000);
     return () => clearTimeout(t);
-  }, [restActive, restTimer]);
+  }, [restActive, restEndTime]);
+
+  // Sync timer when app returns to foreground
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") forceUpdate();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
 
   const totalSets = useMemo(() =>
     weekEjercicios.reduce((sum: number, e: any) => sum + e.series, 0),
@@ -214,17 +225,17 @@ export default function ActiveWorkoutPage() {
     setSetsCompletadosLocal((prev) => new Set(prev).add(key));
     const peso = parseFloat(pesosInput[`${currentWeekEj.ejercicioId}_${currentSet}`] ?? "0");
     completarSerie(sesionId, currentWeekEj.ejercicioId, currentSet, peso || undefined, currentWeekEj.reps);
-    setRestTimer(currentWeekEj.descansoSegundos);
+    setRestEndTime(Date.now() + currentWeekEj.descansoSegundos * 1000);
     setRestActive(true);
   }, [sesionId, currentWeekEj, currentSet, pesosInput, completarSerie]);
 
   const skipRest = useCallback(() => {
-    setRestTimer(0);
+    setRestEndTime(Date.now() - 1000);
     setRestActive(false);
   }, []);
 
   const avanzar = useCallback(() => {
-    setRestTimer(null);
+    setRestEndTime(null);
     if (!currentWeekEj || !sesionId) return;
     const key = `${currentWeekEj.ejercicioId}_${currentSet}`;
     setSetsCompletadosLocal((prev) => new Set(prev).add(key));
