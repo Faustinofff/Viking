@@ -38,6 +38,17 @@ const SECCIONES = [
     ],
   },
   {
+    id: "asignar-rutinas-reutilizar",
+    titulo: "Cómo asignar una rutina que ya está asignada a otro alumno?",
+    pasos: [
+      "Andá a Rutinas en el menú lateral.",
+      "Buscá la rutina que querés reutilizar y presioná el botón 'Editar' (lápiz).",
+      "En el panel de edición, buscá la sección 'Alumnos' y tildá el nuevo alumno al que querés asignársela.",
+      "También podés destildar alumnos si ya no deberían tenerla.",
+      "Presioná 'Guardar Cambios' al final del formulario. La rutina se actualiza para todos los alumnos seleccionados al instante.",
+    ],
+  },
+  {
     id: "crear-planes",
     titulo: "Cómo crear planes nutricionales?",
     pasos: [
