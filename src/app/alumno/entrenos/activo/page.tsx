@@ -195,9 +195,14 @@ export default function ActiveWorkoutPage() {
   // Rest timer countdown using absolute timestamp
   useEffect(() => {
     if (!restActive || restEndTime === null) return;
-    if (Date.now() >= restEndTime) { setRestActive(false); return; }
-    const t = setTimeout(() => forceUpdate(), 1000);
-    return () => clearTimeout(t);
+    const interval = setInterval(() => {
+      if (Date.now() >= restEndTime) {
+        setRestActive(false);
+      } else {
+        forceUpdate();
+      }
+    }, 1000);
+    return () => clearInterval(interval);
   }, [restActive, restEndTime]);
 
   // Sync timer when app returns to foreground
