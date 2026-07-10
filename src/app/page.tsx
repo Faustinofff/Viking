@@ -203,7 +203,7 @@ export default function LandingPage() {
                 </div>
                 <div className="sm:hidden">
                   <img
-                    src="/images/landing/hero-mobile.webp"
+                    src="/images/landing/hero-desktop.webp"
                     alt="Viking App"
                     className="w-[80%] mx-auto h-auto rounded-2xl border border-white/[0.1] shadow-2xl shadow-black/50"
                     style={{ animation: "fade-in 0.6s ease-out" }}
