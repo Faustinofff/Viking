@@ -142,39 +142,78 @@ export default function LandingPage() {
       )}
 
       {/* ─── HERO ─── */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 text-center max-w-3xl mx-auto">
-        <FadeIn>
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm mb-8">
-            <span>🚀</span>
-            <span>Plataforma premium para coaches y alumnos</span>
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-accent/[0.02] via-transparent to-transparent pointer-events-none" />
+        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-accent/[0.03] blur-[120px] pointer-events-none" />
+        <div className="max-w-6xl mx-auto px-6 pt-8 sm:pt-12 pb-16 sm:pb-20">
+          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+            <div className="flex-1 text-center lg:text-left">
+              <FadeIn>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm mb-6 sm:mb-8">
+                  <span>🚀</span>
+                  <span>Plataforma premium para coaches</span>
+                </div>
+              </FadeIn>
+              <FadeIn delay={100}>
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
+                  Tu negocio de
+                  <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-accent/80 to-accent/60">
+                    entrenamiento
+                  </span>
+                  <br />
+                  en un solo lugar
+                </h1>
+              </FadeIn>
+              <FadeIn delay={200}>
+                <p className="text-base sm:text-lg text-white/50 mt-5 max-w-lg leading-relaxed mx-auto lg:mx-0">
+                  Gestioná alumnos, rutinas, planes nutricionales, progreso y agenda 
+                  desde una única plataforma profesional.
+                </p>
+              </FadeIn>
+              <FadeIn delay={300}>
+                <div className="flex flex-col sm:flex-row gap-3 mt-8 w-full sm:w-auto">
+                  <Link href="/login" className="btn-primary text-base px-7 py-3 w-full sm:w-auto text-center shadow-glow hover:shadow-glow-strong transition-shadow">
+                    Acceder como Coach
+                  </Link>
+                  <Link href="/login" className="btn-secondary text-base px-7 py-3 w-full sm:w-auto text-center bg-white/[0.06] hover:bg-white/[0.1] border-white/[0.12]">
+                    Acceder como Alumno
+                  </Link>
+                </div>
+              </FadeIn>
+              <FadeIn delay={400}>
+                <div className="flex items-center gap-4 sm:gap-6 mt-8 text-white/30 text-xs mx-auto lg:mx-0 justify-center lg:justify-start">
+                  <span className="flex items-center gap-1.5">✓ Rutinas</span>
+                  <span className="flex items-center gap-1.5">✓ Nutrición</span>
+                  <span className="flex items-center gap-1.5">✓ Progreso</span>
+                  <span className="flex items-center gap-1.5">✓ Agenda</span>
+                </div>
+              </FadeIn>
+            </div>
+            <FadeIn delay={200} className="flex-1 w-full flex justify-center lg:justify-end">
+              <div className="relative w-full max-w-[500px] lg:max-w-none">
+                <div className="absolute inset-0 bg-gradient-to-t from-accent/[0.08] to-transparent rounded-3xl blur-3xl -z-10" />
+                <div className="hidden sm:block">
+                  <img
+                    src="/images/landing/hero-desktop.webp"
+                    alt="Viking Dashboard"
+                    className="w-full h-auto rounded-2xl border border-white/[0.1] shadow-2xl shadow-black/50"
+                    style={{ animation: "fade-in 0.6s ease-out" }}
+                  />
+                </div>
+                <div className="sm:hidden">
+                  <img
+                    src="/images/landing/hero-mobile.webp"
+                    alt="Viking App"
+                    className="w-[80%] mx-auto h-auto rounded-2xl border border-white/[0.1] shadow-2xl shadow-black/50"
+                    style={{ animation: "fade-in 0.6s ease-out" }}
+                  />
+                </div>
+              </div>
+            </FadeIn>
           </div>
-        </FadeIn>
-        <FadeIn delay={100}>
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight tracking-tight">
-            Tu{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-accent/60">
-              red de entrenamiento
-            </span>{" "}
-            inteligente
-          </h1>
-        </FadeIn>
-        <FadeIn delay={200}>
-          <p className="text-sm sm:text-lg text-white/50 mt-6 max-w-xl leading-relaxed">
-            Creá rutinas, asigná planes nutricionales, seguí el progreso de tus alumnos 
-            y gestioná tu agenda desde un solo lugar.
-          </p>
-        </FadeIn>
-        <FadeIn delay={300}>
-          <div className="flex flex-col sm:flex-row gap-4 mt-10 w-full sm:w-auto">
-            <Link href="/login" className="btn-primary text-base px-8 py-3 w-full sm:w-auto text-center">
-              Acceder como Coach
-            </Link>
-            <Link href="/login" className="btn-secondary text-base px-8 py-3 w-full sm:w-auto text-center">
-              Acceder como Alumno
-            </Link>
-          </div>
-        </FadeIn>
-      </main>
+        </div>
+      </section>
 
       {/* ─── SECTION 2: COACH SHOWCASE ─── */}
       <section className="py-24 sm:py-32 px-6">
