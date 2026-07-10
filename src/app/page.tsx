@@ -129,7 +129,7 @@ export default function LandingPage() {
             className="hidden sm:block w-full h-full object-cover"
           />
           <img
-            src="/images/landing/hero-desktop.webp"
+            src="/images/landing/hero-mobile.webp"
             alt=""
             className="sm:hidden w-full h-full object-cover"
           />
