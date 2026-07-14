@@ -127,7 +127,7 @@ export default function RutinasPage() {
   const ejercicioTutoriales = useAppStore((s) => s.ejercicioTutoriales);
 
   const crearEjercicioRutina = (ej: { id: string; nombre: string; grupoMuscular: string }) => {
-    const s = 4, r = 10, ds = 90;
+    const s = 4, r = 10, ds = 120;
     return {
       id: `ej_${Date.now()}`,
       ejercicioId: ej.id,

@@ -132,7 +132,7 @@ export default function AlumnosPage() {
     if (!ej) return;
     setEditRutinaDias(editRutinaDias.map((d) =>
       d.id === diaId
-        ? { ...d, ejercicios: [...d.ejercicios, { id: `ej_${Date.now()}`, ejercicioId: ej.id, ejercicioNombre: ej.nombre, grupoMuscular: ej.grupoMuscular, series: 4, reps: 10, descansoSegundos: 90, videoUrl: "" }] }
+        ? { ...d, ejercicios: [...d.ejercicios, { id: `ej_${Date.now()}`, ejercicioId: ej.id, ejercicioNombre: ej.nombre, grupoMuscular: ej.grupoMuscular, series: 4, reps: 10, descansoSegundos: 120, videoUrl: "" }] }
         : d
     ));
     setDiaActivo(null);
