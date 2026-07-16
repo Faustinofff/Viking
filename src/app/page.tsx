@@ -33,7 +33,9 @@ function LaptopFrame({ src, alt, onClick }: { src: string; alt: string; onClick?
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-500/60" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-500/60" />
         </div>
-        <img src={src} alt={alt} className="w-full h-auto block" loading="lazy" />
+        <div className="aspect-video">
+          <img src={src} alt={alt} className="w-full h-full object-contain block" loading="lazy" />
+        </div>
       </div>
     </div>
   );
@@ -44,7 +46,9 @@ function PhoneFrame({ src, alt, large = false, onClick }: { src: string; alt: st
     <div className={`relative mx-auto cursor-pointer ${large ? "max-w-[320px] sm:max-w-[380px]" : "max-w-[260px] sm:max-w-[300px]"}`} onClick={onClick}>
       <div className="rounded-[2rem] sm:rounded-[2.5rem] border-2 border-white/[0.1] bg-black shadow-2xl shadow-black/50 transition-transform duration-300 hover:scale-[1.01]">
         <div className="p-2 sm:p-3">
-          <img src={src} alt={alt} className="w-full h-auto block rounded-lg" loading="lazy" />
+          <div className="aspect-[9/16]">
+            <img src={src} alt={alt} className="w-full h-full object-contain block rounded-lg" loading="lazy" />
+          </div>
         </div>
       </div>
     </div>
@@ -193,7 +197,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-center gap-2 mt-5 text-sm text-white/40">
               <span>Probalo gratis hasta 3 alumnos</span>
               <span className="text-white/20">•</span>
-              <button onClick={() => pricingRef.current?.scrollIntoView({ behavior: "smooth" })} className="text-accent hover:text-accent/80 transition-colors cursor-pointer underline underline-offset-2">
+              <button onClick={() => pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="text-accent hover:text-accent/80 transition-colors cursor-pointer underline underline-offset-2">
                 Desde $14.999/mes
               </button>
             </div>
@@ -304,7 +308,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── SECTION 7: PRICING ─── */}
-      <section id="precios" ref={pricingRef} className="py-24 sm:py-32 px-6 border-t border-white/[0.04]">
+      <section id="precios" ref={pricingRef} className="py-24 sm:py-32 px-6 border-t border-white/[0.04] scroll-mt-24">
         <div className="max-w-6xl mx-auto">
           <FadeIn className="text-center mb-16">
             <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
