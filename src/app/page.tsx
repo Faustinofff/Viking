@@ -319,6 +319,42 @@ export default function LandingPage() {
             </p>
           </FadeIn>
 
+          {/* FREE PLAN */}
+          <FadeIn delay={0}>
+            <div className="relative rounded-2xl border border-white/[0.1] bg-gradient-to-br from-white/[0.05] to-white/[0.01] p-6 sm:p-8 mb-6 flex flex-col lg:flex-row items-start gap-6">
+              <div className="flex-1 w-full">
+                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.1] text-[10px] font-semibold uppercase tracking-wider text-white/50 mb-3">
+                  Sin cargo
+                </div>
+                <h3 className="text-xl font-bold text-white">Gratuito</h3>
+                <p className="text-sm text-white/50 mt-1">Ideal para empezar a conocer Viking.</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1.5 mt-4">
+                  <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Hasta <strong className="text-white font-semibold">3 alumnos</strong></span>
+                  <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Todas las funciones disponibles</span>
+                  <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Rutinas</span>
+                  <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Planes alimenticios</span>
+                  <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Viking IA</span>
+                  <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Seguimiento del progreso</span>
+                  <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Redes de entrenamiento</span>
+                  <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Gestión de alumnos</span>
+                </div>
+                <p className="text-[11px] text-white/30 mt-4 border-t border-white/[0.06] pt-3 leading-relaxed">
+                  El coach no puede agregar más de 3 alumnos con este plan. Si querés gestionar 4 o más alumnos, necesitás un plan Premium.
+                </p>
+              </div>
+              <div className="text-center lg:text-right shrink-0 w-full lg:w-auto">
+                <div className="text-3xl font-extrabold text-white">Gratis</div>
+                <p className="text-xs text-white/40 mt-1">Sin límite de tiempo</p>
+                <Link
+                  href="/login"
+                  className="mt-4 inline-flex items-center bg-accent text-bg-primary font-semibold px-8 py-3 rounded-xl text-sm hover:bg-accent/90 transition-all"
+                >
+                  Empezar Gratis
+                </Link>
+              </div>
+            </div>
+          </FadeIn>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             {[
               { name: "Prueba", price: "1.000", desc: "Acceso premium completo por 24 horas", period: "", badge: null, popular: false, bestValue: false, features: ["Alumnos ilimitados", "Acceso premium completo", "Todas las funciones incluidas", "Sin límite de contenido"], cta: "Activar Prueba" },
@@ -385,6 +421,46 @@ export default function LandingPage() {
               Podés pagar con tarjetas de crédito, débito y todos los medios de pago disponibles en Mercado Pago.
             </p>
           </FadeIn>
+        </div>
+      </section>
+
+      {/* ─── SECTION 8: TESTIMONIALS ─── */}
+      <section className="py-24 sm:py-32 px-6 border-t border-white/[0.04]">
+        <div className="max-w-6xl mx-auto">
+          <FadeIn className="text-center mb-16">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+              Lo que opinan los entrenadores
+            </h2>
+            <p className="text-base sm:text-lg text-white/50 mt-4 max-w-2xl mx-auto">
+              Entrenadores que ya profesionalizaron su forma de trabajar con Viking.
+            </p>
+          </FadeIn>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            {[
+              { avatar: "ML", gradient: "bg-gradient-to-br from-accent/40 to-accent/10", name: "María L.", review: "La verdad me sorprendió. Me ahorra un montón de tiempo armando rutinas y gestionando a mis alumnos. Encima ellos tienen todo organizado. Está muy buena." },
+              { avatar: "LM", gradient: "bg-gradient-to-br from-blue-500/30 to-purple-600/10", name: "Lucas M.", review: "Está buenísima. Antes manejaba todo por WhatsApp y Excel. Ahora tengo todo mucho más ordenado y mis alumnos encuentran todo al toque." },
+              { avatar: "CR", gradient: "bg-gradient-to-br from-emerald-500/30 to-teal-600/10", name: "Carla R.", review: "Muy cómoda y práctica. Mis alumnos están re conformes y yo dejo de perder tiempo respondiendo siempre las mismas preguntas. La recomiendo." },
+            ].map((t, i) => (
+              <FadeIn key={t.name} delay={i * 100}>
+                <div className="card h-full flex flex-col transition-all duration-300 hover:scale-[1.02]">
+                  <div className="text-sm tracking-wider mb-4 text-[#f59e0b]">⭐⭐⭐⭐⭐</div>
+                  <p className="text-sm sm:text-base text-white/70 leading-relaxed flex-1">
+                    &ldquo;{t.review}&rdquo;
+                  </p>
+                  <div className="flex items-center gap-3 mt-6 pt-4 border-t border-white/[0.06]">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${t.gradient}`}>
+                      {t.avatar}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{t.name}</p>
+                      <p className="text-xs text-white/40">Entrenador Personal</p>
+                    </div>
+                  </div>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
         </div>
       </section>
 
