@@ -189,7 +189,16 @@ export default function LandingPage() {
             </div>
           </FadeIn>
           <FadeIn delay={400}>
-            <div className="flex items-center gap-4 sm:gap-6 mt-8 text-white/40 text-xs">
+            <div className="flex items-center justify-center gap-2 mt-5 text-sm text-white/40">
+              <span>🆓 Probalo gratis hasta 3 alumnos</span>
+              <span className="text-white/20">•</span>
+              <button onClick={() => document.getElementById("precios")?.scrollIntoView({ behavior: "smooth" })} className="text-accent hover:text-accent/80 transition-colors cursor-pointer underline underline-offset-2">
+                Desde $14.999/mes
+              </button>
+            </div>
+          </FadeIn>
+          <FadeIn delay={500}>
+            <div className="flex items-center gap-4 sm:gap-6 mt-6 text-white/40 text-xs">
               <span className="flex items-center gap-1.5">✓ Rutinas</span>
               <span className="flex items-center gap-1.5">✓ Nutrición</span>
               <span className="flex items-center gap-1.5">✓ Progreso</span>
@@ -289,6 +298,87 @@ export default function LandingPage() {
                 </ul>
               </div>
             </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ─── SECTION 7: PRICING ─── */}
+      <section id="precios" className="py-24 sm:py-32 px-6 border-t border-white/[0.04]">
+        <div className="max-w-6xl mx-auto">
+          <FadeIn className="text-center mb-16">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+              Planes para tu negocio
+            </h2>
+            <p className="text-base sm:text-lg text-white/50 mt-4 max-w-2xl mx-auto">
+              Elegí el plan que mejor se adapte a tu ritmo de trabajo
+            </p>
+          </FadeIn>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {[
+              { name: "Prueba", price: "1.000", desc: "7 días para conocer la plataforma", badge: null, popular: false, bestValue: false, features: ["Hasta 3 alumnos activos", "Rutinas ilimitadas", "Nutrición básica", "Soporte por email"], cta: "Probar gratis" },
+              { name: "Mensual", price: "14.999", desc: "Flexibilidad mes a mes", badge: null, popular: false, bestValue: false, features: ["Alumnos ilimitados", "Rutinas + nutrición", "Progreso automático", "Agenda integrada", "Asistente IA"], cta: "Elegir Mensual" },
+              { name: "Trimestral", price: "24.999", desc: "Ahorrá 44% vs. el plan mensual", badge: "Más popular", popular: true, bestValue: false, features: ["Todo el plan Mensual", "Descuento por trimestre", "Soporte prioritario", "Reportes avanzados"], cta: "Elegir Trimestral" },
+              { name: "Semestral", price: "44.999", desc: "Ahorrá 50% vs. el plan mensual", badge: null, popular: false, bestValue: false, features: ["Todo el plan Trimestral", "Descuento por semestre", "Soporte premium", "Exportación de datos"], cta: "Elegir Semestral" },
+              { name: "Anual", price: "79.999", desc: "Ahorrá 55% vs. el plan mensual", badge: "Mejor valor", popular: false, bestValue: true, features: ["Todo el plan Semestral", "Máximo descuento", "Soporte VIP 24/7", "Features beta anticipadas"], cta: "Elegir Anual" },
+            ].map((plan, i) => (
+              <FadeIn key={plan.name} delay={i * 80}>
+                <div className={`relative flex flex-col rounded-2xl border p-5 transition-all duration-300 hover:scale-[1.02] ${
+                  plan.popular
+                    ? "border-accent bg-accent/[0.04]"
+                    : plan.bestValue
+                    ? "border-accent/40 bg-white/[0.04]"
+                    : "border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.05]"
+                }`}>
+                  {plan.badge && (
+                    <div className={`absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                      plan.popular
+                        ? "bg-accent text-bg-primary"
+                        : "bg-accent/20 text-accent border border-accent/30"
+                    }`}>
+                      {plan.badge}
+                    </div>
+                  )}
+                  <div className="mb-4">
+                    <h3 className="text-base font-bold text-white">{plan.name}</h3>
+                    <p className="text-xs text-white/40 mt-1 leading-relaxed">{plan.desc}</p>
+                  </div>
+                  <div className="mb-5">
+                    <span className="text-sm text-white/40">$</span>
+                    <span className="text-2xl font-extrabold text-white">{plan.price}</span>
+                    <span className="text-xs text-white/40"> /mes</span>
+                  </div>
+                  <ul className="space-y-2 mb-6 flex-1">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-xs text-white/60">
+                        <span className="text-accent mt-0.5 shrink-0">✓</span>
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/login"
+                    className={`w-full text-center text-sm font-semibold py-2.5 rounded-xl transition-all ${
+                      plan.popular
+                        ? "bg-accent text-bg-primary hover:bg-accent/90"
+                        : "bg-white/[0.08] text-white hover:bg-white/[0.12] border border-white/[0.1]"
+                    }`}
+                  >
+                    {plan.cta}
+                  </Link>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+
+          <FadeIn delay={200} className="mt-16 text-center">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <span className="text-white/40 text-sm">Pagos 100% seguros mediante</span>
+              <span className="text-white font-semibold text-sm">Mercado Pago</span>
+            </div>
+            <p className="text-xs text-white/30 max-w-md mx-auto">
+              Podés pagar con tarjetas de crédito, débito y todos los medios de pago disponibles en Mercado Pago.
+            </p>
           </FadeIn>
         </div>
       </section>
