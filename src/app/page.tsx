@@ -117,6 +117,7 @@ const benefits = [
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const pricingRef = useRef<HTMLElement>(null);
 
   return (
     <div className="min-h-screen bg-bg-primary flex flex-col">
@@ -190,9 +191,9 @@ export default function LandingPage() {
           </FadeIn>
           <FadeIn delay={400}>
             <div className="flex items-center justify-center gap-2 mt-5 text-sm text-white/40">
-              <span>🆓 Probalo gratis hasta 3 alumnos</span>
+              <span>Probalo gratis hasta 3 alumnos</span>
               <span className="text-white/20">•</span>
-              <button onClick={() => document.getElementById("precios")?.scrollIntoView({ behavior: "smooth" })} className="text-accent hover:text-accent/80 transition-colors cursor-pointer underline underline-offset-2">
+              <button onClick={() => pricingRef.current?.scrollIntoView({ behavior: "smooth" })} className="text-accent hover:text-accent/80 transition-colors cursor-pointer underline underline-offset-2">
                 Desde $14.999/mes
               </button>
             </div>
@@ -303,7 +304,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── SECTION 7: PRICING ─── */}
-      <section id="precios" className="py-24 sm:py-32 px-6 border-t border-white/[0.04]">
+      <section id="precios" ref={pricingRef} className="py-24 sm:py-32 px-6 border-t border-white/[0.04]">
         <div className="max-w-6xl mx-auto">
           <FadeIn className="text-center mb-16">
             <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
@@ -316,11 +317,11 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             {[
-              { name: "Prueba", price: "1.000", desc: "7 días para conocer la plataforma", badge: null, popular: false, bestValue: false, features: ["Hasta 3 alumnos activos", "Rutinas ilimitadas", "Nutrición básica", "Soporte por email"], cta: "Probar gratis" },
-              { name: "Mensual", price: "14.999", desc: "Flexibilidad mes a mes", badge: null, popular: false, bestValue: false, features: ["Alumnos ilimitados", "Rutinas + nutrición", "Progreso automático", "Agenda integrada", "Asistente IA"], cta: "Elegir Mensual" },
-              { name: "Trimestral", price: "24.999", desc: "Ahorrá 44% vs. el plan mensual", badge: "Más popular", popular: true, bestValue: false, features: ["Todo el plan Mensual", "Descuento por trimestre", "Soporte prioritario", "Reportes avanzados"], cta: "Elegir Trimestral" },
-              { name: "Semestral", price: "44.999", desc: "Ahorrá 50% vs. el plan mensual", badge: null, popular: false, bestValue: false, features: ["Todo el plan Trimestral", "Descuento por semestre", "Soporte premium", "Exportación de datos"], cta: "Elegir Semestral" },
-              { name: "Anual", price: "79.999", desc: "Ahorrá 55% vs. el plan mensual", badge: "Mejor valor", popular: false, bestValue: true, features: ["Todo el plan Semestral", "Máximo descuento", "Soporte VIP 24/7", "Features beta anticipadas"], cta: "Elegir Anual" },
+              { name: "Prueba", price: "1.000", desc: "Acceso premium completo por 24 horas", period: "", badge: null, popular: false, bestValue: false, features: ["Alumnos ilimitados", "Acceso premium completo", "Todas las funciones incluidas", "Sin límite de contenido"], cta: "Activar Prueba" },
+              { name: "Mensual", price: "14.999", desc: "Flexibilidad mes a mes", period: "/mes", badge: null, popular: false, bestValue: false, features: ["Alumnos ilimitados", "Rutinas + nutrición", "Progreso automático", "Agenda integrada", "Asistente IA"], cta: "Elegir Mensual" },
+              { name: "Trimestral", price: "24.999", desc: "Ahorrá 44% vs. el plan mensual", period: "/mes", badge: "Más popular", popular: true, bestValue: false, features: ["Todo el plan Mensual", "Descuento por trimestre", "Soporte prioritario", "Reportes avanzados"], cta: "Elegir Trimestral" },
+              { name: "Semestral", price: "44.999", desc: "Ahorrá 50% vs. el plan mensual", period: "/mes", badge: null, popular: false, bestValue: false, features: ["Todo el plan Trimestral", "Descuento por semestre", "Soporte premium", "Exportación de datos"], cta: "Elegir Semestral" },
+              { name: "Anual", price: "79.999", desc: "Ahorrá 55% vs. el plan mensual", period: "/mes", badge: "Mejor valor", popular: false, bestValue: true, features: ["Todo el plan Semestral", "Máximo descuento", "Soporte VIP 24/7", "Features beta anticipadas"], cta: "Elegir Anual" },
             ].map((plan, i) => (
               <FadeIn key={plan.name} delay={i * 80}>
                 <div className={`relative flex flex-col rounded-2xl border p-5 transition-all duration-300 hover:scale-[1.02] ${
@@ -346,7 +347,7 @@ export default function LandingPage() {
                   <div className="mb-5">
                     <span className="text-sm text-white/40">$</span>
                     <span className="text-2xl font-extrabold text-white">{plan.price}</span>
-                    <span className="text-xs text-white/40"> /mes</span>
+                    <span className="text-xs text-white/40">{plan.period}</span>
                   </div>
                   <ul className="space-y-2 mb-6 flex-1">
                     {plan.features.map((f) => (
