@@ -194,13 +194,17 @@ export default function LandingPage() {
             </div>
           </FadeIn>
           <FadeIn delay={400}>
-            <div className="flex items-center justify-center gap-2 mt-5 text-sm text-white/40">
-              <span>Probalo gratis hasta 3 alumnos</span>
-              <span className="text-white/20">•</span>
-              <button onClick={() => pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="text-accent hover:text-accent/80 transition-colors cursor-pointer underline underline-offset-2">
-                Desde $14.999/mes
-              </button>
-            </div>
+            <button
+              onClick={() => pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="group mt-5 w-full sm:w-auto px-7 py-3 rounded-xl border border-white/[0.12] bg-white/[0.04] hover:bg-white/[0.08] hover:border-accent/30 transition-all duration-300 text-center"
+            >
+              <span className="block text-sm font-bold text-white/80 group-hover:text-accent transition-colors">
+                VER PLANES ($)
+              </span>
+              <span className="block text-[10px] text-white/30 mt-0.5">
+                gratis hasta 3 alumnos
+              </span>
+            </button>
           </FadeIn>
           <FadeIn delay={500}>
             <div className="flex items-center gap-4 sm:gap-6 mt-6 text-white/40 text-xs">
