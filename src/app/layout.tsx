@@ -6,20 +6,17 @@ import InstallPrompt from "@/components/install-prompt";
 export const metadata: Metadata = {
   title: "Viking — Plataforma de Entrenamiento",
   description: "Plataforma premium para coaches y alumnos",
-  manifest: "/manifest.json",
   icons: {
     icon: "/app-icon.png",
-    apple: "/app-icon.png",
+    apple: {
+      url: "/app-icon.png",
+      sizes: "180x180",
+    },
   },
   appleWebApp: {
     capable: true,
     title: "Viking",
     statusBarStyle: "black-translucent",
-  },
-  other: {
-    "mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-status-bar-style": "black-translucent",
   },
 };
 
@@ -36,8 +33,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className="dark">
       <head>
+        <link rel="manifest" href="/manifest.json" />
         <link rel="preload" href="/app-icon.png" as="image" />
-        <link rel="preload" href="/app-icon.png" as="image" crossOrigin="anonymous" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `('serviceWorker' in navigator)&&navigator.serviceWorker.register('/sw.js')`,
+          }}
+        />
       </head>
       <body>
         <AuthProvider>{children}</AuthProvider>
