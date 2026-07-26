@@ -7,9 +7,11 @@ export function isAdmin(email?: string | null): boolean {
   return email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-
 export function getAdminClient() {
-  return createClient(supabaseUrl, supabaseServiceKey);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseServiceKey) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured");
+  }
+  return createClient(supabaseUrl!, supabaseServiceKey);
 }
