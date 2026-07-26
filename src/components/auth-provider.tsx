@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { getCurrentUser, onAuthStateChange } from "@/lib/auth";
 import { createProfile, getProfile } from "@/lib/data";
+import { isAdmin } from "@/lib/admin";
 
 const STORAGE_LAST_PATH = "viking_last_path";
 
@@ -45,6 +46,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await createProfile(user.id, user.email ?? "", nombre, rol).catch(() => {});
           }
           setUsuario({ id: user.id, nombre, email: user.email ?? "", rol });
+          if (isAdmin(user.email)) {
+            router.replace("/admin");
+          } else if (pathname !== "/admin" && pathname !== "/auth/onboarding") {
+            // keep current path
+          }
         } else if (pathname !== "/auth/onboarding") {
           router.replace("/auth/onboarding");
         }
@@ -69,11 +75,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }).catch(() => {});
           setUsuario({ id: user.id, nombre, email: user.email ?? "", rol });
-          const lastPath = loadLastPath();
-          const target = lastPath && lastPath.startsWith(rol === "coach" ? "/dashboard" : "/alumno")
-            ? lastPath
-            : (rol === "coach" ? "/dashboard" : "/alumno");
-          router.replace(target);
+          if (isAdmin(user.email)) {
+            router.replace("/admin");
+          } else {
+            const lastPath = loadLastPath();
+            const target = lastPath && lastPath.startsWith(rol === "coach" ? "/dashboard" : "/alumno")
+              ? lastPath
+              : (rol === "coach" ? "/dashboard" : "/alumno");
+            router.replace(target);
+          }
         } else {
           router.replace("/auth/onboarding");
         }
