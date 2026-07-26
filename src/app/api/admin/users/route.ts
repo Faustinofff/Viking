@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminClient, requireAdmin, ADMIN_EMAIL } from "@/lib/admin";
-
-const FREE_COACH_EMAILS = ["faustinofiordalisi@gmail.com", "maxi22albaracin@gmail.com"];
+import { requireAdmin, getProfilesClient } from "@/lib/admin";
 
 function parseBlob(raw?: string | null): { blob: Record<string, any>; originalUrl: string } {
   if (!raw) return { blob: {}, originalUrl: "" };
@@ -16,10 +14,9 @@ function parseBlob(raw?: string | null): { blob: Record<string, any>; originalUr
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.headers.get("x-admin-token") ?? undefined;
-    await requireAdmin(token);
+    await requireAdmin(req);
 
-    const client = getAdminClient(token);
+    const client = getProfilesClient();
     const { data: profiles, error } = await client
       .from("profiles")
       .select("id, email, display_name, role, avatar_url, created_at")
@@ -53,15 +50,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const token = req.headers.get("x-admin-token") ?? undefined;
-    await requireAdmin(token);
+    await requireAdmin(req);
 
     const { userId, action } = await req.json();
     if (!userId || !action) {
       return NextResponse.json({ error: "Missing userId or action" }, { status: 400 });
     }
 
-    const client = getAdminClient();
+    const client = getProfilesClient();
     const { data: profile, error: fetchErr } = await client
       .from("profiles")
       .select("id, email, avatar_url")

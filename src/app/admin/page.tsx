@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { getAuthHeaders } from "@/lib/admin-client";
 
 interface Stats {
   totalCoaches: number;
@@ -14,11 +15,13 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/stats")
-      .then((r) => r.json())
-      .then((data) => setStats(data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    getAuthHeaders().then((headers) => {
+      fetch("/api/admin/stats", { headers })
+        .then((r) => r.json())
+        .then((data) => setStats(data))
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    });
   }, []);
 
   if (loading) {

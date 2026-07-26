@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminClient, requireAdmin } from "@/lib/admin";
+import { requireAdmin, getProfilesClient } from "@/lib/admin";
+
+function parseBlob(raw?: string | null): Record<string, any> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+  } catch {}
+  return {};
+}
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.headers.get("x-admin-token") ?? undefined;
-    await requireAdmin(token);
+    await requireAdmin(req);
 
-    const client = getAdminClient(token);
+    const client = getProfilesClient();
     const { data: profiles, error } = await client
       .from("profiles")
       .select("id, email, display_name, role, avatar_url, created_at");
@@ -47,13 +55,4 @@ export async function GET(req: NextRequest) {
     }
     return NextResponse.json({ error: msg }, { status: 500 });
   }
-}
-
-function parseBlob(raw?: string | null): Record<string, any> {
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw);
-    if (typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
-  } catch {}
-  return {};
 }

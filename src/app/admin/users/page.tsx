@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
+import { getAuthHeaders } from "@/lib/admin-client";
 
 interface UserRow {
   id: string;
@@ -7,7 +8,6 @@ interface UserRow {
   display_name: string;
   role: string;
   created_at: string;
-  avatar_url?: string;
   premium?: {
     planId: string;
     premiumExpiresAt: string;
@@ -25,13 +25,15 @@ export default function AdminUsersPage() {
   const [confirmModal, setConfirmModal] = useState<{ user: UserRow; action: "activate" | "deactivate" } | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  const loadUsers = () => {
+  const loadUsers = async () => {
     setLoading(true);
-    fetch("/api/admin/users")
-      .then((r) => r.json())
-      .then((data) => setUsers(data.users ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    try {
+      const headers = await getAuthHeaders();
+      const r = await fetch("/api/admin/users", { headers });
+      const data = await r.json();
+      setUsers(data.users ?? []);
+    } catch {}
+    setLoading(false);
   };
 
   useEffect(() => { loadUsers(); }, []);
@@ -49,9 +51,10 @@ export default function AdminUsersPage() {
   const handleTogglePremium = async (user: UserRow, action: "activate" | "deactivate") => {
     setProcessing(true);
     try {
+      const headers = await getAuthHeaders();
       await fetch("/api/admin/users", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify({ userId: user.id, action }),
       });
       loadUsers();
@@ -106,16 +109,27 @@ export default function AdminUsersPage() {
                     <p className="text-xs text-white/40 truncate">{u.email}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                     u.role === "coach" ? "bg-accent/20 text-accent" : "bg-blue-500/20 text-blue-400"
                   }`}>
                     {u.role === "coach" ? "Coach" : "Alumno"}
                   </span>
                   {isPremium ? (
-                    <span className="text-[10px] font-bold bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
-                      Premium
-                    </span>
+                    <>
+                      <span className="text-[10px] font-bold bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
+                        Premium
+                      </span>
+                      <span className="text-[10px] text-white/30">
+                        vence {new Date(u.premium!.premiumExpiresAt).toLocaleDateString("es-AR")}
+                      </span>
+                      <button
+                        onClick={() => setConfirmModal({ user: u, action: "deactivate" })}
+                        className="text-[10px] font-bold bg-red-500/10 text-red-400 px-2 py-0.5 rounded-full hover:bg-red-500/20 transition-all"
+                      >
+                        Desactivar
+                      </button>
+                    </>
                   ) : u.role === "coach" ? (
                     <button
                       onClick={() => setConfirmModal({ user: u, action: "activate" })}
@@ -124,14 +138,6 @@ export default function AdminUsersPage() {
                       Activar Premium
                     </button>
                   ) : null}
-                  {isPremium && (
-                    <button
-                      onClick={() => setConfirmModal({ user: u, action: "deactivate" })}
-                      className="text-[10px] font-bold bg-red-500/10 text-red-400 px-2 py-0.5 rounded-full hover:bg-red-500/20 transition-all"
-                    >
-                      Desactivar
-                    </button>
-                  )}
                 </div>
               </div>
             );
