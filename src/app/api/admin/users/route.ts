@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/admin";
 
+const COACH_GRATIS_EMAILS = ["faustinofiordalisi@gmail.com", "maxi22albaracin@gmail.com"];
+
+function isCoachGratuito(email?: string | null): boolean {
+  if (!email) return false;
+  return COACH_GRATIS_EMAILS.includes(email.toLowerCase());
+}
+
 function parseBlob(raw?: string | null): { blob: Record<string, any>; originalUrl: string } {
   if (!raw) return { blob: {}, originalUrl: "" };
   try {
@@ -26,6 +33,7 @@ export async function GET(req: NextRequest) {
       const { blob } = parseBlob(p.avatar_url);
       const prem = blob.premium;
       const isPremium = prem && new Date(prem.premiumExpiresAt) > new Date();
+      const isFree = isCoachGratuito(p.email);
       return {
         id: p.id,
         email: p.email,
@@ -33,6 +41,7 @@ export async function GET(req: NextRequest) {
         role: p.role,
         created_at: p.created_at,
         premium: isPremium ? prem : null,
+        isFreeCoach: isFree,
       };
     });
 

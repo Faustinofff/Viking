@@ -12,6 +12,7 @@ interface UserRow {
     premiumExpiresAt: string;
     planName: string;
   } | null;
+  isFreeCoach?: boolean;
 }
 
 type Tab = "coaches" | "students";
@@ -128,7 +129,11 @@ export default function AdminUsersPage() {
                   }`}>
                     {u.role === "coach" ? "Coach" : "Alumno"}
                   </span>
-                  {isPremium ? (
+                  {u.isFreeCoach ? (
+                    <span className="text-[10px] font-bold bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full">
+                      Gratuito
+                    </span>
+                  ) : isPremium ? (
                     <>
                       <span className="text-[10px] font-bold bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
                         Premium
@@ -136,21 +141,25 @@ export default function AdminUsersPage() {
                       <span className="text-[10px] text-white/30">
                         vence {new Date(u.premium!.premiumExpiresAt).toLocaleDateString("es-AR")}
                       </span>
+                    </>
+                  ) : null}
+                  {!u.isFreeCoach && (
+                    isPremium ? (
                       <button
                         onClick={() => setConfirmModal({ user: u, action: "deactivate" })}
                         className="text-[10px] font-bold bg-red-500/10 text-red-400 px-2 py-0.5 rounded-full hover:bg-red-500/20 transition-all"
                       >
                         Desactivar
                       </button>
-                    </>
-                  ) : u.role === "coach" ? (
-                    <button
-                      onClick={() => setConfirmModal({ user: u, action: "activate" })}
-                      className="text-[10px] font-bold bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full hover:bg-green-500/20 transition-all"
-                    >
-                      Activar Premium
-                    </button>
-                  ) : null}
+                    ) : u.role === "coach" ? (
+                      <button
+                        onClick={() => setConfirmModal({ user: u, action: "activate" })}
+                        className="text-[10px] font-bold bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full hover:bg-green-500/20 transition-all"
+                      >
+                        Activar Premium
+                      </button>
+                    ) : null
+                  )}
                 </div>
               </div>
             );
