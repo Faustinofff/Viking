@@ -7,12 +7,9 @@ export function isAdmin(email?: string | null): boolean {
   return email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 }
 
+const SUPABASE_URL = "https://xybyaiumxzwtrhggzwon.supabase.co";
+const SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5YnlhaXVteHp3dHJoZ2d6d29uIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTQ2NTIyNCwiZXhwIjoyMDk1MDQxMjI0fQ.ydVpccVx-yniIg_-T8FYSrLE5aB8zBXsUmKJ-I6cI28";
+
 export function getAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseServiceKey) {
-    console.error("[ADMIN] SUPABASE_SERVICE_ROLE_KEY missing. Env keys:", Object.keys(process.env).filter(k => k.includes("SUPABASE")));
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured");
-  }
-  return createClient(supabaseUrl!, supabaseServiceKey);
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 }
