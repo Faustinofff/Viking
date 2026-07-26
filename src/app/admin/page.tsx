@@ -5,6 +5,7 @@ interface Stats {
   totalCoaches: number;
   totalStudents: number;
   premiumCoaches: number;
+  gratuitoCoaches: number;
   freeCoaches: number;
   totalUsers: number;
 }
@@ -44,6 +45,7 @@ export default function AdminDashboard() {
     { label: "Coaches", value: stats.totalCoaches, color: "text-accent" },
     { label: "Alumnos", value: stats.totalStudents, color: "text-blue-400" },
     { label: "Premium", value: stats.premiumCoaches, color: "text-yellow-400" },
+    { label: "Gratuito", value: stats.gratuitoCoaches, color: "text-purple-400" },
     { label: "Free", value: stats.freeCoaches, color: "text-green-400" },
   ];
 
@@ -54,7 +56,7 @@ export default function AdminDashboard() {
         <span className="text-[10px] font-bold bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">Admin</span>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {cards.map((c) => (
           <div key={c.label} className="card text-center p-4">
             <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
