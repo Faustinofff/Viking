@@ -11,6 +11,7 @@ export function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseServiceKey) {
+    console.error("[ADMIN] SUPABASE_SERVICE_ROLE_KEY missing. Env keys:", Object.keys(process.env).filter(k => k.includes("SUPABASE")));
     throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured");
   }
   return createClient(supabaseUrl!, supabaseServiceKey);
