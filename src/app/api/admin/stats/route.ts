@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin, getProfilesClient } from "@/lib/admin";
+import { getAdminClient } from "@/lib/admin";
 
 function parseBlob(raw?: string | null): Record<string, any> {
   if (!raw) return {};
@@ -12,9 +12,7 @@ function parseBlob(raw?: string | null): Record<string, any> {
 
 export async function GET(req: NextRequest) {
   try {
-    await requireAdmin(req);
-
-    const client = getProfilesClient();
+    const client = getAdminClient();
     const { data: profiles, error } = await client
       .from("profiles")
       .select("id, email, display_name, role, avatar_url, created_at");
@@ -49,10 +47,6 @@ export async function GET(req: NextRequest) {
       totalUsers: all.length,
     });
   } catch (err: any) {
-    const msg = err?.message ?? String(err);
-    if (msg === "Unauthorized" || msg === "No token" || msg === "Invalid token") {
-      return NextResponse.json({ error: msg }, { status: 403 });
-    }
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: err?.message ?? String(err) }, { status: 500 });
   }
 }

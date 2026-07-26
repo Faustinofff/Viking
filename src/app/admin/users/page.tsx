@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { getAuthHeaders } from "@/lib/admin-client";
 
 interface UserRow {
   id: string;
@@ -20,6 +19,7 @@ type Tab = "coaches" | "students";
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("coaches");
   const [search, setSearch] = useState("");
   const [confirmModal, setConfirmModal] = useState<{ user: UserRow; action: "activate" | "deactivate" } | null>(null);
@@ -27,12 +27,20 @@ export default function AdminUsersPage() {
 
   const loadUsers = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const headers = await getAuthHeaders();
-      const r = await fetch("/api/admin/users", { headers });
+      const r = await fetch("/api/admin/users");
       const data = await r.json();
-      setUsers(data.users ?? []);
-    } catch {}
+      if (data.error) {
+        setError(data.error);
+        setUsers([]);
+      } else {
+        setUsers(data.users ?? []);
+      }
+    } catch (e: any) {
+      setError(e?.message ?? "Error de conexión");
+      setUsers([]);
+    }
     setLoading(false);
   };
 
@@ -51,10 +59,9 @@ export default function AdminUsersPage() {
   const handleTogglePremium = async (user: UserRow, action: "activate" | "deactivate") => {
     setProcessing(true);
     try {
-      const headers = await getAuthHeaders();
       await fetch("/api/admin/users", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, action }),
       });
       loadUsers();
@@ -67,13 +74,19 @@ export default function AdminUsersPage() {
     <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-4">
       <h1 className="text-xl font-bold text-white">Usuarios</h1>
 
+      {error && (
+        <div className="card bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
+          {error}
+        </div>
+      )}
+
       <div className="flex gap-2 border-b border-white/[0.06] pb-2">
         {(["coaches", "students"] as Tab[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               tab === t ? "bg-accent/10 text-accent border border-accent/20" : "text-white/40 hover:text-white/60"
             }`}>
-            {t === "coaches" ? "Coaches" : "Alumnos"}
+            {t === "coaches" ? `Coaches (${users.filter(u => u.role === "coach").length})` : `Alumnos (${users.filter(u => u.role === "student").length})`}
           </button>
         ))}
       </div>

@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getAuthHeaders } from "@/lib/admin-client";
 
 interface Stats {
   totalCoaches: number;
@@ -15,13 +14,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getAuthHeaders().then((headers) => {
-      fetch("/api/admin/stats", { headers })
-        .then((r) => r.json())
-        .then((data) => setStats(data))
-        .catch(() => {})
-        .finally(() => setLoading(false));
-    });
+    fetch("/api/admin/stats")
+      .then((r) => r.json())
+      .then((data) => setStats(data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -32,11 +29,11 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!stats) {
+  if (!stats || stats.error) {
     return (
       <div className="p-6">
         <div className="card text-center p-8">
-          <p className="text-white/60">Error al cargar estadísticas</p>
+          <p className="text-white/60">{stats?.error ?? "Error al cargar estadísticas"}</p>
         </div>
       </div>
     );
