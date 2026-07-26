@@ -29,11 +29,11 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!stats || stats.error) {
+  if (!stats) {
     return (
       <div className="p-6">
         <div className="card text-center p-8">
-          <p className="text-white/60">{stats?.error ?? "Error al cargar estadísticas"}</p>
+          <p className="text-white/60">Error al cargar estadísticas</p>
         </div>
       </div>
     );
