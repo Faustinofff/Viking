@@ -110,6 +110,21 @@ const SECCIONES = [
       "Presioná 'Crear Sesión'.",
     ],
   },
+  {
+    id: "videos-propios",
+    titulo: "Cómo agregar videos propios a los ejercicios?",
+    pasos: [
+      "Abrí YouTube en tu celular o computadora.",
+      "Presioná el botón '+' (o 'Crear') → 'Subir un video'.",
+      "Seleccioná el video del ejercicio que grabaste.",
+      "Antes de publicar, tocá 'Visibilidad' o el ícono del lápiz al lado de 'Público'.",
+      "Cambiá a 'No listado' (solo quien tiene el link puede verlo).",
+      "Presioná 'Subir' o 'Guardar' y esperá que YouTube lo procese (10-30 seg).",
+      "Copiá el link del video (ej: https://youtu.be/XXXX).",
+      "Volvé a Viking, andá a Ejercicios, seleccioná el ejercicio y pegá el link en el campo 'URL de video'.",
+      "Listo. Tu alumno va a ver el video al abrir el ejercicio.",
+    ],
+  },
 ];
 
 export default function AyudaPage() {
