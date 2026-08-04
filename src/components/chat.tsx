@@ -109,11 +109,11 @@ export default function ChatDialog({ collapsed, mobile, header }: { collapsed?: 
           <img src="/vikingIA.png" alt="IA" className="w-8 h-8 object-contain" />
         </button>
       ) : mobile ? (
-        <button onClick={() => setOpen(true)} className="relative flex flex-col items-center gap-1 px-3.5 py-1.5 rounded-full transition-transform duration-200 active:scale-90">
+        <button onClick={() => setOpen(true)} className="relative flex flex-col items-center justify-center gap-1 min-w-0 py-1.5 rounded-full transition-transform duration-200 active:scale-90">
           <span className="relative flex items-center justify-center w-12 h-8 rounded-full transition-all duration-300">
             <img src="/vikingIA.png" alt="IA" className="w-5 h-5 object-contain" />
           </span>
-          <span className="text-[10px] font-semibold text-white/30">IA</span>
+          <span className="text-[10px] font-semibold whitespace-nowrap text-white/30">IA</span>
         </button>
       ) : (
         <>

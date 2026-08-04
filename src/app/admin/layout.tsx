@@ -98,18 +98,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 pointer-events-none" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.875rem)" }}>
         <div className="pointer-events-auto mx-auto max-w-md px-5">
-          <div className="flex items-center justify-around rounded-full bg-bg-secondary/65 backdrop-blur-2xl border border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.45)] px-2 py-2">
+          <div className="flex items-stretch overflow-hidden rounded-full bg-bg-secondary/65 backdrop-blur-2xl border border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.45)] px-4 py-2">
             {NAV.map((item) => {
               const active = pathname === item.href;
               return (
                 <Link key={item.href} href={item.href}
-                  className="relative flex flex-col items-center gap-1 px-5 py-1.5 rounded-full transition-transform duration-200 active:scale-90">
+                  className="relative flex-1 flex flex-col items-center justify-center gap-1 min-w-0 py-1.5 rounded-full transition-transform duration-200 active:scale-90">
                   <span className={`relative flex items-center justify-center w-12 h-8 rounded-full transition-all duration-300 ${active ? "bg-accent/15 scale-110" : ""}`}>
                     <svg className={`w-5 h-5 transition-all duration-300 ${active ? "text-accent" : "text-white/35"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
                     </svg>
                   </span>
-                  <span className={`text-[10px] font-semibold transition-colors duration-300 ${active ? "text-accent" : "text-white/30"}`}>{item.label}</span>
+                  <span className={`text-[10px] font-semibold whitespace-nowrap transition-colors duration-300 ${active ? "text-accent" : "text-white/30"}`}>{item.label}</span>
                 </Link>
               );
             })}

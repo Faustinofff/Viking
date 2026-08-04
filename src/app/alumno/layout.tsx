@@ -81,21 +81,23 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       {/* Bottom Nav */}
       <nav className="shrink-0 pointer-events-none" style={{ padding: "0 1.25rem calc(env(safe-area-inset-bottom, 0px) + 0.875rem)" }}>
         <div className="pointer-events-auto mx-auto max-w-md">
-          <div className="flex items-center justify-around rounded-full bg-bg-secondary/65 backdrop-blur-2xl border border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.45)] px-2 py-2">
+          <div className="flex items-stretch overflow-hidden rounded-full bg-bg-secondary/65 backdrop-blur-2xl border border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.45)] px-4 py-2">
             {NAV.map((item) => {
               const active = isActive(item.href);
               return (
                 <Link key={item.href} href={item.href}
-                  className="relative flex flex-col items-center gap-1 px-3.5 py-1.5 rounded-full transition-transform duration-200 active:scale-90"
+                  className="relative flex-1 flex flex-col items-center justify-center gap-1 min-w-0 py-1.5 rounded-full transition-transform duration-200 active:scale-90"
                 >
                   <span className={`relative flex items-center justify-center w-12 h-8 rounded-full transition-all duration-300 ${active ? "bg-accent/15 scale-110" : ""}`}>
                     <span className={`transition-all duration-300 ${active ? "text-accent" : "text-white/35"}`}>{item.icon}</span>
                   </span>
-                  <span className={`text-[10px] font-semibold transition-colors duration-300 ${active ? "text-accent" : "text-white/30"}`}>{item.label}</span>
+                  <span className={`text-[10px] font-semibold whitespace-nowrap transition-colors duration-300 ${active ? "text-accent" : "text-white/30"}`}>{item.label}</span>
                 </Link>
               );
             })}
-            <ChatDialog mobile />
+            <div className="flex-1 flex items-center justify-center min-w-0 py-1.5">
+              <ChatDialog mobile />
+            </div>
           </div>
         </div>
       </nav>
