@@ -76,10 +76,10 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      <main className="flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">{children}</main>
 
       {/* Bottom Nav */}
-      <nav className="shrink-0 pointer-events-none" style={{ padding: "0 1.25rem calc(env(safe-area-inset-bottom, 0px) + 0.875rem)" }}>
+      <nav className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none" style={{ padding: "0 1.25rem calc(env(safe-area-inset-bottom, 0px) + 0.875rem)" }}>
         <div className="pointer-events-auto mx-auto max-w-md">
           <div className="flex items-stretch overflow-hidden rounded-full bg-bg-secondary/65 backdrop-blur-2xl border border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.45)] px-4 py-2">
             {NAV.map((item) => {
