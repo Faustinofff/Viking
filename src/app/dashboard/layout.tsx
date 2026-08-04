@@ -190,27 +190,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-bg-secondary/95 backdrop-blur-xl border-t border-white/[0.06]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-        <div className="flex items-center justify-around max-w-lg mx-auto px-1 py-1.5">
-          {BOTTOM_NAV.map((item) => {
-            const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-            return (
-              <Link key={item.href} href={item.href}
-                className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-all ${
-                  active ? "text-accent" : "text-white/30 hover:text-white/50"
-                }`}
-              >
-                <span className="text-lg">{item.icon}</span>
-                <span className="text-[10px] font-medium">{item.label}</span>
-              </Link>
-            );
-          })}
-          <ChatDialog mobile />
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 pointer-events-none" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.875rem)" }}>
+        <div className="pointer-events-auto mx-auto max-w-md px-5">
+          <div className="flex items-center justify-around rounded-full bg-bg-secondary/65 backdrop-blur-2xl border border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.45)] px-2 py-2">
+            {BOTTOM_NAV.map((item) => {
+              const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+              return (
+                <Link key={item.href} href={item.href}
+                  className="relative flex flex-col items-center gap-1 px-3.5 py-1.5 rounded-full transition-transform duration-200 active:scale-90"
+                >
+                  <span className={`relative flex items-center justify-center w-12 h-8 rounded-full transition-all duration-300 ${active ? "bg-accent/15 scale-110" : ""}`}>
+                    <span className={`transition-all duration-300 ${active ? "text-accent" : "text-white/35"}`}>{item.icon}</span>
+                  </span>
+                  <span className={`text-[10px] font-semibold transition-colors duration-300 ${active ? "text-accent" : "text-white/30"}`}>{item.label}</span>
+                </Link>
+              );
+            })}
+            <ChatDialog mobile />
+          </div>
         </div>
       </nav>
 
-      <style>{`@media (max-width:767px){.main-content{padding-top:calc(3.5rem + env(safe-area-inset-top, 0px))!important;padding-bottom:calc(4rem + env(safe-area-inset-bottom, 0px))!important}}`}</style>
-      <main className="flex-1 overflow-y-auto md:pt-0 pt-14 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] main-content relative">
+      <style>{`@media (max-width:767px){.main-content{padding-top:calc(3.5rem + env(safe-area-inset-top, 0px))!important;padding-bottom:calc(6rem + env(safe-area-inset-bottom, 0px))!important}}`}</style>
+      <main className="flex-1 overflow-y-auto md:pt-0 pt-14 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] main-content relative">
         {premiumError && (
           <div className="fixed bottom-6 right-6 z-50 max-w-sm card bg-red-500/10 border border-red-500/20 shadow-xl animate-slide-up">
             <p className="text-sm text-red-400 mb-3">{premiumError}</p>
