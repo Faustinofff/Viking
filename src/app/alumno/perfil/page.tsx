@@ -8,6 +8,7 @@ export default function StudentProfilePage() {
   const coaches = useAppStore((s) => s.coaches);
   const actualizarTelefono = useAppStore((s) => s.actualizarTelefono);
   const actualizarNombre = useAppStore((s) => s.actualizarNombre);
+  const cerrarSesion = useAppStore((s) => s.cerrarSesion);
 
   const alumno = alumnos.find((a) => a.email === usuario?.email);
   let coach = alumno?.coachId ? coaches[alumno.coachId] : null;
@@ -92,6 +93,13 @@ export default function StudentProfilePage() {
           <p className="text-xs text-white/20 mt-1">Estás en modo independiente</p>
         </div>
       )}
+
+      <button
+        onClick={async () => { await cerrarSesion(); window.location.href = "/login"; }}
+        className="w-full border border-red-500/30 bg-red-500/5 text-red-400 rounded-xl py-3 text-sm font-semibold transition-colors hover:bg-red-500/10 hover:border-red-500/50"
+      >
+        Cerrar sesión
+      </button>
     </div>
   );
 }

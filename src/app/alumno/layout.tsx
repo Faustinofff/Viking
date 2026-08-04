@@ -15,7 +15,6 @@ const NAV = [
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const usuario = useAppStore((s) => s.usuarioActual);
-  const cerrarSesion = useAppStore((s) => s.cerrarSesion);
 
   useEffect(() => {
     if (usuario?.rol === "alumno") {
@@ -47,31 +46,21 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           <img src="/Viking.png" alt="Viking" className="w-16 h-16 object-contain" />
           <span className="text-white font-bold">Viking</span>
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-3">
-          {[
-            { href: "/alumno/agenda", label: "Agenda", icon: "📅" },
-            { href: "/alumno/perfil", label: "Perfil", icon: "👤" },
-          ].map((item) => {
-            const active = pathname === item.href || pathname.startsWith(item.href);
-            return (
-              <Link key={item.href} href={item.href}
-                className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-all text-xs sm:text-sm ${
-                  active ? "bg-accent/10 text-accent" : "text-white/40 hover:text-white/70"
-                }`}
-              >
-                <span>{item.icon}</span>
-                <span className="hidden sm:inline">{item.label}</span>
-              </Link>
-            );
-          })}
-          <div className="w-px h-5 bg-white/[0.06] mx-1" />
-          <div className="flex items-center gap-2 text-xs sm:text-sm text-white/50">
-            <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-xs font-medium text-accent">
+        <div className="flex items-center gap-3">
+          <Link href="/alumno/agenda"
+            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-all text-xs sm:text-sm ${
+              pathname === "/alumno/agenda" || pathname.startsWith("/alumno/agenda") ? "bg-accent/10 text-accent" : "text-white/40 hover:text-white/70"
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="16" cy="16" r="2"/></svg>
+            <span className="hidden sm:inline">Agenda</span>
+          </Link>
+          <Link href="/alumno/perfil" className="flex flex-col items-center gap-0.5 rounded-lg p-1 transition-all hover:bg-white/[0.04]">
+            <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-sm font-medium text-accent">
               {usuario.nombre[0]}
             </div>
-            <span className="hidden sm:inline">{usuario.nombre}</span>
-          </div>
-          <button onClick={async () => { await cerrarSesion(); window.location.href = "/login"; }} className="text-white/20 hover:text-red-400 text-xs">Salir</button>
+            <span className="text-[10px] text-white/30 text-center">Perfil</span>
+          </Link>
         </div>
       </header>
 
