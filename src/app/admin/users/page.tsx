@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
+import { useConfirmToast } from "@/components/toast";
 
 interface UserRow {
   id: string;
@@ -25,6 +26,8 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [confirmModal, setConfirmModal] = useState<{ user: UserRow; action: "activate" | "deactivate" } | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [daysInput, setDaysInput] = useState<string>("");
+  const { toast, ToastUI } = useConfirmToast();
 
   const loadUsers = async () => {
     setLoading(true);
@@ -57,18 +60,63 @@ export default function AdminUsersPage() {
     });
   }, [users, tab, search]);
 
-  const handleTogglePremium = async (user: UserRow, action: "activate" | "deactivate") => {
+  const handleActivate = async (user: UserRow) => {
+    const daysNum = Number(daysInput);
+    if (!Number.isInteger(daysNum) || daysNum <= 0) {
+      toast("Ingresá una cantidad de días mayor a 0", "error");
+      return;
+    }
+    setProcessing(true);
+    try {
+      const r = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, action: "activate", days: daysNum }),
+      });
+      const data = await r.json();
+      if (data.error) {
+        toast(data.error, "error");
+      } else if (data.expiresAt) {
+        const fecha = new Date(data.expiresAt).toLocaleDateString("es-AR");
+        toast(`Premium activado correctamente hasta ${fecha}`);
+      }
+      loadUsers();
+    } catch {
+      toast("Error al activar premium", "error");
+    }
+    setProcessing(false);
+    setConfirmModal(null);
+  };
+
+  const handleDeactivate = async (user: UserRow) => {
     setProcessing(true);
     try {
       await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, action }),
+        body: JSON.stringify({ userId: user.id, action: "deactivate" }),
       });
+      toast("Premium desactivado");
       loadUsers();
-    } catch {}
+    } catch {
+      toast("Error al desactivar premium", "error");
+    }
     setProcessing(false);
     setConfirmModal(null);
+  };
+
+  const handleConfirm = async () => {
+    if (!confirmModal) return;
+    if (confirmModal.action === "activate") {
+      await handleActivate(confirmModal.user);
+    } else {
+      await handleDeactivate(confirmModal.user);
+    }
+  };
+
+  const openActivateModal = (user: UserRow) => {
+    setDaysInput("");
+    setConfirmModal({ user, action: "activate" });
   };
 
   return (
@@ -153,7 +201,7 @@ export default function AdminUsersPage() {
                       </button>
                     ) : u.role === "coach" ? (
                       <button
-                        onClick={() => setConfirmModal({ user: u, action: "activate" })}
+                        onClick={() => openActivateModal(u)}
                         className="text-[10px] font-bold bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full hover:bg-green-500/20 transition-all"
                       >
                         Activar Premium
@@ -174,28 +222,54 @@ export default function AdminUsersPage() {
             <h3 className="text-lg font-bold text-white">
               {confirmModal.action === "activate" ? "Activar Premium" : "Desactivar Premium"}
             </h3>
-            <p className="text-sm text-white/60">
-              {confirmModal.action === "activate"
-                ? `¿Activar premium para ${confirmModal.user.display_name}? Se creará un plan anual de 365 días.`
-                : `¿Desactivar premium para ${confirmModal.user.display_name}? Perderá acceso a funciones premium.`}
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-white">{confirmModal.user.display_name}</p>
+              <p className="text-xs text-white/40 break-all">{confirmModal.user.email}</p>
+            </div>
+            {confirmModal.action === "activate" ? (
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5">
+                  Cantidad de días de Premium
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  inputMode="numeric"
+                  value={daysInput}
+                  onChange={(e) => setDaysInput(e.target.value)}
+                  placeholder="Ej: 30, 90, 365"
+                  className="input w-full"
+                />
+                {daysInput && Number(daysInput) > 0 && (
+                  <p className="text-xs text-white/40 mt-2">
+                    ¿Activar Premium a {confirmModal.user.email} por {daysInput} días?
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-white/60">
+                ¿Desactivar premium para {confirmModal.user.display_name}? Perderá acceso a funciones premium.
+              </p>
+            )}
             <div className="flex gap-2 justify-end">
               <button onClick={() => setConfirmModal(null)} disabled={processing}
                 className="px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition-all">
                 Cancelar
               </button>
-              <button onClick={() => handleTogglePremium(confirmModal.user, confirmModal.action)} disabled={processing}
+              <button onClick={() => handleConfirm()} disabled={processing}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   confirmModal.action === "activate"
                     ? "bg-green-500 text-white hover:bg-green-600"
                     : "bg-red-500 text-white hover:bg-red-600"
                 } ${processing ? "opacity-50" : ""}`}>
-                {processing ? "Procesando..." : confirmModal.action === "activate" ? "Activar" : "Desactivar"}
+                {processing ? "Procesando..." : confirmModal.action === "activate" ? "Activar Premium" : "Desactivar"}
               </button>
             </div>
           </div>
         </div>
       )}
+      {ToastUI}
     </div>
   );
 }

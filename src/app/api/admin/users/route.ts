@@ -53,9 +53,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, action } = await req.json();
+    const { userId, action, days } = await req.json();
     if (!userId || !action) {
       return NextResponse.json({ error: "Missing userId or action" }, { status: 400 });
+    }
+
+    if (action === "activate") {
+      const daysNum = Number(days);
+      if (!Number.isInteger(daysNum) || daysNum <= 0) {
+        return NextResponse.json({ error: "Cantidad de días inválida. Ingresá un número mayor a 0." }, { status: 400 });
+      }
     }
 
     const client = getAdminClient();
@@ -71,16 +78,25 @@ export async function POST(req: NextRequest) {
 
     const { blob, originalUrl } = parseBlob(profile.avatar_url);
 
+    let newExpiresAt: string | null = null;
+
     if (action === "activate") {
+      const daysNum = Number(days);
+      const existing = blob.premium;
       const now = new Date();
-      const expires = new Date(now);
-      expires.setDate(expires.getDate() + 365);
+      const isActive = existing?.premiumExpiresAt && new Date(existing.premiumExpiresAt) > now;
+
+      const base = isActive ? new Date(existing.premiumExpiresAt) : now;
+      const expires = new Date(base);
+      expires.setDate(expires.getDate() + daysNum);
+      newExpiresAt = expires.toISOString();
+
       blob.premium = {
-        planId: "anual",
-        planName: "Anual (Admin)",
-        planDurationDays: 365,
+        planId: existing?.planId ?? "anual",
+        planName: existing?.planName ?? "Admin",
+        planDurationDays: daysNum,
         planPrice: 0,
-        premiumExpiresAt: expires.toISOString(),
+        premiumExpiresAt: newExpiresAt,
         paymentStatus: "approved",
         paymentDate: now.toISOString(),
       };
@@ -99,7 +115,7 @@ export async function POST(req: NextRequest) {
 
     if (updateErr) throw updateErr;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, expiresAt: newExpiresAt });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message ?? String(err) }, { status: 500 });
   }
