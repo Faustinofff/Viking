@@ -54,7 +54,8 @@ export default function RedDetailPage() {
         notas: "",
       });
     } catch (err: any) {
-      toast(err.message || "Error al agregar alumno", "error");
+      const msg = err.message || "Error al agregar alumno";
+      if (!useAppStore.getState().premiumError) toast(msg, "error");
       return;
     }
     setNombre("");

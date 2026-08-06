@@ -216,12 +216,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <style>{`@media (max-width:767px){.main-content{padding-top:calc(3.5rem + env(safe-area-inset-top, 0px))!important;padding-bottom:calc(6rem + env(safe-area-inset-bottom, 0px))!important}}`}</style>
       <main className="flex-1 overflow-y-auto md:pt-0 pt-14 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] main-content relative">
         {premiumError && (
-          <div className="fixed bottom-6 right-6 z-50 max-w-sm card bg-red-500/10 border border-red-500/20 shadow-xl animate-slide-up">
-            <p className="text-sm text-red-400 mb-3">{premiumError}</p>
-            <Link href="/dashboard/planes-premium" onClick={() => setPremiumError(null)}
-              className="text-sm font-medium text-accent hover:text-accent/80 underline">
-              Ver planes
-            </Link>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setPremiumError(null)}>
+            <div className="card max-w-sm w-full p-6 text-center animate-fade-in" onClick={(e) => e.stopPropagation()}>
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-accent/15 flex items-center justify-center text-2xl">👑</div>
+              <p className="text-white font-medium mb-1">Plan Premium</p>
+              <p className="text-sm text-white/60 mb-6 leading-relaxed">{premiumError}</p>
+              <div className="flex flex-col gap-2">
+                <Link href="/dashboard/planes-premium" onClick={() => setPremiumError(null)}
+                  className="btn-primary w-full text-center">
+                  Ver planes
+                </Link>
+                <button onClick={() => setPremiumError(null)} className="text-xs text-white/40 hover:text-white/70 pt-1">
+                  Ahora no
+                </button>
+              </div>
+            </div>
           </div>
         )}
         {children}

@@ -545,7 +545,9 @@ export const useAppStore = create<AppState>((set, get) => {
     const { usuarioActual, premium } = get();
     if (usuarioActual?.rol !== "coach") return;
     if (esCoachGratuito(usuarioActual?.email)) return;
-    if (!premium || new Date(premium.premiumExpiresAt) <= new Date()) {
+    if (premium && new Date(premium.premiumExpiresAt) > new Date()) return;
+    const total = get().alumnos.length;
+    if (total > 3) {
       const msg = "Tu plan premium ha vencido. Contratá un plan para seguir gestionando.";
       set({ premiumError: msg });
       throw new Error(msg);
@@ -628,9 +630,10 @@ export const useAppStore = create<AppState>((set, get) => {
       if (!premiumActivo) {
         const total = get().alumnos.length;
         if (total >= 3) {
-          throw new Error(
-            `Límite de 3 alumnos en el plan Gratis. Contratá un plan Premium para agregar más alumnos.`
-          );
+          const msg =
+            `Límite de 3 alumnos en el plan Gratis. Para agregar otro alumno necesitás un plan Premium.`;
+          set({ premiumError: msg });
+          throw new Error(msg);
         }
       }
     }
