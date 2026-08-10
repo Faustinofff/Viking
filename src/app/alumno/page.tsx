@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAppStore, type Rutina } from "@/lib/store";
 import { getStudentWorkoutPlans, ejercicioWeekValue } from "@/lib/data";
+import TutorialButton from "@/components/tutorial-button";
 
 const MEAL_CHECK_KEY = "viking_meal_checks";
 
@@ -145,7 +146,7 @@ export default function StudentDashboard() {
                       <span className="text-white/70">{ej.ejercicioNombre}</span>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-white/30 text-xs">{s}×{r}</span>
-                        {ej.videoUrl && <a href={ej.videoUrl} target="_blank" rel="noopener noreferrer" className="bg-accent/10 text-accent font-medium rounded-lg px-2 py-1 text-[10px] hover:bg-accent/20 transition-all border border-accent/20" onClick={(e) => e.stopPropagation()}>Tutorial</a>}
+                        {ej.videoUrl && <TutorialButton videoUrl={ej.videoUrl} />}
                       </div>
                     </div>
                     );

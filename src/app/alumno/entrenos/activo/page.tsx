@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAppStore, type Rutina } from "@/lib/store";
 import { getStudentWorkoutPlans, getStudentCurrentWeek, saveStudentCurrentWeek, ejercicioWeekValue, parseIndicacionesSemanales } from "@/lib/data";
+import TutorialButton from "@/components/tutorial-button";
 
 export default function ActiveWorkoutPage() {
   const router = useRouter();
@@ -339,7 +340,7 @@ export default function ActiveWorkoutPage() {
                 </span>
                 {currentWeekEj.notas && <button onClick={() => setVerEspecs(!verEspecs)} className="bg-white/5 text-white/70 font-medium rounded-lg px-2 py-1 text-[10px] hover:bg-white/10 transition-all border border-white/10">Indicaciones del ejercicio</button>}
                 {rutina?.indicacionesSemanales?.some((s) => s.trim()) && <button onClick={() => setVerSemanales(!verSemanales)} className="bg-accent/10 text-accent font-medium rounded-lg px-2 py-1 text-[10px] hover:bg-accent/20 transition-all border border-accent/20">Indicaciones semanales</button>}
-                {currentWeekEj.videoUrl && <a href={currentWeekEj.videoUrl} target="_blank" rel="noopener noreferrer" className="bg-accent/10 text-accent font-medium rounded-lg px-2 py-1 text-[10px] hover:bg-accent/20 transition-all border border-accent/20">Tutorial</a>}
+                {currentWeekEj.videoUrl && <TutorialButton videoUrl={currentWeekEj.videoUrl} />}
               </div>
               {verEspecs && currentWeekEj.notas && (
                 <div className="mt-2 bg-white/[0.04] rounded-lg p-3 border border-white/[0.06]">
