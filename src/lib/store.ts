@@ -54,6 +54,7 @@ import {
   type PremiumData,
   type StudentActivity,
 } from "./data";
+import { trackActivity } from "./telemetry";
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -656,11 +657,13 @@ export const useAppStore = create<AppState>((set, get) => {
         redes: nuevasRedes,
       };
     });
+    trackActivity("student_added", `Agregó al alumno ${a.nombre}`, { studentId: student.id, studentName: a.nombre });
   },
 
   eliminarAlumno: async (id) => {
     requierePremium();
     const coachId = get().usuarioActual?.id;
+    const alumno = get().alumnos.find((x) => x.id === id);
     if (!coachId) return;
     try {
       await removeStudentFromCoach(coachId, id);
@@ -688,6 +691,7 @@ export const useAppStore = create<AppState>((set, get) => {
         registrosPeso: state.registrosPeso.filter((r) => r.alumnoId !== id),
       };
     });
+    trackActivity("student_removed", `Eliminó al alumno${alumno ? ` ${alumno.nombre}` : ""}`, alumno ? { studentId: id, studentName: alumno.nombre } : undefined);
   },
 
   actualizarPesoAlumno: async (alumnoId, peso) => {
@@ -734,6 +738,9 @@ export const useAppStore = create<AppState>((set, get) => {
         }
       }
     } catch {}
+    if (get().usuarioActual?.rol === "coach") {
+      trackActivity("weight_updated", `Actualizó el peso de ${alumnoNombre || "un alumno"} a ${peso}kg`, { studentId: alumnoId, studentName: alumnoNombre || undefined, detail: `${peso}kg` });
+    }
   },
 
   actualizarApodoAlumno: async (alumnoId, apodo) => {
@@ -741,6 +748,7 @@ export const useAppStore = create<AppState>((set, get) => {
     if (!coachId) return;
     set({ alumnos: get().alumnos.map((a) => a.id === alumnoId ? { ...a, apodo } : a) });
     await saveStudentApodo(coachId, alumnoId, apodo);
+    trackActivity("student_updated", `Renombró a un alumno como "${apodo}"`, { studentId: alumnoId, studentName: apodo });
   },
 
   getAlumnosPorRed: (redId) => {
@@ -760,6 +768,7 @@ export const useAppStore = create<AppState>((set, get) => {
       if (coachId) saveRedesForCoach(coachId, nuevas).catch(() => {});
       return { redes: nuevas };
     });
+    trackActivity("red_created", `Creó la red "${nombre}"`, { redName: nombre });
   },
   eliminarRed: (id) => {
     requierePremium();
@@ -824,10 +833,12 @@ export const useAppStore = create<AppState>((set, get) => {
 
   eliminarRutina: async (id) => {
     requierePremium();
+    const rutina = get().rutinas.find((r) => r.id === id);
     try { await deleteWorkoutPlan(id); } catch {}
     set((state) => ({
       rutinas: state.rutinas.filter((r) => r.id !== id),
     }));
+    trackActivity("routine_deleted", `Eliminó la rutina${rutina ? ` "${rutina.nombre}"` : ""}`, rutina ? { routineName: rutina.nombre } : undefined);
   },
 
   syncCoachData: async () => {
@@ -1328,10 +1339,12 @@ export const useAppStore = create<AppState>((set, get) => {
 
   eliminarPlanNutricional: async (id) => {
     requierePremium();
+    const plan = get().planesNutricionales.find((p) => p.id === id);
     try { await deleteWorkoutPlan(id); } catch {}
     set((state) => ({
       planesNutricionales: state.planesNutricionales.filter((p) => p.id !== id),
     }));
+    trackActivity("nutrition_deleted", `Eliminó el plan nutricional${plan ? ` "${plan.nombre}"` : ""}`, plan ? { planName: plan.nombre } : undefined);
   },
 
   // ─── Ejercicios Personalizados ─────────────────────────────
@@ -1346,6 +1359,7 @@ export const useAppStore = create<AppState>((set, get) => {
       saveCoachExercises(coachId, personalizados).catch(() => {});
       return { ejercicios: updated };
     });
+    trackActivity("exercise_created", `Creó el ejercicio "${e.nombre}"`, { exerciseName: e.nombre });
     return nuevo;
   },
 
@@ -1379,6 +1393,7 @@ export const useAppStore = create<AppState>((set, get) => {
     saveAgenda(nueva);
     set({ agenda: nueva });
     try { saveAgendaForCoach(state.usuarioActual?.id ?? s.coachId ?? "", nueva); } catch {}
+    trackActivity("session_created", `Agendó la sesión "${s.titulo}"`, { sessionTitle: s.titulo });
   },
 
   eliminarSesion: (id) => {
@@ -1772,6 +1787,7 @@ export const useAppStore = create<AppState>((set, get) => {
     saveUnassignedRoutines(nuevas);
     set({ unassignedRoutines: nuevas });
     if (coachId) saveCoachUnassignedRoutines(coachId, nuevas).catch(() => {});
+    trackActivity("routine_created", `Creó la rutina "${r.nombre}"`, { routineName: r.nombre });
   },
 
   deleteUnassignedRoutine: (id) => {
@@ -1801,6 +1817,7 @@ export const useAppStore = create<AppState>((set, get) => {
     saveUnassignedPlans(nuevos);
     set({ unassignedPlans: nuevos });
     if (coachId) saveCoachUnassignedPlans(coachId, nuevos).catch(() => {});
+    trackActivity("nutrition_created", `Creó el plan nutricional "${p.nombre}"`, { planName: p.nombre });
   },
 
   deleteUnassignedPlan: (id) => {

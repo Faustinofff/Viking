@@ -5,6 +5,7 @@ import { useAppStore } from "@/lib/store";
 import { getCurrentUser, onAuthStateChange } from "@/lib/auth";
 import { createProfile, getProfile } from "@/lib/data";
 import { isAdmin } from "@/lib/admin";
+import { trackLogin } from "@/lib/telemetry";
 
 const STORAGE_LAST_PATH = "viking_last_path";
 
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await createProfile(user.id, user.email ?? "", nombre, rol).catch(() => {});
           }
           setUsuario({ id: user.id, nombre, email: user.email ?? "", rol });
+          trackLogin();
           if (isAdmin(user.email)) {
             router.replace("/admin");
           } else if (pathname !== "/admin" && pathname !== "/auth/onboarding") {
@@ -75,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }).catch(() => {});
           setUsuario({ id: user.id, nombre, email: user.email ?? "", rol });
+          trackLogin();
           if (isAdmin(user.email)) {
             router.replace("/admin");
           } else {

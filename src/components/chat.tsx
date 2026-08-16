@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAppStore } from "@/lib/store";
+import { trackActivity } from "@/lib/telemetry";
 
 
 
@@ -96,6 +97,7 @@ export default function ChatDialog({ collapsed, mobile, header }: { collapsed?: 
       }
       const data = await res.json();
       setMessages((prev) => [...prev, { role: "assistant", content: data.content }]);
+      trackActivity("ai_used", "Consultó al asistente IA", { detail: q.slice(0, 80) });
     } catch (err: any) {
       setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${err.message}` }]);
     }
