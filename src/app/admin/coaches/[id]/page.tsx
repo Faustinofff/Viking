@@ -14,7 +14,6 @@ export default function CoachDetailPage() {
   const { toast } = useToast();
   const [data, setData] = useState<CoachDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [tab, setTab] = useState<Tab>("resumen");
@@ -57,14 +56,12 @@ export default function CoachDetailPage() {
   const statusTone = c.status === "active" ? "green" : c.status === "no_recent" ? "yellow" : "gray";
   const statusLabel = c.status === "active" ? "Activo" : c.status === "no_recent" ? "Baja" : "Inactivo";
 
-  const onSaved = async () => {
-    setRefreshing(true);
-    await load(true);
-    setRefreshing(false);
+  const onSaved = (freshCoach: AdminCoach) => {
+    setData((prev) => prev ? { ...prev, coach: freshCoach } : prev);
   };
 
   return (
-    <div className={`p-4 md:p-6 max-w-7xl mx-auto space-y-5 ${refreshing ? "opacity-60 pointer-events-none transition-opacity" : "transition-opacity"}`}>
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
       <div className="flex flex-wrap items-center gap-3">
         <Link href="/admin/coaches" className="w-8 h-8 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.06] transition-all">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

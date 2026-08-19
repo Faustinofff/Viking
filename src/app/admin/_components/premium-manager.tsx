@@ -10,7 +10,7 @@ export function PremiumManager({
 }: {
   coach: AdminCoach;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (coach: AdminCoach) => void;
 }) {
   const { toast } = useToast();
   const [coach, setCoach] = useState<AdminCoach>(initialCoach);
@@ -24,6 +24,7 @@ export function PremiumManager({
   const handleResponse = (data: any) => {
     if (data.coach) {
       setCoach((prev) => ({ ...prev, ...data.coach }));
+      onSaved(data.coach);
     }
   };
 
@@ -48,7 +49,6 @@ export function PremiumManager({
         return;
       }
       handleResponse(data);
-      onSaved();
       toast(`Premium activado por ${daysNum} días`);
       setProcessing(false);
       onClose();
@@ -74,7 +74,6 @@ export function PremiumManager({
         return;
       }
       handleResponse(data);
-      onSaved();
       toast("Premium desactivado");
       setProcessing(false);
       onClose();
@@ -105,7 +104,6 @@ export function PremiumManager({
         return;
       }
       handleResponse(data);
-      onSaved();
       toast(`Premium actualizado a ${daysNum} días`);
       setDaysInput("");
       setEditMode(false);
@@ -132,7 +130,6 @@ export function PremiumManager({
         return;
       }
       handleResponse(data);
-      onSaved();
       toast("Premium eliminado");
       setProcessing(false);
       onClose();
