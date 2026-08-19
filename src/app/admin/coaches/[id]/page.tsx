@@ -2,8 +2,8 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import type { CoachDetail } from "@/lib/admin-types";
-import { Spinner, ErrorState, Badge, Avatar, EmptyState, StatCard, SectionCard, TimeAgo, formatDate } from "../../_components/ui";
+import type { CoachDetail, AdminCoach } from "@/lib/admin-types";
+import { Spinner, ErrorState, Badge, Avatar, EmptyState, StatCard, SectionCard, TimeAgo, formatDate, useToast } from "../../_components/ui";
 import { ActivityFeed } from "../../_components/activity";
 import { PremiumManager } from "../../_components/premium-manager";
 
@@ -11,30 +11,37 @@ type Tab = "resumen" | "alumnos" | "actividad";
 
 export default function CoachDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
   const [data, setData] = useState<CoachDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [tab, setTab] = useState<Tab>("resumen");
   const [premiumOpen, setPremiumOpen] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false): Promise<AdminCoach | null> => {
+    if (!silent) setLoading(true);
     try {
       const r = await fetch(`/api/admin/coaches/${id}`);
       const d = await r.json();
       if (r.status === 404) {
         setNotFound(true);
+        return null;
       } else if (d.error) {
         setError(d.error);
+        return null;
       } else {
         setData(d);
         setError(null);
+        return d.coach;
       }
     } catch (e: any) {
       setError(e?.message ?? "Error de conexión");
+      return null;
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [id]);
 
   useEffect(() => {
@@ -50,8 +57,15 @@ export default function CoachDetailPage() {
   const statusTone = c.status === "active" ? "green" : c.status === "no_recent" ? "yellow" : "gray";
   const statusLabel = c.status === "active" ? "Activo" : c.status === "no_recent" ? "Baja" : "Inactivo";
 
+  const onSaved = async (): Promise<AdminCoach | null> => {
+    setRefreshing(true);
+    const fresh = await load(true);
+    setRefreshing(false);
+    return fresh;
+  };
+
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
+    <div className={`p-4 md:p-6 max-w-7xl mx-auto space-y-5 ${refreshing ? "opacity-60 pointer-events-none transition-opacity" : "transition-opacity"}`}>
       <div className="flex flex-wrap items-center gap-3">
         <Link href="/admin/coaches" className="w-8 h-8 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.06] transition-all">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -64,7 +78,11 @@ export default function CoachDetailPage() {
             <h1 className="text-lg font-bold text-white truncate">{c.name}</h1>
             <Badge tone={statusTone}>{statusLabel}</Badge>
             {c.isFreeCoach && <Badge tone="purple">Gratuito</Badge>}
-            {c.isPremiumActive && !c.isFreeCoach && <Badge tone="yellow">Premium</Badge>}
+            {c.isPremiumActive && !c.isFreeCoach && <Badge tone="yellow">
+              Premium · {c.premiumDaysLeft !== null && c.premiumDaysLeft >= 0 ? `${c.premiumDaysLeft}d restantes` : "Activo"}
+            </Badge>}
+            {!c.isFreeCoach && !c.isPremiumActive && c.premium && <Badge tone="red">Premium vencido</Badge>}
+            {!c.isFreeCoach && !c.premium && <Badge tone="gray">Sin premium</Badge>}
           </div>
           <p className="text-xs text-white/40 truncate">{c.email}</p>
         </div>
@@ -88,9 +106,18 @@ export default function CoachDetailPage() {
         <StatCard label="Registrado" value={formatDate(c.createdAt)} tone="gray" />
         <StatCard
           label="Premium"
-          value={c.isFreeCoach ? "Gratuito" : c.isPremiumActive ? (c.premiumDaysLeft !== null && c.premiumDaysLeft >= 0 ? `${c.premiumDaysLeft}d` : "Activo") : c.premium ? "Vencido" : "Sin"}
+          value={
+            c.isFreeCoach ? "Gratuito" :
+            c.isPremiumActive ? (c.premiumDaysLeft !== null && c.premiumDaysLeft >= 0 ? `${c.premiumDaysLeft}d` : "Activo") :
+            c.premium ? "Vencido" : "Sin"
+          }
           sub={c.premiumExpiresAt ? `Hasta ${formatDate(c.premiumExpiresAt)}` : undefined}
-          tone={c.isFreeCoach ? "purple" : c.isPremiumActive ? (c.premiumDaysLeft !== null && c.premiumDaysLeft <= 7 ? "orange" : "yellow") : c.premium ? "red" : "gray"}
+          tone={
+            c.isFreeCoach ? "purple" :
+            c.isPremiumActive ? (c.premiumDaysLeft !== null && c.premiumDaysLeft <= 7 ? "orange" : "yellow") :
+            c.premium ? "red" : "gray"
+          }
+          onClick={() => !c.isFreeCoach && setPremiumOpen(true)}
         />
       </div>
 
@@ -121,9 +148,19 @@ export default function CoachDetailPage() {
                 <Row label="Pago" value={c.premium.paymentStatus} />
                 <Row label="Fecha de pago" value={formatDate(c.premium.paymentDate)} />
                 {c.isFreeCoach && <p className="text-xs text-purple-400 pt-1">Este coach usa Viking gratis (gratuito).</p>}
+                <div className="pt-2">
+                  <button onClick={() => setPremiumOpen(true)} className="btn-primary text-xs !py-2">
+                    {c.isPremiumActive ? "Editar / Desactivar" : "Activar Premium"}
+                  </button>
+                </div>
               </div>
             ) : (
-              <EmptyState title="Sin Premium" sub="Este coach no tiene una suscripción activa" />
+              <div className="space-y-3">
+                <EmptyState title="Sin Premium" sub="Este coach no tiene una suscripción activa" />
+                <button onClick={() => setPremiumOpen(true)} className="btn-primary text-xs !py-2 w-full">
+                  Activar Premium
+                </button>
+              </div>
             )}
           </SectionCard>
 
@@ -135,7 +172,7 @@ export default function CoachDetailPage() {
               <Row label="Relación" value={`${c.studentCount} alumno${c.studentCount === 1 ? "" : "s"}`} />
               <Row label="Perfil creado" value={formatDate(c.createdAt)} />
               <div className="pt-2 flex gap-2 flex-wrap">
-                <Link href={`/admin/activity`} className="btn-secondary text-xs !py-2">Ver actividad completa</Link>
+                <Link href="/admin/activity" className="btn-secondary text-xs !py-2">Ver actividad completa</Link>
                 <button onClick={() => setPremiumOpen(true)} className="btn-primary text-xs !py-2">Gestionar Premium</button>
               </div>
             </div>
@@ -178,7 +215,7 @@ export default function CoachDetailPage() {
         </SectionCard>
       )}
 
-      {premiumOpen && <PremiumManager coach={c} onClose={() => setPremiumOpen(false)} onSaved={load} />}
+      {premiumOpen && <PremiumManager coach={c} onClose={() => setPremiumOpen(false)} onSaved={onSaved} />}
     </div>
   );
 }

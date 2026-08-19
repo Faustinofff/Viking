@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { isAdmin } from "@/lib/admin";
 import { GlobalSearch, GlobalSearchButton } from "./_components/search";
+import { ToastProvider } from "./_components/ui";
 
 const NAV = [
   {
@@ -77,6 +78,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(href + "/");
 
   return (
+    <ToastProvider>
     <div className="flex h-screen bg-bg-primary">
       <style>{`.hide-scrollbar::-webkit-scrollbar{display:none}.hide-scrollbar{-ms-overflow-style:none;scrollbar-width:none}`}</style>
       <aside className="hidden md:flex flex-col w-60 border-r border-white/[0.06] bg-bg-secondary">
@@ -198,5 +200,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
+    </ToastProvider>
   );
 }

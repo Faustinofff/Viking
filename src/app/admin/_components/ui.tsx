@@ -1,6 +1,44 @@
 "use client";
 import type { ReactNode } from "react";
+import { createContext, useCallback, useContext, useState, useEffect } from "react";
 import type { PremiumInfo } from "@/lib/admin-types";
+
+/* ─── Toast Context ─── */
+interface Toast { id: string; message: string; tone: "success" | "error" | "info"; }
+const ToastCtx = createContext<{ toast: (message: string, tone?: Toast["tone"]) => void }>({ toast: () => {} });
+export const useToast = () => useContext(ToastCtx);
+
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toast = useCallback((message: string, tone: Toast["tone"] = "success") => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts((t) => [...t, { id, message, tone }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4000);
+  }, []);
+  const remove = useCallback((id: string) => setToasts((t) => t.filter((x) => x.id !== id)), []);
+  return (
+    <ToastCtx.Provider value={{ toast }}>
+      {children}
+      <div className="fixed top-4 right-4 z-[200] flex flex-col gap-2 max-w-sm pointer-events-none">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            onClick={() => remove(t.id)}
+            className={`pointer-events-auto cursor-pointer rounded-xl px-4 py-3 text-sm font-medium shadow-2xl border animate-fade-in transition-all ${
+              t.tone === "success"
+                ? "bg-green-500/15 text-green-400 border-green-500/25"
+                : t.tone === "error"
+                ? "bg-red-500/15 text-red-400 border-red-500/25"
+                : "bg-accent/15 text-accent border-accent/25"
+            }`}
+          >
+            {t.message}
+          </div>
+        ))}
+      </div>
+    </ToastCtx.Provider>
+  );
+}
 
 export function timeAgo(date?: string | null): string {
   if (!date) return "—";
