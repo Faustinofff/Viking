@@ -22,7 +22,8 @@ export default function RedDetailPage() {
   const [apodo, setApodo] = useState("");
   const [edad, setEdad] = useState("");
   const [peso, setPeso] = useState("");
-  const [objetivo, setObjetivo] = useState<"definicion" | "hipertrofia" | "volumen" | "fuerza" | "mantenimiento">("hipertrofia");
+  const [objetivo, setObjetivo] = useState("hipertrofia");
+  const [objetivoCustom, setObjetivoCustom] = useState("");
   const [plan, setPlan] = useState<"solo_rutina" | "rutina_nutricion" | "acompanamiento_total">("solo_rutina");
 
   if (!red) {
@@ -49,7 +50,7 @@ export default function RedDetailPage() {
         email: email.trim(),
         edad: parseInt(edad),
         peso: parseFloat(peso),
-        objetivo,
+        objetivo: objetivo === "personalizado" ? objetivoCustom.trim() || "Personalizado" : objetivo,
         plan,
         notas: "",
       });
@@ -152,7 +153,7 @@ export default function RedDetailPage() {
                     <td className="px-6 py-4 text-sm text-white/60">{a.edad} años</td>
                     <td className="px-6 py-4 text-sm text-white/60">{a.peso} kg</td>
                     <td className="px-6 py-4">
-                      <span className="badge-green">{a.objetivo === "definicion" ? "Definición" : a.objetivo === "hipertrofia" ? "Hipertrofia" : a.objetivo === "volumen" ? "Volumen" : a.objetivo === "fuerza" ? "Fuerza" : "Mantenimiento"}</span>
+                      <span className="badge-green">{a.objetivo === "definicion" ? "Definición" : a.objetivo === "hipertrofia" ? "Hipertrofia" : a.objetivo === "volumen" ? "Volumen" : a.objetivo === "fuerza" ? "Fuerza" : a.objetivo === "mantenimiento" ? "Mantenimiento" : a.objetivo}</span>
                     </td>
                     <td className="px-6 py-4 text-xs text-white/50">{planLabel(a.plan)}</td>
                     <td className="px-6 py-4 text-right">
@@ -196,13 +197,23 @@ export default function RedDetailPage() {
               </div>
               <div>
                 <label className="label block mb-1">Objetivo</label>
-                <select className="input" value={objetivo} onChange={(e) => setObjetivo(e.target.value as any)}>
+                <select className="input" value={objetivo} onChange={(e) => setObjetivo(e.target.value)}>
                   <option value="hipertrofia">Hipertrofia</option>
                   <option value="definicion">Definición</option>
                   <option value="volumen">Volumen</option>
                   <option value="fuerza">Fuerza</option>
                   <option value="mantenimiento">Mantenimiento</option>
+                  <option value="personalizado">Otro / Personalizado</option>
                 </select>
+                {objetivo === "personalizado" && (
+                  <input
+                    type="text"
+                    className="input mt-2"
+                    placeholder="Ej: Preparar media maratón"
+                    value={objetivoCustom}
+                    onChange={(e) => setObjetivoCustom(e.target.value)}
+                  />
+                )}
               </div>
               <div>
                 <label className="label block mb-1">Plan contratado</label>

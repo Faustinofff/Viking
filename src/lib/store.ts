@@ -59,7 +59,7 @@ import { trackActivity } from "./telemetry";
 // ─── Types ─────────────────────────────────────────────────
 
 export type PlanType = "solo_rutina" | "rutina_nutricion" | "acompanamiento_total";
-export type Goal = "definicion" | "hipertrofia" | "volumen" | "fuerza" | "mantenimiento";
+export type Goal = string;
 export type WeekDay = "lunes" | "martes" | "miercoles" | "jueves" | "viernes" | "sabado" | "domingo";
 export type MealType = "desayuno" | "almuerzo" | "cena" | "snack" | "pre_entreno" | "post_entreno";
 export type Rol = "coach" | "alumno";
