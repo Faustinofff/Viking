@@ -10,7 +10,7 @@ export function PremiumManager({
 }: {
   coach: AdminCoach;
   onClose: () => void;
-  onSaved: () => Promise<AdminCoach | null>;
+  onSaved: () => void;
 }) {
   const { toast } = useToast();
   const [coach, setCoach] = useState<AdminCoach>(initialCoach);
@@ -20,6 +20,12 @@ export function PremiumManager({
   const [error, setError] = useState<string | null>(null);
 
   const isActive = coach.isPremiumActive && !coach.isFreeCoach;
+
+  const handleResponse = (data: any) => {
+    if (data.coach) {
+      setCoach((prev) => ({ ...prev, ...data.coach }));
+    }
+  };
 
   const activate = async () => {
     const daysNum = Number(daysInput);
@@ -41,8 +47,8 @@ export function PremiumManager({
         setProcessing(false);
         return;
       }
-      const fresh = await onSaved();
-      if (fresh) setCoach(fresh);
+      handleResponse(data);
+      onSaved();
       toast(`Premium activado por ${daysNum} días`);
       setProcessing(false);
       onClose();
@@ -67,8 +73,8 @@ export function PremiumManager({
         setProcessing(false);
         return;
       }
-      const fresh = await onSaved();
-      if (fresh) setCoach(fresh);
+      handleResponse(data);
+      onSaved();
       toast("Premium desactivado");
       setProcessing(false);
       onClose();
@@ -98,8 +104,8 @@ export function PremiumManager({
         setProcessing(false);
         return;
       }
-      const fresh = await onSaved();
-      if (fresh) setCoach(fresh);
+      handleResponse(data);
+      onSaved();
       toast(`Premium actualizado a ${daysNum} días`);
       setDaysInput("");
       setEditMode(false);
@@ -125,8 +131,8 @@ export function PremiumManager({
         setProcessing(false);
         return;
       }
-      const fresh = await onSaved();
-      if (fresh) setCoach(fresh);
+      handleResponse(data);
+      onSaved();
       toast("Premium eliminado");
       setProcessing(false);
       onClose();
@@ -167,7 +173,7 @@ export function PremiumManager({
             </div>
             <div className="flex justify-between items-center">
               <span className="text-white/40">Días restantes</span>
-              {isActive && coach.premiumDaysLeft !== null && coach.premiumDaysLeft >= 0 ? (
+              {coach.premiumDaysLeft !== null && coach.premiumDaysLeft >= 0 ? (
                 <span className={coach.premiumDaysLeft <= 7 ? "text-yellow-400 font-semibold" : "text-white/80"}>
                   {coach.premiumDaysLeft} días
                 </span>
@@ -199,7 +205,7 @@ export function PremiumManager({
             {editMode ? (
               <div className="space-y-2">
                 <p className="text-xs text-white/50">
-                  Editar días de premium de <strong className="text-white">{coach.name}</strong>. Se reemplaza la fecha de vencimiento actual.
+                  Editar días de premium de <strong className="text-white">{coach.name}</strong>
                 </p>
                 <div>
                   <label className="block text-xs text-white/50 mb-1.5">Nueva cantidad de días</label>
@@ -229,7 +235,7 @@ export function PremiumManager({
                 <button onClick={() => setEditMode(true)} disabled={processing} className="btn-primary flex-1 disabled:opacity-50">
                   Editar días
                 </button>
-                <button onClick={handleRemove} disabled={processing} className="btn-danger flex-1 disabled:opacity-50">
+                <button onClick={deactivate} disabled={processing} className="btn-danger flex-1 disabled:opacity-50">
                   {processing ? "Procesando..." : "Desactivar Premium"}
                 </button>
               </div>

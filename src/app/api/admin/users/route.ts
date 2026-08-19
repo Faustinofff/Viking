@@ -1,23 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/admin";
+import { parseBlob, parsePremium } from "@/lib/admin-data";
 
-const COACH_GRATIS_EMAILS = ["faustinofiordalisi@gmail.com", "maxi22albaracin@gmail.com"];
-
-function isCoachGratuito(email?: string | null): boolean {
-  if (!email) return false;
-  return COACH_GRATIS_EMAILS.includes(email.toLowerCase());
-}
-
-function parseBlob(raw?: string | null): { blob: Record<string, any>; originalUrl: string } {
-  if (!raw) return { blob: {}, originalUrl: "" };
-  try {
-    const parsed = JSON.parse(raw);
-    if (typeof parsed === "object" && !Array.isArray(parsed)) {
-      return { blob: parsed, originalUrl: parsed._url ?? "" };
-    }
-  } catch {}
-  return { blob: {}, originalUrl: raw };
-}
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function GET(req: NextRequest) {
   try {
@@ -29,18 +14,19 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
 
+    const COACH_GRATIS_EMAILS = ["faustinofiordalisi@gmail.com", "maxi22albaracin@gmail.com"];
     const users = (profiles ?? []).map((p: any) => {
-      const { blob } = parseBlob(p.avatar_url);
-      const prem = blob.premium;
-      const isPremium = prem && new Date(prem.premiumExpiresAt) > new Date();
-      const isFree = isCoachGratuito(p.email);
+      const blob = parseBlob(p.avatar_url);
+      const prem = parsePremium(blob);
+      const isActive = prem && new Date(prem.premiumExpiresAt) > new Date();
+      const isFree = COACH_GRATIS_EMAILS.includes((p.email ?? "").toLowerCase());
       return {
         id: p.id,
         email: p.email,
         display_name: p.display_name,
         role: p.role,
         created_at: p.created_at,
-        premium: isPremium ? prem : null,
+        premium: isActive ? prem : null,
         isFreeCoach: isFree,
       };
     });
@@ -49,6 +35,25 @@ export async function GET(req: NextRequest) {
   } catch (err: any) {
     return NextResponse.json({ error: err?.message ?? String(err), users: [] }, { status: 500 });
   }
+}
+
+function buildCoachFromProfile(p: any) {
+  const blob = parseBlob(p.avatar_url);
+  const premium = parsePremium(blob);
+  const now = Date.now();
+  const isActive = !!premium && new Date(premium.premiumExpiresAt).getTime() > now;
+  const daysLeft = premium && !isNaN(new Date(premium.premiumExpiresAt).getTime())
+    ? Math.floor((new Date(premium.premiumExpiresAt).getTime() - now) / DAY_MS)
+    : null;
+  return {
+    id: p.id,
+    email: p.email,
+    name: p.display_name ?? p.email ?? p.id,
+    premium,
+    isPremiumActive: isActive,
+    premiumExpiresAt: premium?.premiumExpiresAt ?? null,
+    premiumDaysLeft: daysLeft,
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -76,7 +81,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const { blob, originalUrl } = parseBlob(profile.avatar_url);
+    const blob = parseBlob(profile.avatar_url);
+    const originalUrl = (typeof profile.avatar_url === "string" && !profile.avatar_url.startsWith("{")) ? profile.avatar_url : "";
 
     let newExpiresAt: string | null = null;
 
@@ -115,7 +121,15 @@ export async function POST(req: NextRequest) {
 
     if (updateErr) throw updateErr;
 
-    return NextResponse.json({ success: true, expiresAt: newExpiresAt });
+    const { data: freshProfile } = await client
+      .from("profiles")
+      .select("id, email, display_name, avatar_url")
+      .eq("id", userId)
+      .single();
+
+    const coach = freshProfile ? buildCoachFromProfile(freshProfile) : null;
+
+    return NextResponse.json({ success: true, expiresAt: newExpiresAt, coach });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message ?? String(err) }, { status: 500 });
   }

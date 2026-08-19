@@ -57,11 +57,10 @@ export default function CoachDetailPage() {
   const statusTone = c.status === "active" ? "green" : c.status === "no_recent" ? "yellow" : "gray";
   const statusLabel = c.status === "active" ? "Activo" : c.status === "no_recent" ? "Baja" : "Inactivo";
 
-  const onSaved = async (): Promise<AdminCoach | null> => {
+  const onSaved = async () => {
     setRefreshing(true);
-    const fresh = await load(true);
+    await load(true);
     setRefreshing(false);
-    return fresh;
   };
 
   return (
