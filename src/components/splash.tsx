@@ -3,18 +3,22 @@ import { useState, useEffect } from "react";
 
 const SPLASH_KEY = "__viking_splash";
 
+function needsSplash() {
+  if (typeof window === "undefined") return false;
+  return !sessionStorage.getItem(SPLASH_KEY);
+}
+
 export default function SplashScreen({ children }: { children: React.ReactNode }) {
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(needsSplash);
 
   useEffect(() => {
-    if (sessionStorage.getItem(SPLASH_KEY)) return;
-    setShow(true);
+    if (!show) return;
     const t = setTimeout(() => {
       sessionStorage.setItem(SPLASH_KEY, "1");
       setShow(false);
     }, 1000);
     return () => clearTimeout(t);
-  }, []);
+  }, [show]);
 
   if (!show) return <>{children}</>;
 
