@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { onAuthReady } from "@/lib/splash-ready";
 
 const SPLASH_KEY = "__viking_splash";
 
@@ -9,32 +10,53 @@ function needsSplash() {
 }
 
 export default function SplashScreen({ children }: { children: React.ReactNode }) {
-  const [show, setShow] = useState(needsSplash);
-  const [ready, setReady] = useState(!needsSplash);
+  const [visible, setVisible] = useState(needsSplash);
+  const [fading, setFading] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!show) return;
-    const t = setTimeout(() => {
-      sessionStorage.setItem(SPLASH_KEY, "1");
-      setShow(false);
-      setReady(true);
-    }, 1000);
-    return () => clearTimeout(t);
-  }, [show]);
+    if (!visible) return;
 
-  if (show) {
-    return (
+    let authDone = false;
+    let timerDone = false;
+    let fadeTimer: ReturnType<typeof setTimeout>;
+
+    const tryDismiss = () => {
+      if (authDone && timerDone) {
+        sessionStorage.setItem(SPLASH_KEY, "1");
+        setFading(true);
+        fadeTimer = setTimeout(() => setVisible(false), 300);
+      }
+    };
+
+    onAuthReady(() => { authDone = true; tryDismiss(); });
+    const minTimer = setTimeout(() => { timerDone = true; tryDismiss(); }, 1000);
+
+    return () => {
+      clearTimeout(minTimer);
+      clearTimeout(fadeTimer);
+    };
+  }, [visible]);
+
+  if (!visible) return <>{children}</>;
+
+  return (
+    <>
+      {children}
       <div
+        ref={ref}
         style={{
           position: "fixed",
           inset: 0,
-          zIndex: 9999,
+          zIndex: 99999,
           background: "#0A0A0B",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          animation: "splashFadeOut 0.3s ease-out 0.7s forwards",
+          opacity: fading ? 0 : 1,
+          transition: "opacity 0.3s ease-out",
+          pointerEvents: fading ? "none" : "auto",
         }}
       >
         <img
@@ -74,13 +96,8 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
             50%  { transform: scale(1.02); }
             100% { transform: scale(1); }
           }
-          @keyframes splashFadeOut {
-            to { opacity: 0; pointer-events: none; }
-          }
         `}</style>
       </div>
-    );
-  }
-
-  return <>{children}</>;
+    </>
+  );
 }

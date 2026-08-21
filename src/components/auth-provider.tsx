@@ -6,6 +6,7 @@ import { getCurrentUser, onAuthStateChange } from "@/lib/auth";
 import { createProfile, getProfile } from "@/lib/data";
 import { isAdmin } from "@/lib/admin";
 import { trackLogin } from "@/lib/telemetry";
+import { markAuthReady } from "@/lib/splash-ready";
 
 const STORAGE_LAST_PATH = "viking_last_path";
 
@@ -26,7 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Save current path for redirect restoration
   useEffect(() => {
     if (!loading && pathname && !pathname.startsWith("/auth/")) {
       saveLastPath(pathname);
@@ -58,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       setLoading(false);
+      markAuthReady();
     };
     init();
   }, []);
@@ -100,16 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription?.unsubscribe();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center gap-6">
-        <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden">
-          <div className="h-full bg-accent rounded-full animate-pulse" style={{ width: "60%" }} />
-        </div>
-        <p className="text-white/40 text-sm">Cargando...</p>
-      </div>
-    );
-  }
+  if (loading) return null;
 
   return <>{children}</>;
 }
