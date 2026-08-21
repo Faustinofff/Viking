@@ -10,21 +10,20 @@ function needsSplash() {
 
 export default function SplashScreen({ children }: { children: React.ReactNode }) {
   const [show, setShow] = useState(needsSplash);
+  const [ready, setReady] = useState(!needsSplash);
 
   useEffect(() => {
     if (!show) return;
     const t = setTimeout(() => {
       sessionStorage.setItem(SPLASH_KEY, "1");
       setShow(false);
+      setReady(true);
     }, 1000);
     return () => clearTimeout(t);
   }, [show]);
 
-  if (!show) return <>{children}</>;
-
-  return (
-    <>
-      {children}
+  if (show) {
+    return (
       <div
         style={{
           position: "fixed",
@@ -80,6 +79,8 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
           }
         `}</style>
       </div>
-    </>
-  );
+    );
+  }
+
+  return <>{children}</>;
 }
