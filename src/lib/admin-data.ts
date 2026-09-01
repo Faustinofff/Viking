@@ -61,7 +61,8 @@ export async function loadRawSnapshot(): Promise<RawSnapshot> {
 
   const { data: profiles } = await client
     .from("profiles")
-    .select("id, email, display_name, role, avatar_url, created_at");
+    .select("id, email, display_name, role, avatar_url, created_at")
+    .order("created_at", { ascending: false });
 
   let relations: any[] = [];
   let hasRelationTimestamps = false;
