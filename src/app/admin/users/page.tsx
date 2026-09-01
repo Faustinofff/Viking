@@ -33,7 +33,7 @@ export default function AdminUsersPage() {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch("/api/admin/users");
+      const r = await fetch(`/api/admin/users?ts=${Date.now()}`, { cache: "no-store" });
       const data = await r.json();
       if (data.error) {
         setError(data.error);
@@ -48,7 +48,23 @@ export default function AdminUsersPage() {
     setLoading(false);
   };
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => {
+    loadUsers();
+    const id = setInterval(loadUsers, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (!document.hidden) loadUsers();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();

@@ -76,7 +76,7 @@ export default function AdminDashboard() {
   const load = useCallback(async () => {
     setRefreshing(true);
     try {
-      const r = await fetch("/api/admin/overview");
+      const r = await fetch(`/api/admin/overview?ts=${Date.now()}`, { cache: "no-store" });
       const d = await r.json();
       if (d.error) {
         setError(d.error);

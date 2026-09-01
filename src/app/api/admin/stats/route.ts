@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { unstable_noStore as noStore } from "next/cache";
 import { getAdminClient } from "@/lib/admin";
 
 const COACH_GRATIS_EMAILS = ["faustinofiordalisi@gmail.com", "maxi22albaracin@gmail.com"];
+
+function noStoreHeaders(): Record<string, string> {
+  return {
+    "Cache-Control": "no-store, max-age=0, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  };
+}
 
 function parseBlob(raw?: string | null): Record<string, any> {
   if (!raw) return {};
@@ -12,7 +21,11 @@ function parseBlob(raw?: string | null): Record<string, any> {
   return {};
 }
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
+  noStore();
   try {
     const client = getAdminClient();
     const { data: profiles, error } = await client
@@ -55,8 +68,8 @@ export async function GET(req: NextRequest) {
       gratuitoCoaches: gratuitoCount,
       freeCoaches: freeCount,
       totalUsers: all.length,
-    });
+    }, { headers: noStoreHeaders() });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? String(err) }, { status: 500 });
+    return NextResponse.json({ error: err?.message ?? String(err) }, { status: 500, headers: noStoreHeaders() });
   }
 }

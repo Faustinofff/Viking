@@ -25,10 +25,13 @@ export default function AdminCoachesPage() {
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch("/api/admin/coaches");
+      const r = await fetch(`/api/admin/coaches?ts=${Date.now()}`, { cache: "no-store" });
       const d = await r.json();
       if (d.error) setError(d.error);
-      else setCoaches(d.coaches ?? []);
+      else {
+        setCoaches(d.coaches ?? []);
+        setError(null);
+      }
     } catch (e: any) {
       setError(e?.message ?? "Error de conexión");
     }
@@ -37,6 +40,20 @@ export default function AdminCoachesPage() {
 
   useEffect(() => {
     load();
+    const id = setInterval(load, 30000);
+    return () => clearInterval(id);
+  }, [load]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (!document.hidden) load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, [load]);
 
   const filtered = useMemo(() => {
