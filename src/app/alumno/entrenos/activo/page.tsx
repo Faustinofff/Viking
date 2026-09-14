@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAppStore, type Rutina } from "@/lib/store";
 import { getStudentWorkoutPlans, getStudentCurrentWeek, saveStudentCurrentWeek, ejercicioWeekValue, parseIndicacionesSemanales } from "@/lib/data";
 import TutorialButton from "@/components/tutorial-button";
+import WorkoutSummary from "../_components/workout-summary";
 
 export default function ActiveWorkoutPage() {
   const router = useRouter();
@@ -225,6 +226,21 @@ export default function ActiveWorkoutPage() {
   );
   const progress = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
+  const ejerciciosCompletados = useMemo(() => {
+    if (!sesion || !weekEjercicios.length) return 0;
+    return weekEjercicios.filter((ej: any, idx: number) => {
+      const setsHechos = sesion.series.filter(
+        (s) => s.ejercicioId === ej.ejercicioId && s.completada
+      ).length;
+      return setsHechos >= ej.series;
+    }).length;
+  }, [sesion, weekEjercicios]);
+
+  const volumenTotal = useMemo(() => {
+    if (!sesion) return 0;
+    return sesion.series.reduce((sum, s) => sum + (s.pesoUsado ?? 0) * (s.repsHechas ?? 0), 0);
+  }, [sesion]);
+
   const completarSetActual = useCallback(() => {
     if (!sesionId || !currentWeekEj) return;
     const key = `${currentWeekEj.ejercicioId}_${currentSet}`;
@@ -315,14 +331,17 @@ export default function ActiveWorkoutPage() {
       </div>
 
       {isWorkoutComplete && (
-        <div className="card-glow text-center py-8 space-y-4">
-          <p className="text-4xl">🎉</p>
-          <p className="text-lg font-bold text-white">Entreno completado</p>
-          <p className="text-sm text-white/40">¡Buen trabajo! Completaste todas las series.</p>
-          <button onClick={() => router.push("/alumno/entrenos")} className="btn-primary">
-            Volver a entrenos
-          </button>
-        </div>
+        <WorkoutSummary
+          diaNombre={dia.nombre}
+          rutinaNombre={rutina?.nombre ?? ""}
+          startedAt={sesion?.fecha ?? new Date().toISOString()}
+          completedSets={completedSets}
+          totalSets={totalSets}
+          volumenTotal={volumenTotal}
+          ejerciciosCompletados={ejerciciosCompletados}
+          totalEjercicios={allEjercicios.length}
+          onBack={() => router.push("/alumno/entrenos")}
+        />
       )}
 
       {!isWorkoutComplete && currentWeekEj && (
