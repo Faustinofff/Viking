@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo, useReducer } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAppStore, type Rutina } from "@/lib/store";
-import { getStudentWorkoutPlans, getStudentCurrentWeek, saveStudentCurrentWeek, ejercicioWeekValue, parseIndicacionesSemanales } from "@/lib/data";
+import { getStudentWorkoutPlans, getStudentCurrentWeek, saveStudentCurrentWeek, ejercicioWeekValue, parseIndicacionesSemanales, getLastWeights } from "@/lib/data";
 import TutorialButton from "@/components/tutorial-button";
 import WorkoutSummary from "../_components/workout-summary";
 
@@ -193,6 +193,33 @@ export default function ActiveWorkoutPage() {
     setVerSemanales(false);
     setWeekToast(null);
   }, [currentEjIndex]);
+
+  // Load last weights used for this day and prefill empty inputs
+  useEffect(() => {
+    if (!alumnoId || !dia?.id) return;
+    getLastWeights(alumnoId, dia.id)
+      .then((w) => {
+        if (Object.keys(w).length) {
+          setPesosInput((prev) => {
+            const newInput = { ...prev };
+            let updated = false;
+            (weekEjercicios ?? []).forEach((ej: any) => {
+              const peso = w[ej.ejercicioId];
+              if (peso === undefined) return;
+              for (let s = 1; s <= ej.series; s++) {
+                const k = `${ej.ejercicioId}_${s}`;
+                if (!(k in newInput)) {
+                  newInput[k] = String(peso);
+                  updated = true;
+                }
+              }
+            });
+            return updated ? newInput : prev;
+          });
+        }
+      })
+      .catch(() => {});
+  }, [alumnoId, dia?.id, weekIdx]);
 
   // Rest timer countdown using absolute timestamp
   useEffect(() => {

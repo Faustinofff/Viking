@@ -627,6 +627,37 @@ export async function getWeeksCompletadas(
   return result;
 }
 
+export async function getLastWeights(
+  userId: string,
+  dayId: string
+): Promise<Record<string, number>> {
+  if (!userId || !dayId) return {};
+  try {
+    const { data } = await readProfileBlob(userId);
+    const completions = data.completions ?? {};
+    const prefix = dayId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const keys = Object.keys(completions).filter(
+      (k) => k.startsWith(dayId + "_w") && /_\d{4}-W\d{2}$/.test(k) && new RegExp(`^${prefix}_w\\d+_\\d{4}-W\\d{2}$`).test(k)
+    );
+    if (!keys.length) return {};
+    keys.sort(
+      (a, b) =>
+        new Date((completions[b] as any).completedAt ?? 0).getTime() -
+        new Date((completions[a] as any).completedAt ?? 0).getTime()
+    );
+    const sets: { ejercicioId: string; pesoUsado?: number }[] = (completions[keys[0]] as any)?.sets ?? [];
+    const result: Record<string, number> = {};
+    for (const s of sets) {
+      if (typeof s.pesoUsado === "number") {
+        result[s.ejercicioId] = Math.max(result[s.ejercicioId] ?? 0, s.pesoUsado);
+      }
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
 export async function removeStudentFromCoach(coachId: string, studentId: string) {
   const { data: plans } = await supabase
     .from("workout_plans")
