@@ -132,6 +132,7 @@ export default function ActiveWorkoutPage() {
   const [pesosInput, setPesosInput] = useState<Record<string, string>>({});
   const [verEspecs, setVerEspecs] = useState(false);
   const [verSemanales, setVerSemanales] = useState(false);
+  const [verProximo, setVerProximo] = useState(false);
   const [weekToast, setWeekToast] = useState<string | null>(null);
 
   const currentEjercicio = dia?.ejercicios[currentEjIndex];
@@ -145,6 +146,7 @@ export default function ActiveWorkoutPage() {
     notas: ejercicioWeekValue(ej, "notas", ej.notas ?? "", weekIdx),
   })), [allEjercicios, weekIdx]);
   const currentWeekEj = weekEjercicios[currentEjIndex];
+  const proximoEjercicio = weekEjercicios[currentEjIndex + 1];
 
   const sesion = useMemo(() => sesionesEntreno.find((s) => s.id === sesionId), [sesionesEntreno, sesionId]);
 
@@ -191,6 +193,7 @@ export default function ActiveWorkoutPage() {
   useEffect(() => {
     setVerEspecs(false);
     setVerSemanales(false);
+    setVerProximo(false);
     setWeekToast(null);
   }, [currentEjIndex]);
 
@@ -385,6 +388,7 @@ export default function ActiveWorkoutPage() {
                   {currentWeekEj.series}×{currentWeekEj.reps} · {currentWeekEj.descansoSegundos}s
                 </span>
                 {currentWeekEj.notas && <button onClick={() => setVerEspecs(!verEspecs)} className="bg-white/5 text-white/70 font-medium rounded-lg px-2 py-1 text-[10px] hover:bg-white/10 transition-all border border-white/10">Indicaciones del ejercicio</button>}
+                {proximoEjercicio && <button onClick={() => setVerProximo(true)} className="bg-white/5 text-white/70 font-medium rounded-lg px-2 py-1 text-[10px] hover:bg-white/10 transition-all border border-white/10">Próximo ejercicio →</button>}
                 {rutina?.indicacionesSemanales?.some((s) => s.trim()) && <button onClick={() => setVerSemanales(!verSemanales)} className="bg-accent/10 text-accent font-medium rounded-lg px-2 py-1 text-[10px] hover:bg-accent/20 transition-all border border-accent/20">Indicaciones semanales</button>}
                 {currentWeekEj.videoUrl && <TutorialButton videoUrl={currentWeekEj.videoUrl} />}
               </div>
@@ -507,6 +511,31 @@ export default function ActiveWorkoutPage() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {verProximo && proximoEjercicio && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm" onClick={() => setVerProximo(false)}>
+          <div className="card max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <p className="text-xs font-semibold text-accent uppercase tracking-wider mb-3">Próximo ejercicio</p>
+            <p className="text-lg font-bold text-white">{proximoEjercicio.ejercicioNombre}</p>
+            <p className="text-xs text-white/40 mt-0.5 mb-3">{proximoEjercicio.grupoMuscular}</p>
+            <div className="flex flex-wrap items-center gap-1.5 mb-3">
+              <span className="text-xs text-white/30 bg-white/[0.05] px-2.5 py-1 rounded-full">
+                {proximoEjercicio.series}×{proximoEjercicio.reps} · {proximoEjercicio.descansoSegundos}s
+              </span>
+              {proximoEjercicio.notas && (
+                <span className="text-xs text-white/30 bg-white/[0.05] px-2.5 py-1 rounded-full">Tiene indicaciones</span>
+              )}
+            </div>
+            {proximoEjercicio.notas && (
+              <div className="mb-6 bg-white/[0.04] rounded-lg p-3 border border-white/[0.06]">
+                <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-1">Indicaciones del ejercicio</p>
+                <p className="text-xs text-white/80 whitespace-pre-wrap">{proximoEjercicio.notas}</p>
+              </div>
+            )}
+            <button onClick={() => setVerProximo(false)} className="btn-primary w-full py-2.5 text-sm">Aceptar</button>
+          </div>
         </div>
       )}
 
