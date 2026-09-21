@@ -498,7 +498,7 @@ export default function ActiveWorkoutPage() {
             </div>
 
             {restActive ? (
-              <div className="card-glow text-center py-6">
+              <div className="card-glow text-center py-6 mt-5">
                 <p className="text-xs font-semibold text-accent uppercase tracking-widest mb-2">Descanso</p>
                 <p className={`text-5xl font-light tracking-wider mb-3 ${restTimer !== null && restTimer <= 5 ? "text-accent" : "text-white"}`}>
                   {restTimer !== null
@@ -508,7 +508,7 @@ export default function ActiveWorkoutPage() {
                 <button onClick={skipRest} className="btn-ghost text-sm">Saltar descanso →</button>
               </div>
             ) : restTimer === 0 ? (
-              <div className="card-glow text-center py-5 border-accent/30">
+              <div className="card-glow text-center py-5 border-accent/30 mt-5">
                 <p className="text-sm font-semibold text-accent mb-1">¡Descanso terminado!</p>
                 <p className="text-xs text-white/50 mb-3">
                   {isLastSet && isLastEjercicio ? "Último ejercicio completado" : isLastSet ? "Última serie de este ejercicio" : `Preparate para la serie ${currentSet + 1}`}
@@ -521,7 +521,7 @@ export default function ActiveWorkoutPage() {
               <button
                 onClick={completarSetActual}
                 disabled={restActive}
-                className="btn-primary w-full py-4 text-base"
+                className="btn-primary w-full py-4 text-base mt-5"
               >
                 {`Finalizar serie ${currentSet}`}
               </button>
