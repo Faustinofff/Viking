@@ -341,18 +341,22 @@ export default function ActiveWorkoutPage() {
   }
 
   return (
-    <div className="p-4 max-w-lg mx-auto space-y-4">
-      <div className="flex items-center justify-between">
-        <Link href="/alumno/entrenos" className="text-sm text-white/30 hover:text-white/50">← Salir</Link>
-        <div className="text-center">
-          <p className="text-base font-bold text-white">{dia.nombre}</p>
-          <p className="text-xs text-white/40">
+    <div className="px-4 pt-3 pb-6 max-w-lg mx-auto space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <Link href="/alumno/entrenos" className="shrink-0 text-sm text-white/30 hover:text-white/50">← Salir</Link>
+        <div className="text-center min-w-0">
+          <p className="text-sm font-semibold text-white truncate">{dia.nombre}</p>
+          <p className="text-xs text-white/40 whitespace-nowrap">
             Semana {weekIdx + 1}/4 · {completedSets}/{totalSets} series
             <button onClick={() => setShowWeekSelector(true)} className="ml-2 text-accent hover:text-accent/80 underline">Cambiar semana</button>
           </p>
         </div>
-        <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-          <span className="text-sm font-bold text-accent">{Math.round(progress)}%</span>
+        <div className="relative w-10 h-10 shrink-0">
+          <svg viewBox="0 0 40 40" className="w-10 h-10 -rotate-90">
+            <circle cx="20" cy="20" r="16" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3.5" />
+            <circle cx="20" cy="20" r="16" fill="none" stroke="#00D4AA" strokeWidth="3.5" strokeLinecap="round" strokeDasharray={2 * Math.PI * 16} strokeDashoffset={2 * Math.PI * 16 * (1 - progress / 100)} />
+          </svg>
+          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-accent">{Math.round(progress)}%</span>
         </div>
       </div>
 
@@ -375,98 +379,144 @@ export default function ActiveWorkoutPage() {
       )}
 
       {!isWorkoutComplete && currentWeekEj && (
-        <div className="card">
-            <div className="mb-4">
-            <div>
-              <p className="flex items-center gap-2">
-                <span className="text-xs text-white/30 font-mono">{currentEjIndex + 1}/{allEjercicios.length}</span>
-                <span className="text-lg font-bold text-white">{currentWeekEj.ejercicioNombre}</span>
-              </p>
-              <p className="text-xs text-white/40 mt-0.5">{currentWeekEj.grupoMuscular}</p>
-              <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                <span className="text-xs text-white/30 bg-white/[0.05] px-2.5 py-1 rounded-full">
+        <>
+          <div className="card">
+            <div className="mb-5">
+              <p className="text-[11px] font-semibold text-accent/80 uppercase tracking-wider mb-1">{currentEjIndex + 1}/{allEjercicios.length}</p>
+              <h1 className="text-2xl font-bold text-white leading-tight">{currentWeekEj.ejercicioNombre}</h1>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <p className="text-xs text-white/40">{currentWeekEj.grupoMuscular}</p>
+                <span className="inline-flex items-center text-[11px] text-white/40 bg-white/[0.05] border border-white/[0.08] rounded-full px-2.5 py-0.5">
                   {currentWeekEj.series}×{currentWeekEj.reps} · {currentWeekEj.descansoSegundos}s
                 </span>
-                {currentWeekEj.notas && <button onClick={() => setVerEspecs(!verEspecs)} className="bg-white/5 text-white/70 font-medium rounded-lg px-2 py-1 text-[10px] hover:bg-white/10 transition-all border border-white/10">Indicaciones del ejercicio</button>}
-                {proximoEjercicio && <button onClick={() => setVerProximo(true)} className="bg-white/5 text-white/70 font-medium rounded-lg px-2 py-1 text-[10px] hover:bg-white/10 transition-all border border-white/10">Próximo ejercicio →</button>}
-                {rutina?.indicacionesSemanales?.some((s) => s.trim()) && <button onClick={() => setVerSemanales(!verSemanales)} className="bg-accent/10 text-accent font-medium rounded-lg px-2 py-1 text-[10px] hover:bg-accent/20 transition-all border border-accent/20">Indicaciones semanales</button>}
-                {currentWeekEj.videoUrl && <TutorialButton videoUrl={currentWeekEj.videoUrl} />}
               </div>
-              {verEspecs && currentWeekEj.notas && (
-                <div className="mt-2 bg-white/[0.04] rounded-lg p-3 border border-white/[0.06]">
-                  <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-1">Indicaciones del ejercicio</p>
-                  <p className="text-xs text-white/80 whitespace-pre-wrap">{currentWeekEj.notas}</p>
-                </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 mb-4">
+              {currentWeekEj.videoUrl && <TutorialButton videoUrl={currentWeekEj.videoUrl} />}
+              {currentWeekEj.notas && (
+                <button onClick={() => setVerEspecs(!verEspecs)}
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-medium rounded-lg px-3 py-1.5 border transition-all ${
+                    verEspecs ? "bg-accent/10 text-accent border-accent/20" : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10"
+                  }`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>
+                  Indicaciones del ejercicio
+                </button>
               )}
-              {verSemanales && rutina?.indicacionesSemanales?.some((s) => s.trim()) && (
-                <div className="mt-2 flex items-center gap-1.5">
-                  {[0, 1, 2, 3].map((w) => {
-                    const texto = (rutina.indicacionesSemanales ?? [])[w];
-                    if (!texto?.trim()) return null;
-                    return (
-                      <button key={w} onClick={() => setWeekToast(texto)}
-                        className="text-[11px] font-medium text-white/70 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] hover:border-accent/30 transition-all px-2.5 py-1">
-                        Semana {w + 1}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+            </div>
+
+            {verEspecs && currentWeekEj.notas && (
+              <div className="mb-4 bg-white/[0.03] rounded-xl p-3.5 border border-white/[0.06]">
+                <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-1">Indicaciones del ejercicio</p>
+                <p className="text-xs text-white/80 whitespace-pre-wrap leading-relaxed">{currentWeekEj.notas}</p>
+              </div>
+            )}
+
+            {rutina?.indicacionesSemanales?.some((s) => s.trim()) && (
+              <div className="mb-4">
+                <button onClick={() => setVerSemanales(!verSemanales)}
+                  className="w-full flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] px-4 py-2.5 transition-all">
+                  <span className="text-xs font-semibold text-white/55">Indicaciones de esta semana</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 text-white/40 transition-transform duration-200 ${verSemanales ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                {verSemanales && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {[0, 1, 2, 3].map((w) => {
+                      const texto = (rutina.indicacionesSemanales ?? [])[w];
+                      if (!texto?.trim()) return null;
+                      return (
+                        <button key={w} onClick={() => setWeekToast(texto)}
+                          className="text-[11px] font-medium text-white/70 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] hover:border-accent/30 transition-all px-2.5 py-1">
+                          Semana {w + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {proximoEjercicio && (
+              <button onClick={() => setVerProximo(true)}
+                className="w-full flex items-center justify-between rounded-xl border border-accent/30 bg-accent/[0.06] hover:bg-accent/[0.12] px-4 py-3.5 transition-all mb-4">
+                <span className="flex items-center gap-2 text-sm font-semibold text-accent">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+                  Ver próximo ejercicio
+                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-accent/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            )}
+
+            <div className="space-y-2">
+              {Array.from({ length: currentWeekEj.series }, (_, i) => i + 1).map((serieNum) => {
+                const completada = (
+                  sesion?.series.some(
+                    (s) => s.ejercicioId === currentWeekEj.ejercicioId && s.serie === serieNum && s.completada
+                  ) ?? false
+                ) || setsCompletadosLocal.has(`${currentWeekEj.ejercicioId}_${serieNum}`);
+                const isActive = serieNum === currentSet;
+
+                return (
+                  <div
+                    key={serieNum}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all ${
+                      completada
+                        ? "bg-accent/10 border-accent/20"
+                        : isActive && !restActive
+                        ? "bg-white/[0.06] border-accent/40"
+                        : "bg-white/[0.03] border-white/[0.06]"
+                    } ${restActive && isActive && !completada ? "opacity-40" : ""}`}
+                  >
+                    <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                      completada ? "bg-accent border-accent" : "border-white/20"
+                    }`}>
+                      {completada && <span className="text-bg-primary text-xs font-bold">✓</span>}
+                    </div>
+                    <span className={`text-sm font-medium ${completada ? "text-accent" : isActive ? "text-white" : "text-white/40"}`}>
+                      Serie {serieNum}
+                    </span>
+                    <span className={`text-xs ${completada ? "text-accent/50" : "text-white/30"}`}>
+                      {currentWeekEj.reps} reps
+                    </span>
+                    {!completada && isActive && (
+                      <>
+                        <div className="flex-1" />
+                        <input
+                          type="number"
+                          step="0.5"
+                          placeholder="kg"
+                          value={pesosInput[`${currentWeekEj.ejercicioId}_${serieNum}`] ?? ""}
+                          onChange={(e) => setPesosInput({ ...pesosInput, [`${currentWeekEj.ejercicioId}_${serieNum}`]: e.target.value })}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-16 bg-white/[0.05] border border-white/[0.08] rounded-lg px-2 py-2 text-xs text-white/60 text-center focus:outline-none focus:border-accent"
+                        />
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          <div className="space-y-2 mb-4">
-            {Array.from({ length: currentWeekEj.series }, (_, i) => i + 1).map((serieNum) => {
-              const completada = (
-                sesion?.series.some(
-                  (s) => s.ejercicioId === currentWeekEj.ejercicioId && s.serie === serieNum && s.completada
-                ) ?? false
-              ) || setsCompletadosLocal.has(`${currentWeekEj.ejercicioId}_${serieNum}`);
-              const isActive = serieNum === currentSet;
-
-              return (
-                <div
-                  key={serieNum}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
-                    completada
-                      ? "bg-accent/10 border-accent/20"
-                      : isActive && !restActive
-                      ? "bg-white/[0.06] border-accent/40"
-                      : "bg-white/[0.03] border-white/[0.06]"
-                  } ${restActive && isActive && !completada ? "opacity-40" : ""}`}
-                >
-                  <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                    completada ? "bg-accent border-accent" : "border-white/20"
-                  }`}>
-                    {completada && <span className="text-bg-primary text-xs font-bold">✓</span>}
-                  </div>
-                  <span className={`text-sm font-medium ${completada ? "text-accent" : isActive ? "text-white" : "text-white/40"}`}>
-                    Serie {serieNum}
-                  </span>
-                  <span className={`text-xs ${completada ? "text-accent/50" : "text-white/30"}`}>
-                    {currentWeekEj.reps} reps
-                  </span>
-                  {!completada && isActive && (
-                    <>
-                      <div className="flex-1" />
-                      <input
-                        type="number"
-                        step="0.5"
-                        placeholder="kg"
-                        value={pesosInput[`${currentWeekEj.ejercicioId}_${serieNum}`] ?? ""}
-                        onChange={(e) => setPesosInput({ ...pesosInput, [`${currentWeekEj.ejercicioId}_${serieNum}`]: e.target.value })}
-                        onClick={(e) => e.stopPropagation()}
-                          className="w-16 bg-white/[0.05] border border-white/[0.08] rounded-lg px-2 py-2 text-xs text-white/60 text-center focus:outline-none focus:border-accent"
-                      />
-                    </>
+          {allEjercicios.length > 1 && (
+            <div className="flex items-center gap-2 justify-center">
+              {allEjercicios.map((ej: any, idx: number) => (
+                <div key={ej.id} className="flex items-center gap-1">
+                  <div className={`w-2.5 h-2.5 rounded-full transition-all ${
+                    ejCompletados.has(idx) ? "bg-accent" : idx === currentEjIndex ? "bg-white/40" : "bg-white/[0.08]"
+                  }`} />
+                  {idx < allEjercicios.length - 1 && (
+                    <div className={`w-4 h-[2px] transition-all ${
+                      ejCompletados.has(idx) ? "bg-accent/40" : "bg-white/[0.06]"
+                    }`} />
                   )}
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
 
           {restActive ? (
-            <div className="card-glow text-center py-5">
+            <div className="card-glow text-center py-6">
               <p className="text-xs font-semibold text-accent uppercase tracking-widest mb-2">Descanso</p>
               <p className={`text-5xl font-light tracking-wider mb-3 ${restTimer !== null && restTimer <= 5 ? "text-accent" : "text-white"}`}>
                 {restTimer !== null
@@ -476,7 +526,7 @@ export default function ActiveWorkoutPage() {
               <button onClick={skipRest} className="btn-ghost text-sm">Saltar descanso →</button>
             </div>
           ) : restTimer === 0 ? (
-            <div className="card-glow text-center py-4 border-accent/30">
+            <div className="card-glow text-center py-5 border-accent/30">
               <p className="text-sm font-semibold text-accent mb-1">¡Descanso terminado!</p>
               <p className="text-xs text-white/50 mb-3">
                 {isLastSet && isLastEjercicio ? "Último ejercicio completado" : isLastSet ? "Última serie de este ejercicio" : `Preparate para la serie ${currentSet + 1}`}
@@ -489,29 +539,12 @@ export default function ActiveWorkoutPage() {
             <button
               onClick={completarSetActual}
               disabled={restActive}
-              className="btn-primary w-full py-3"
+              className="btn-primary w-full py-4 text-base"
             >
               {`Finalizar serie ${currentSet}`}
             </button>
           )}
-        </div>
-      )}
-
-      {!isWorkoutComplete && allEjercicios.length > 1 && (
-        <div className="flex items-center gap-2 justify-center">
-          {allEjercicios.map((ej: any, idx: number) => (
-            <div key={ej.id} className="flex items-center gap-1">
-              <div className={`w-2.5 h-2.5 rounded-full transition-all ${
-                ejCompletados.has(idx) ? "bg-accent" : idx === currentEjIndex ? "bg-white/40" : "bg-white/[0.08]"
-              }`} />
-              {idx < allEjercicios.length - 1 && (
-                <div className={`w-4 h-[2px] transition-all ${
-                  ejCompletados.has(idx) ? "bg-accent/40" : "bg-white/[0.06]"
-                }`} />
-              )}
-            </div>
-          ))}
-        </div>
+        </>
       )}
 
       {verProximo && proximoEjercicio && (
