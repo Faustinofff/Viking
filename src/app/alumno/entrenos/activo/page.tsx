@@ -412,46 +412,29 @@ export default function ActiveWorkoutPage() {
               </div>
             )}
 
-            {(() => {
-              const semanasExisten = !!rutina?.indicacionesSemanales?.some((s) => s.trim());
-              if (!semanasExisten && !proximoEjercicio) return null;
-              return (
-                <div className="mb-3">
-                  <div className={`flex items-stretch gap-2 ${semanasExisten ? "" : "justify-end"}`}>
-                    {semanasExisten && (
-                      <button onClick={() => setVerSemanales(!verSemanales)}
-                        className={`flex-1 min-w-0 flex items-center justify-between gap-2 h-11 rounded-xl border transition-all ${
-                          verSemanales ? "bg-white/[0.06] border-white/[0.14]" : "bg-white/[0.02] border-white/[0.08] hover:bg-white/[0.05]"
-                        }`}>
-                        <span className="text-xs font-semibold text-white/55 truncate pl-3">Indicaciones de esta semana</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 text-white/40 shrink-0 mr-3 transition-transform duration-200 ${verSemanales ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                      </button>
-                    )}
-                    {proximoEjercicio && (
-                      <button onClick={() => setVerProximo(true)}
-                        className="shrink-0 flex items-center gap-1.5 h-11 rounded-xl border border-accent/30 bg-accent/[0.06] hover:bg-accent/[0.12] px-3.5 text-xs font-semibold text-accent transition-all">
-                        Próximo
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-                      </button>
-                    )}
+            {rutina?.indicacionesSemanales?.some((s) => s.trim()) && (
+              <div className="mb-3">
+                <button onClick={() => setVerSemanales(!verSemanales)}
+                  className="w-full flex items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] px-3 h-11 transition-all">
+                  <span className="text-xs font-semibold text-white/55">Indicaciones de esta semana</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 text-white/40 shrink-0 transition-transform duration-200 ${verSemanales ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                {verSemanales && (
+                  <div className="mt-2 grid grid-cols-4 gap-2">
+                    {[0, 1, 2, 3].map((w) => {
+                      const texto = (rutina?.indicacionesSemanales ?? [])[w];
+                      if (!texto?.trim()) return null;
+                      return (
+                        <button key={w} onClick={() => setWeekToast(texto)}
+                          className="w-full text-sm font-medium text-center text-white/70 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] hover:border-accent/30 transition-all px-1 py-1.5 rounded-lg leading-tight">
+                          Semana {w + 1}
+                        </button>
+                      );
+                    })}
                   </div>
-                  {verSemanales && semanasExisten && (
-                    <div className="mt-2 grid grid-cols-4 gap-2">
-                      {[0, 1, 2, 3].map((w) => {
-                        const texto = (rutina?.indicacionesSemanales ?? [])[w];
-                        if (!texto?.trim()) return null;
-                        return (
-                          <button key={w} onClick={() => setWeekToast(texto)}
-                            className="w-full text-sm font-medium text-center text-white/70 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] hover:border-accent/30 transition-all px-1 py-1.5 rounded-lg leading-tight">
-                            Semana {w + 1}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+                )}
+              </div>
+            )}
 
             <div className="space-y-1.5">
               {Array.from({ length: currentWeekEj.series }, (_, i) => i + 1).map((serieNum) => {
