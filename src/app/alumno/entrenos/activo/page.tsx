@@ -429,13 +429,13 @@ export default function ActiveWorkoutPage() {
                   <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 text-white/40 transition-transform duration-200 ${verSemanales ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
                 {verSemanales && (
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <div className="mt-2 grid grid-cols-4 gap-2">
                     {[0, 1, 2, 3].map((w) => {
                       const texto = (rutina.indicacionesSemanales ?? [])[w];
                       if (!texto?.trim()) return null;
                       return (
                         <button key={w} onClick={() => setWeekToast(texto)}
-                          className="text-[11px] font-medium text-white/70 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] hover:border-accent/30 transition-all px-2.5 py-1">
+                          className="w-full text-sm font-medium text-center text-white/70 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] hover:border-accent/30 transition-all px-1 py-1.5 rounded-lg leading-tight">
                           Semana {w + 1}
                         </button>
                       );
