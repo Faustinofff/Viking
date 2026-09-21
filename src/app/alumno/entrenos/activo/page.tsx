@@ -392,7 +392,7 @@ export default function ActiveWorkoutPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 mb-3">
+            <div className="flex items-center gap-2 mb-3">
               {currentWeekEj.videoUrl && <TutorialButton videoUrl={currentWeekEj.videoUrl} />}
               {currentWeekEj.notas && (
                 <button onClick={() => setVerEspecs(!verEspecs)}
@@ -401,6 +401,13 @@ export default function ActiveWorkoutPage() {
                   }`}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>
                   Indicaciones del ejercicio
+                </button>
+              )}
+              {proximoEjercicio && (
+                <button onClick={() => setVerProximo(true)}
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent rounded-lg border border-accent/30 bg-accent/[0.06] hover:bg-accent/[0.12] px-2 py-1 transition-all">
+                  Próximo
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
                 </button>
               )}
             </div>
