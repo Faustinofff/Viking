@@ -341,7 +341,7 @@ export default function ActiveWorkoutPage() {
   }
 
   return (
-    <div className="px-4 pt-3 pb-6 max-w-lg mx-auto space-y-4">
+    <div className="px-4 pt-2 pb-6 max-w-lg mx-auto space-y-3">
       <div className="flex items-center justify-between gap-3">
         <Link href="/alumno/entrenos" className="shrink-0 text-sm text-white/30 hover:text-white/50">← Salir</Link>
         <div className="text-center min-w-0">
@@ -381,10 +381,19 @@ export default function ActiveWorkoutPage() {
       {!isWorkoutComplete && currentWeekEj && (
         <>
           <div className="card">
-            <div className="mb-5">
-              <p className="text-[11px] font-semibold text-accent/80 uppercase tracking-wider mb-1">{currentEjIndex + 1}/{allEjercicios.length}</p>
+            <div className="mb-3">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-[11px] font-semibold text-accent/80 uppercase tracking-wider pt-1.5">{currentEjIndex + 1}/{allEjercicios.length}</p>
+                {proximoEjercicio && (
+                  <button onClick={() => setVerProximo(true)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent rounded-lg border border-accent/30 bg-accent/[0.06] hover:bg-accent/[0.12] px-2.5 py-1.5 transition-all">
+                    Próximo
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+                  </button>
+                )}
+              </div>
               <h1 className="text-2xl font-bold text-white leading-tight">{currentWeekEj.ejercicioNombre}</h1>
-              <div className="flex flex-wrap items-center gap-2 mt-2">
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
                 <p className="text-xs text-white/40">{currentWeekEj.grupoMuscular}</p>
                 <span className="inline-flex items-center text-[11px] text-white/40 bg-white/[0.05] border border-white/[0.08] rounded-full px-2.5 py-0.5">
                   {currentWeekEj.series}×{currentWeekEj.reps} · {currentWeekEj.descansoSegundos}s
@@ -392,30 +401,30 @@ export default function ActiveWorkoutPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 mb-4">
+            <div className="flex flex-wrap items-center gap-1.5 mb-3">
               {currentWeekEj.videoUrl && <TutorialButton videoUrl={currentWeekEj.videoUrl} />}
               {currentWeekEj.notas && (
                 <button onClick={() => setVerEspecs(!verEspecs)}
-                  className={`inline-flex items-center gap-1.5 text-[11px] font-medium rounded-lg px-3 py-1.5 border transition-all ${
+                  className={`inline-flex items-center gap-1 text-[10px] font-medium rounded-lg px-2 py-1 border transition-all ${
                     verEspecs ? "bg-accent/10 text-accent border-accent/20" : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10"
                   }`}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>
                   Indicaciones del ejercicio
                 </button>
               )}
             </div>
 
             {verEspecs && currentWeekEj.notas && (
-              <div className="mb-4 bg-white/[0.03] rounded-xl p-3.5 border border-white/[0.06]">
+              <div className="mb-3 bg-white/[0.03] rounded-xl p-3 border border-white/[0.06]">
                 <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-1">Indicaciones del ejercicio</p>
                 <p className="text-xs text-white/80 whitespace-pre-wrap leading-relaxed">{currentWeekEj.notas}</p>
               </div>
             )}
 
             {rutina?.indicacionesSemanales?.some((s) => s.trim()) && (
-              <div className="mb-4">
+              <div className="mb-3">
                 <button onClick={() => setVerSemanales(!verSemanales)}
-                  className="w-full flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] px-4 py-2.5 transition-all">
+                  className="w-full flex items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] px-3 py-2 transition-all">
                   <span className="text-xs font-semibold text-white/55">Indicaciones de esta semana</span>
                   <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 text-white/40 transition-transform duration-200 ${verSemanales ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
@@ -436,18 +445,7 @@ export default function ActiveWorkoutPage() {
               </div>
             )}
 
-            {proximoEjercicio && (
-              <button onClick={() => setVerProximo(true)}
-                className="w-full flex items-center justify-between rounded-xl border border-accent/30 bg-accent/[0.06] hover:bg-accent/[0.12] px-4 py-3.5 transition-all mb-4">
-                <span className="flex items-center gap-2 text-sm font-semibold text-accent">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-                  Ver próximo ejercicio
-                </span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-accent/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-              </button>
-            )}
-
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {Array.from({ length: currentWeekEj.series }, (_, i) => i + 1).map((serieNum) => {
                 const completada = (
                   sesion?.series.some(
@@ -459,7 +457,7 @@ export default function ActiveWorkoutPage() {
                 return (
                   <div
                     key={serieNum}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all ${
+                    className={`flex items-center gap-3 px-4 py-2 rounded-xl border transition-all ${
                       completada
                         ? "bg-accent/10 border-accent/20"
                         : isActive && !restActive
@@ -488,7 +486,7 @@ export default function ActiveWorkoutPage() {
                           value={pesosInput[`${currentWeekEj.ejercicioId}_${serieNum}`] ?? ""}
                           onChange={(e) => setPesosInput({ ...pesosInput, [`${currentWeekEj.ejercicioId}_${serieNum}`]: e.target.value })}
                           onClick={(e) => e.stopPropagation()}
-                          className="w-16 bg-white/[0.05] border border-white/[0.08] rounded-lg px-2 py-2 text-xs text-white/60 text-center focus:outline-none focus:border-accent"
+                          className="w-14 bg-white/[0.05] border border-white/[0.08] rounded-lg px-2 py-1.5 text-xs text-white/60 text-center focus:outline-none focus:border-accent"
                         />
                       </>
                     )}
