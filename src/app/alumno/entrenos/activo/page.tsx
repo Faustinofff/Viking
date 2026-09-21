@@ -496,6 +496,36 @@ export default function ActiveWorkoutPage() {
                 );
               })}
             </div>
+
+            {restActive ? (
+              <div className="card-glow text-center py-6">
+                <p className="text-xs font-semibold text-accent uppercase tracking-widest mb-2">Descanso</p>
+                <p className={`text-5xl font-light tracking-wider mb-3 ${restTimer !== null && restTimer <= 5 ? "text-accent" : "text-white"}`}>
+                  {restTimer !== null
+                    ? `${Math.floor(restTimer / 60)}:${String(restTimer % 60).padStart(2, "0")}`
+                    : "0:00"}
+                </p>
+                <button onClick={skipRest} className="btn-ghost text-sm">Saltar descanso →</button>
+              </div>
+            ) : restTimer === 0 ? (
+              <div className="card-glow text-center py-5 border-accent/30">
+                <p className="text-sm font-semibold text-accent mb-1">¡Descanso terminado!</p>
+                <p className="text-xs text-white/50 mb-3">
+                  {isLastSet && isLastEjercicio ? "Último ejercicio completado" : isLastSet ? "Última serie de este ejercicio" : `Preparate para la serie ${currentSet + 1}`}
+                </p>
+                <button onClick={avanzar} className="btn-primary">
+                  {isLastSet && isLastEjercicio ? "Finalizar entreno →" : isLastSet ? "Siguiente ejercicio →" : `Serie ${currentSet + 1} →`}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={completarSetActual}
+                disabled={restActive}
+                className="btn-primary w-full py-4 text-base"
+              >
+                {`Finalizar serie ${currentSet}`}
+              </button>
+            )}
           </div>
 
           {allEjercicios.length > 1 && (
@@ -514,40 +544,6 @@ export default function ActiveWorkoutPage() {
               ))}
             </div>
           )}
-
-          <div className="sticky z-10 -mx-4 px-4 pt-3 pb-4" style={{ bottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}>
-            <div className="bg-bg-primary/85 backdrop-blur-xl rounded-2xl p-1.5 border border-white/[0.08] shadow-[0_-12px_40px_rgba(0,0,0,0.5)]">
-              {restActive ? (
-                <div className="text-center py-5">
-                  <p className="text-xs font-semibold text-accent uppercase tracking-widest mb-2">Descanso</p>
-                  <p className={`text-5xl font-light tracking-wider mb-3 ${restTimer !== null && restTimer <= 5 ? "text-accent" : "text-white"}`}>
-                    {restTimer !== null
-                      ? `${Math.floor(restTimer / 60)}:${String(restTimer % 60).padStart(2, "0")}`
-                      : "0:00"}
-                  </p>
-                  <button onClick={skipRest} className="btn-ghost text-sm">Saltar descanso →</button>
-                </div>
-              ) : restTimer === 0 ? (
-                <div className="text-center py-2">
-                  <p className="text-sm font-semibold text-accent mb-1">¡Descanso terminado!</p>
-                  <p className="text-xs text-white/50 mb-3">
-                    {isLastSet && isLastEjercicio ? "Último ejercicio completado" : isLastSet ? "Última serie de este ejercicio" : `Preparate para la serie ${currentSet + 1}`}
-                  </p>
-                  <button onClick={avanzar} className="btn-primary w-full">
-                    {isLastSet && isLastEjercicio ? "Finalizar entreno →" : isLastSet ? "Siguiente ejercicio →" : `Serie ${currentSet + 1} →`}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={completarSetActual}
-                  disabled={restActive}
-                  className="btn-primary w-full py-4 text-base"
-                >
-                  {`Finalizar serie ${currentSet}`}
-                </button>
-              )}
-            </div>
-          </div>
         </>
       )}
 
