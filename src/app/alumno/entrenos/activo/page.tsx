@@ -438,7 +438,7 @@ export default function ActiveWorkoutPage() {
                   {verSemanales && semanasExisten && (
                     <div className="mt-2 grid grid-cols-4 gap-2">
                       {[0, 1, 2, 3].map((w) => {
-                        const texto = (rutina.indicacionesSemanales ?? [])[w];
+                        const texto = (rutina?.indicacionesSemanales ?? [])[w];
                         if (!texto?.trim()) return null;
                         return (
                           <button key={w} onClick={() => setWeekToast(texto)}
