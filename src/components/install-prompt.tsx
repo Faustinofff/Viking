@@ -40,7 +40,7 @@ export default function InstallPrompt() {
     <>
       <button
         onClick={() => setModalOpen(true)}
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-5 py-3 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/[0.1] text-white/80 hover:text-white hover:bg-white/[0.1] hover:border-accent/30 transition-all shadow-2xl text-sm font-medium animate-fade-in"
+        className="fixed top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/[0.1] text-white/80 hover:text-white hover:bg-white/[0.1] hover:border-accent/30 transition-all shadow-2xl text-sm font-medium animate-fade-in"
       >
         <span>📲</span> Instalar App
       </button>
@@ -76,7 +76,7 @@ export default function InstallPrompt() {
                     muted
                     loop
                     playsInline
-                    className="w-44 h-[240px] rounded-2xl object-cover shadow-xl"
+                    className="w-44 h-auto max-h-[46vh] object-contain rounded-2xl shadow-xl"
                   />
                 </div>
 
@@ -105,7 +105,7 @@ export default function InstallPrompt() {
                     muted
                     loop
                     playsInline
-                    className="w-44 h-[240px] rounded-2xl object-cover shadow-xl"
+                    className="w-44 h-auto max-h-[46vh] object-contain rounded-2xl shadow-xl"
                   />
                 </div>
 
