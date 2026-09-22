@@ -48,10 +48,10 @@ export default function InstallPrompt() {
       {modalOpen && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
-          <div className="relative w-full max-w-sm rounded-3xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-2xl p-6 shadow-2xl animate-fade-in max-h-[90dvh] overflow-y-auto">
+          <div className="relative w-full max-w-sm rounded-3xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-2xl p-5 shadow-2xl animate-fade-in max-h-[92dvh] overflow-y-auto">
             <button onClick={() => setModalOpen(false)} className="absolute top-4 right-4 text-white/20 hover:text-white/60 text-xl leading-none">&times;</button>
 
-            <div className="flex items-center gap-1.5 mb-5 p-1 rounded-2xl bg-white/[0.05] border border-white/[0.06]">
+            <div className="flex items-center gap-1.5 mb-4 p-1 rounded-2xl bg-white/[0.05] border border-white/[0.06]">
               {(["iphone", "android"] as const).map((t) => (
                 <button
                   key={t}
@@ -67,26 +67,20 @@ export default function InstallPrompt() {
 
             {tab === "iphone" ? (
               <>
-                <h2 className="text-lg font-bold text-white mb-5 text-center">Instalar Viking en tu iPhone</h2>
+                <h2 className="text-lg font-bold text-white mb-4 text-center">Instalar Viking en tu iPhone</h2>
 
-                <div className="flex justify-center mb-6">
-                  <div className="relative w-48 h-[380px] rounded-[2.5rem] border-[6px] border-black bg-black overflow-hidden shadow-2xl">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-[22px] bg-black rounded-b-2xl z-10" />
-                    <div className="m-0.5 rounded-[2.1rem] overflow-hidden bg-white/5">
-                      <video
-                        src="/videos/install-iphone.mp4"
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-[118px] h-[4px] rounded-full bg-white/40" />
-                  </div>
+                <div className="flex justify-center mb-4">
+                  <video
+                    src="/videos/install-iphone.mp4"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="w-44 h-[240px] rounded-2xl object-cover shadow-xl"
+                  />
                 </div>
 
-                <div className="space-y-3 mb-6">
+                <div className="space-y-2.5 mb-5">
                   {[
                     { num: "1️⃣", text: 'Tocar "..."' },
                     { num: "2️⃣", text: 'Tocar "Compartir"' },
@@ -102,25 +96,20 @@ export default function InstallPrompt() {
               </>
             ) : (
               <>
-                <h2 className="text-lg font-bold text-white mb-5 text-center">Instalar Viking en tu Android</h2>
+                <h2 className="text-lg font-bold text-white mb-4 text-center">Instalar Viking en tu Android</h2>
 
-                <div className="flex justify-center mb-6">
-                  <div className="relative w-48 h-[380px] rounded-[2.5rem] border-[6px] border-black bg-black overflow-hidden shadow-2xl">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-[22px] bg-black rounded-b-2xl z-10" />
-                    <div className="m-0.5 overflow-hidden bg-white/5">
-                      <video
-                        src="/videos/install-android.mp4"
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </div>
+                <div className="flex justify-center mb-4">
+                  <video
+                    src="/videos/install-android.mp4"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="w-44 h-[240px] rounded-2xl object-cover shadow-xl"
+                  />
                 </div>
 
-                <div className="space-y-3 mb-6">
+                <div className="space-y-2.5 mb-5">
                   {[
                     { num: "1️⃣", text: 'Presioná "..."' },
                     { num: "2️⃣", text: 'Presioná "Agregar a pantalla de inicio"' },
