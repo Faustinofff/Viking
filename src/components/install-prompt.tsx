@@ -40,7 +40,7 @@ export default function InstallPrompt() {
     <>
       <button
         onClick={() => setModalOpen(true)}
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/[0.1] text-white/80 hover:text-white hover:bg-white/[0.1] hover:border-accent/30 transition-all shadow-2xl text-sm font-medium animate-fade-in"
+        className="fixed top-4 left-[55%] -translate-x-1/2 z-40 flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/[0.1] text-white/80 hover:text-white hover:bg-white/[0.1] hover:border-accent/30 transition-all shadow-2xl text-sm font-medium animate-fade-in"
       >
         <span>📲</span> Instalar App
       </button>
@@ -70,14 +70,18 @@ export default function InstallPrompt() {
                 <h2 className="text-lg font-bold text-white mb-4 text-center">Instalar Viking en tu iPhone</h2>
 
                 <div className="flex justify-center mb-4">
-                  <video
-                    src="/videos/install-iphone.mp4"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    className="w-44 h-auto max-h-[46vh] object-contain rounded-2xl shadow-xl"
-                  />
+                  <div className="relative rounded-[2.2rem] border-[6px] border-black bg-black overflow-hidden shadow-2xl">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-[20px] bg-black rounded-b-xl z-10" />
+                    <video
+                      src="/videos/install-iphone.mp4"
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      className="h-[44vh] w-auto object-contain rounded-[1.6rem]"
+                    />
+                    <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-[96px] h-[4px] rounded-full bg-white/40" />
+                  </div>
                 </div>
 
                 <div className="space-y-2.5 mb-5">
@@ -105,7 +109,7 @@ export default function InstallPrompt() {
                     muted
                     loop
                     playsInline
-                    className="w-44 h-auto max-h-[46vh] object-contain rounded-2xl shadow-xl"
+                    className="h-[44vh] w-auto object-contain rounded-[2rem] shadow-2xl"
                   />
                 </div>
 
