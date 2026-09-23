@@ -1,9 +1,17 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo, useReducer } from "react";
+import { useState, useEffect, useCallback, useMemo, useReducer, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAppStore, type Rutina } from "@/lib/store";
 import { getStudentWorkoutPlans, getStudentCurrentWeek, saveStudentCurrentWeek, ejercicioWeekValue, parseIndicacionesSemanales, getLastWeights } from "@/lib/data";
+import {
+  loadSessionSnapshot,
+  saveSessionSnapshot,
+  clearSessionSnapshot,
+  isSnapshotValidFor,
+  injectSessionIntoStore,
+  type WorkoutSessionSnapshot,
+} from "@/lib/workout-session";
 import TutorialButton from "@/components/tutorial-button";
 import WorkoutSummary from "../_components/workout-summary";
 
@@ -25,6 +33,9 @@ export default function ActiveWorkoutPage() {
   const [rutina, setRutina] = useState<Rutina | null>(null);
   const [dia, setDia] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
+  const positionFromSnapshot = useRef(false);
+  const lastSnapRef = useRef<WorkoutSessionSnapshot | null>(null);
 
   const [showWeekSelector, setShowWeekSelector] = useState(false);
 
@@ -150,20 +161,53 @@ export default function ActiveWorkoutPage() {
 
   const sesion = useMemo(() => sesionesEntreno.find((s) => s.id === sesionId), [sesionesEntreno, sesionId]);
 
-  // Initialize session and restore position
+  // Initialize session, restoring a persisted in-progress one when it exists
   useEffect(() => {
     if (!alumnoId || !rutina || !dia || sesionId) return;
+
+    const snap = loadSessionSnapshot(alumnoId);
+    const exerciseIds = dia.ejercicios.map((e: any) => e.ejercicioId);
+    if (snap && isSnapshotValidFor(snap, alumnoId, rutina.id, dia.id, exerciseIds)) {
+      injectSessionIntoStore(snap.sesion);
+      setSesionId(snap.sesion.id);
+      if (Number.isInteger(snap.currentEjIndex) && snap.currentEjIndex >= 0 && snap.currentEjIndex < dia.ejercicios.length) {
+        setCurrentEjIndex(snap.currentEjIndex);
+      }
+      if (Number.isInteger(snap.currentSet) && snap.currentSet > 0) setCurrentSet(snap.currentSet);
+      if (Array.isArray(snap.ejCompletados)) setEjCompletados(new Set(snap.ejCompletados));
+      if (Array.isArray(snap.setsCompletadosLocal)) setSetsCompletadosLocal(new Set(snap.setsCompletadosLocal));
+      if (snap.pesosInput) setPesosInput(snap.pesosInput);
+      if (snap.restActive && snap.restEndTime !== null) {
+        if (snap.restEndTime > Date.now()) {
+          setRestEndTime(snap.restEndTime);
+          setRestActive(true);
+        } else {
+          // El timer ya terminó mientras la app estaba fuera: mostrarlo terminado, NO reiniciar
+          setRestEndTime(snap.restEndTime);
+          setRestActive(false);
+        }
+      } else {
+        setRestEndTime(null);
+        setRestActive(false);
+      }
+      positionFromSnapshot.current = true;
+      setHydrated(true);
+      return;
+    }
+
     if (sesionActiva) {
       setSesionId(sesionActiva.id);
     } else {
       const id = iniciarSesionEntreno(alumnoId, rutina.id, dia.id);
       setSesionId(id);
     }
+    setHydrated(true);
   }, [alumnoId, rutina, dia, sesionId]);
 
   // Restore current position from existing session
   useEffect(() => {
     if (!sesion || !allEjercicios.length) return;
+    if (positionFromSnapshot.current) return;
     // Populate local completed sets from session
     const local = new Set<string>();
     sesion.series.filter((s) => s.completada).forEach((s) => {
@@ -245,6 +289,51 @@ export default function ActiveWorkoutPage() {
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
+
+  // ─── Persistencia progresiva de la sesión en curso ───
+  const sesionEnCurso = hydrated && !!sesion && !!sesionId && !sesion.completada;
+
+  useEffect(() => {
+    if (!sesionEnCurso) return;
+    const snap: WorkoutSessionSnapshot = {
+      version: 1,
+      alumnoId,
+      sesion,
+      currentWeek,
+      currentEjIndex,
+      currentSet,
+      ejCompletados: Array.from(ejCompletados),
+      setsCompletadosLocal: Array.from(setsCompletadosLocal),
+      pesosInput,
+      restEndTime,
+      restActive,
+      updatedAt: Date.now(),
+    };
+    lastSnapRef.current = snap;
+    saveSessionSnapshot(alumnoId, snap);
+  }, [sesionEnCurso, sesion, currentWeek, currentEjIndex, currentSet, ejCompletados, setsCompletadosLocal, pesosInput, restEndTime, restActive]);
+
+  // Persistir también al pasar la app a background / salir de ella
+  useEffect(() => {
+    const persist = () => {
+      const snap = lastSnapRef.current;
+      if (snap && !snap.sesion.completada) saveSessionSnapshot(snap.alumnoId, snap);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") persist();
+    };
+    window.addEventListener("pagehide", persist);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", persist);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
+  // Al terminar el entreno (completada), limpiar la sesión temporal persistida
+  useEffect(() => {
+    if (sesion?.completada) clearSessionSnapshot(alumnoId);
+  }, [sesion?.completada, alumnoId]);
 
   const totalSets = useMemo(() =>
     weekEjercicios.reduce((sum: number, e: any) => sum + e.series, 0),

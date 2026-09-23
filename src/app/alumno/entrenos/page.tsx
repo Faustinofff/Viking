@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppStore, type Rutina } from "@/lib/store";
 import { getStudentWorkoutPlans, getCompletionsBatch, getWeeksCompletadas, getStudentCurrentWeek, saveStudentCurrentWeek, ejercicioWeekValue, parseIndicacionesSemanales } from "@/lib/data";
+import { restoreWorkoutSession } from "@/lib/workout-session";
 import TutorialButton from "@/components/tutorial-button";
 
 export default function StudentEntrenosPage() {
@@ -26,6 +27,7 @@ export default function StudentEntrenosPage() {
     if (!usuario?.id) return;
     const load = async () => {
       try {
+        restoreWorkoutSession(usuario.id);
         await loadCurrentWeek();
         const week = useAppStore.getState().currentWeek;
         const plans = await getStudentWorkoutPlans(usuario.id);
@@ -102,12 +104,17 @@ export default function StudentEntrenosPage() {
   if (!usuario) return null;
   const fullCompletions = completions;
 
-  const sesionActiva = sesionesEntreno.find((s) =>
+  const sesionActivaRaw = sesionesEntreno.find((s) =>
     s.alumnoId === usuario.id
     && !s.completada
     && s.series.some((ser) => !ser.completada)
     && !fullCompletions[s.diaRutinaId]
   );
+  const sesionActiva =
+    sesionActivaRaw &&
+    rutinas.some((r) => r.id === sesionActivaRaw.rutinaId && r.dias.some((d) => d.id === sesionActivaRaw.diaRutinaId))
+      ? sesionActivaRaw
+      : undefined;
 
   if (loading) {
     return (
