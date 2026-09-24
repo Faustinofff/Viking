@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { PLANES_PREMIUM } from "@/lib/data";
-import { canManageBranding } from "@/lib/branding";
 import ChatDialog from "@/components/chat";
 
 const BOTTOM_NAV = [
@@ -46,12 +45,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const nav = usuario?.rol === "coach" && canManageBranding(usuario.email) ? [...NAV, PERSONALIZACION_NAV] : NAV;
+  const nav = usuario?.rol === "coach" && usuario?.brandingEnabled === true ? [...NAV, PERSONALIZACION_NAV] : NAV;
 
   useEffect(() => {
     if (usuario?.rol === "coach") {
       useAppStore.getState().syncCoachData();
+      useAppStore.getState().refreshBrandingEnabled();
     }
+  }, [usuario?.id]);
+
+  useEffect(() => {
+    const onFocus = () => {
+      if (usuario?.rol === "coach") useAppStore.getState().refreshBrandingEnabled();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
   }, [usuario?.id]);
 
   useEffect(() => {

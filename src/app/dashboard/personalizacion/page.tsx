@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
-import { canManageBranding, getCoachBranding, CoachBranding } from "@/lib/branding";
+import { getCoachBranding } from "@/lib/branding";
 import LogoUpload, { BrandingIcons } from "@/components/logo-upload";
 
 export default function CoachPersonalizacionPage() {
@@ -18,7 +18,13 @@ export default function CoachPersonalizacionPage() {
   const [brandIcon512, setBrandIcon512] = useState<string | null>(null);
   const [brandIcon180, setBrandIcon180] = useState<string | null>(null);
 
-  const allowed = usuario?.rol === "coach" && canManageBranding(usuario.email);
+  const allowed = usuario?.rol === "coach" && usuario?.brandingEnabled === true;
+
+  useEffect(() => {
+    if (usuario?.rol === "coach") {
+      useAppStore.getState().refreshBrandingEnabled();
+    }
+  }, [usuario?.id]);
 
   useEffect(() => {
     if (!usuario) return;
@@ -56,8 +62,8 @@ export default function CoachPersonalizacionPage() {
     return (
       <div className="p-6 md:p-8 max-w-4xl mx-auto">
         <div className="card text-center p-8">
-          <p className="text-white/60 mb-2">Esta función está en fase beta privada.</p>
-          <p className="text-sm text-white/30">Todavía no está disponible para tu cuenta.</p>
+          <p className="text-white/60 mb-2">Todavía no tenés acceso a la personalización.</p>
+          <p className="text-sm text-white/30">Ponete en contacto con tu administrador para habilitarla.</p>
         </div>
       </div>
     );

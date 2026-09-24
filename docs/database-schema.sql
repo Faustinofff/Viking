@@ -13,6 +13,7 @@ CREATE TABLE public.profiles (
   display_name TEXT NOT NULL,
   avatar_url  TEXT,
   role        TEXT NOT NULL CHECK (role IN ('independent', 'student', 'coach', 'admin')),
+  branding_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   onboarded   BOOLEAN DEFAULT FALSE,
   created_at  TIMESTAMPTZ DEFAULT NOW(),
   updated_at  TIMESTAMPTZ DEFAULT NOW()

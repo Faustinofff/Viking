@@ -2,7 +2,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/lib/store";
-import { canManageBranding } from "@/lib/branding";
 
 export default function CoachProfilePage() {
   const usuario = useAppStore((s) => s.usuarioActual);
@@ -59,7 +58,7 @@ export default function CoachProfilePage() {
         </div>
       </div>
 
-      {canManageBranding(usuario?.email) && (
+      {usuario?.rol === "coach" && usuario?.brandingEnabled === true && (
         <Link href="/dashboard/personalizacion" className="card flex items-center justify-between p-5 hover:border-accent/30 transition-all">
           <div className="flex items-center gap-4">
             <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center text-xl">🎨</div>

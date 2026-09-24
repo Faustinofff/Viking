@@ -1,10 +1,10 @@
 // ─── Coach Branding ────────────────────────────────────────────────
-// Private beta: solo el coach de prueba puede configurar branding.
-// Para habilitar el resto de coaches, cambiar canManageBranding().
+// El permiso para configurar branding lo otorga el admin por coach
+// (columna profiles.branding_enabled). Sin permiso, la sección
+// "Personalización" no aparece en el panel del coach.
 
 import { supabase } from "@/lib/supabase";
 
-export const PRIVATE_BRANDING_TEST_EMAIL = "faustinofiordalisi@gmail.com";
 export const BRANDING_STORAGE_BUCKET = "branding";
 export const BRANDING_LOGO_MAX_BYTES = 2 * 1024 * 1024;
 export const BRANDING_LOGO_TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -41,9 +41,34 @@ export interface CoachBranding {
 }
 
 /** Gate: habilita la configuración de branding para un coach. */
-export function canManageBranding(email?: string | null): boolean {
-  if (!email) return false;
-  return email.toLowerCase() === PRIVATE_BRANDING_TEST_EMAIL.toLowerCase();
+export async function getBrandingEnabled(userId: string): Promise<boolean> {
+  if (!userId) return false;
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("branding_enabled")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error || !data) return false;
+  return data.branding_enabled === true;
+}
+
+function permissionCacheKey(userId: string) {
+  return `viking_branding_${userId}`;
+}
+
+/** Cachea el permiso para que la sección aparezca de forma síncrona al reentrar. */
+export function cacheBrandingEnabled(userId: string, enabled: boolean) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(permissionCacheKey(userId), enabled ? "1" : "0"); } catch {}
+}
+
+/** Permiso desde la caché local (null si no hay dato). */
+export function loadCachedBrandingEnabled(userId: string): boolean | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = localStorage.getItem(permissionCacheKey(userId));
+    return v === "1" ? true : v === "0" ? false : null;
+  } catch { return null; }
 }
 
 function normalizeBrandColor(color: string | undefined | null): string | null {

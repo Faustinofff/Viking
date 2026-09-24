@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { getAdminClient, ADMIN_SUPABASE_URL } from "@/lib/admin";
-import { canManageBranding, BRANDING_STORAGE_BUCKET } from "@/lib/branding";
+import { BRANDING_STORAGE_BUCKET } from "@/lib/branding";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -31,7 +31,7 @@ function extractBlob(profile: any): { blob: Record<string, any>; originalUrl: st
   return { blob, originalUrl };
 }
 
-/** Server-side auth: el usuario debe estar logueado, ser coach y estar habilitado. */
+/** Server-side auth: el usuario debe estar logueado, ser coach y tener el permiso de branding. */
 export async function requireBrandingCoach(token: string | null | undefined): Promise<BrandingAuthUser | null> {
   if (!token) return null;
   const anonClient = createClient(supabaseUrl, supabaseAnonKey);
@@ -39,7 +39,14 @@ export async function requireBrandingCoach(token: string | null | undefined): Pr
   if (error || !user) return null;
   const email = user.email ?? "";
   const rol = user.user_metadata?.rol;
-  if (rol !== "coach" || !canManageBranding(email)) return null;
+  if (rol !== "coach") return null;
+  const admin = getAdminClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("branding_enabled")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!profile?.branding_enabled) return null;
   return { id: user.id, email };
 }
 

@@ -55,7 +55,7 @@ import {
   type StudentActivity,
 } from "./data";
 import { trackActivity } from "./telemetry";
-import { getCoachBranding, saveStudentCoachId, clearStudentCoachId, type CoachBranding } from "./branding";
+import { getCoachBranding, saveStudentCoachId, clearStudentCoachId, getBrandingEnabled, cacheBrandingEnabled, loadCachedBrandingEnabled, type CoachBranding } from "./branding";
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -72,6 +72,8 @@ export interface Usuario {
   rol: Rol;
   telefono?: string;
   avatar?: string;
+  /** Permiso de branding otorgado por el admin (solo coaches). */
+  brandingEnabled?: boolean;
 }
 
 export interface Alumno {
@@ -425,6 +427,7 @@ interface AppState {
   setUsuario: (u: Usuario) => void;
   iniciarSesion: (rol: Rol, nombre: string, email: string) => void;
   cerrarSesion: () => void;
+  refreshBrandingEnabled: () => Promise<void>;
   _cerrandoSesion: boolean;
 
   // Datos
@@ -561,12 +564,20 @@ export const useAppStore = create<AppState>((set, get) => {
   // Auth
   usuarioActual: null,
   _cerrandoSesion: false,
-  setUsuario: (u) => set({ usuarioActual: { ...u, telefono: u.telefono || loadTelefono() || undefined } }),
+  setUsuario: (u) => set({ usuarioActual: { ...u, telefono: u.telefono || loadTelefono() || undefined, brandingEnabled: u.rol === "coach" ? (u.brandingEnabled ?? loadCachedBrandingEnabled(u.id) ?? undefined) : undefined } }),
+  refreshBrandingEnabled: async () => {
+    const u = get().usuarioActual;
+    if (!u || u.rol !== "coach") return;
+    const enabled = await getBrandingEnabled(u.id);
+    cacheBrandingEnabled(u.id, enabled);
+    set({ usuarioActual: { ...get().usuarioActual!, brandingEnabled: enabled } });
+  },
   iniciarSesion: async (rol, nombre, email) => {
     const { data: { user } } = await supabase.auth.getUser();
     const id = user?.id ?? `anon_${Date.now()}`;
     const telefono = loadTelefono() || undefined;
-    set({ usuarioActual: { id, nombre, email, rol, telefono } });
+    set({ usuarioActual: { id, nombre, email, rol, telefono, brandingEnabled: rol === "coach" ? (loadCachedBrandingEnabled(id) ?? undefined) : undefined } });
+    if (rol === "coach") get().refreshBrandingEnabled();
   },
   cerrarSesion: async () => {
     if (get()._cerrandoSesion) return;
