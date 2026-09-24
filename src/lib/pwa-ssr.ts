@@ -9,25 +9,30 @@ export interface PwaBrand {
   color: string;
   /** Ícono apple-touch-icon (180) de la marca, o el fallback Viking. */
   icon: string;
+  /** Íconos del manifest (192/512) de la marca, o el fallback Viking. */
+  icon192: string;
+  icon512: string;
 }
 
-const FALLBACK: PwaBrand = { name: "Viking", color: "#0a0a0a", icon: "/app-icon.png" };
+const FALLBACK: PwaBrand = { name: "Viking", color: "#0a0a0a", icon: "/app-icon.png", icon192: "/app-icon.png", icon512: "/app-icon.png" };
 
-function parseBrand(raw: unknown): { name: string | null; color: string | null; icon: string | null } {
-  if (!raw || typeof raw !== "object") return { name: null, color: null, icon: null };
+function parseBrand(raw: unknown): { name: string | null; color: string | null; icon180: string | null; icon192: string | null; icon512: string | null } {
+  if (!raw || typeof raw !== "object") return { name: null, color: null, icon180: null, icon192: null, icon512: null };
   const r = raw as Record<string, unknown>;
   const name = typeof r.brandName === "string" ? r.brandName.trim() : "";
   let color: string | null = null;
   if (typeof r.brandColor === "string" && /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(r.brandColor.trim())) {
     color = r.brandColor.trim().toLowerCase();
   }
-  const icon =
-    (typeof r.brandIcon180 === "string" && r.brandIcon180.trim() ? r.brandIcon180.trim() : null) ??
-    (typeof r.brandLogoUrl === "string" && r.brandLogoUrl.trim() ? r.brandLogoUrl.trim() : null);
-  return { name: name || null, color, icon };
+  const str = (k: string) => (typeof r[k] === "string" && (r[k] as string).trim() ? (r[k] as string).trim() : null);
+  const logo = str("brandLogoUrl");
+  const icon180 = str("brandIcon180") ?? logo;
+  const icon192 = str("brandIcon192") ?? logo;
+  const icon512 = str("brandIcon512") ?? logo;
+  return { name: name || null, color, icon180, icon192, icon512 };
 }
 
-async function readBrandingBlob(coachId: string): Promise<{ name: string | null; color: string | null; icon: string | null } | null> {
+async function readBrandingBlob(coachId: string): Promise<{ name: string | null; color: string | null; icon180: string | null; icon192: string | null; icon512: string | null } | null> {
   const client = getAdminClient();
   const { data } = await client.from("profiles").select("avatar_url").eq("id", coachId).maybeSingle();
   if (!data?.avatar_url) return null;
@@ -35,7 +40,7 @@ async function readBrandingBlob(coachId: string): Promise<{ name: string | null;
     const parsed = JSON.parse(data.avatar_url);
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && parsed.branding) {
       const b = parseBrand(parsed.branding);
-      if (b.name || b.icon) return b;
+      if (b.name || b.icon180) return b;
     }
   } catch {}
   return null;
@@ -72,7 +77,9 @@ export async function resolvePwaBrand(uid: string | null | undefined): Promise<P
     return {
       name: b.name || FALLBACK.name,
       color: b.color || FALLBACK.color,
-      icon: b.icon || FALLBACK.icon,
+      icon: b.icon180 || FALLBACK.icon,
+      icon192: b.icon192 || FALLBACK.icon192,
+      icon512: b.icon512 || FALLBACK.icon512,
     };
   } catch {
     return FALLBACK;

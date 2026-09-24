@@ -37,7 +37,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  let brand: PwaBrand = { name: "Viking", color: "#0a0a0a", icon: "/app-icon.png" };
+  let brand: PwaBrand = { name: "Viking", color: "#0a0a0a", icon: "/app-icon.png", icon192: "/app-icon.png", icon512: "/app-icon.png" };
   try {
     const uid = cookies().get(UID_COOKIE)?.value ?? null;
     brand = await resolvePwaBrand(uid);
@@ -45,7 +45,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="es" className="dark">
       <head>
-        <link id="pwa-manifest" rel="manifest" href="/manifest.json" />
+        <link id="pwa-manifest" rel="manifest" href="/api/pwa-manifest" />
         <link id="pwa-apple-icon" rel="apple-touch-icon" sizes="180x180" href={brand.icon} />
         <meta id="pwa-apple-title" name="apple-mobile-web-app-title" content={brand.name} />
         <meta id="pwa-app-name" name="application-name" content={brand.name} />
@@ -68,17 +68,6 @@ try{
   var il=document.getElementById('pwa-apple-icon'); if(il) il.href=icon;
   document.title=name;
   if(color){var tm=document.querySelector('meta[name="theme-color"]'); if(tm) tm.setAttribute('content',color);}
-  if(name!=='Viking'){
-    var ml=document.getElementById('pwa-manifest');
-    if(ml){
-      var mn={name:name,short_name:name.slice(0,12),description:'Plataforma premium de entrenamiento para coaches y alumnos',start_url:'/login',display:'standalone',display_override:['standalone','minimal-ui','browser'],scope:'/',id:'/',background_color:'#0a0a0a',theme_color:color||'#0a0a0a',orientation:'portrait',icons:[
-        {src:icon,sizes:'192x192',type:'image/png',purpose:'any'},
-        {src:icon,sizes:'512x512',type:'image/png',purpose:'any'},
-        {src:icon,sizes:'512x512',type:'image/png',purpose:'maskable'}
-      ]};
-      ml.href=URL.createObjectURL(new Blob([JSON.stringify(mn)],{type:'application/manifest+json'}));
-    }
-  }
 }catch(e){}
 }
 apply();
