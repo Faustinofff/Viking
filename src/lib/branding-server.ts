@@ -1,9 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
-import { getAdminClient } from "@/lib/admin";
-import { canManageBranding } from "@/lib/branding";
+import { getAdminClient, ADMIN_SUPABASE_URL } from "@/lib/admin";
+import { canManageBranding, BRANDING_STORAGE_BUCKET } from "@/lib/branding";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+
+export function isBrandingStorageUrl(url: string): boolean {
+  return url.startsWith(`${ADMIN_SUPABASE_URL}/storage/v1/object/public/${BRANDING_STORAGE_BUCKET}/`);
+}
 
 export interface BrandingAuthUser {
   id: string;

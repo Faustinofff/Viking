@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/admin";
-import { BRANDING_STORAGE_BUCKET, BRANDING_LOGO_MAX_BYTES, BRANDING_LOGO_TYPES, isBrandingStorageUrl } from "@/lib/branding";
-import { requireBrandingCoach } from "@/lib/branding-server";
+import { BRANDING_STORAGE_BUCKET, BRANDING_LOGO_MAX_BYTES, BRANDING_LOGO_TYPES } from "@/lib/branding";
+import { requireBrandingCoach, isBrandingStorageUrl } from "@/lib/branding-server";
 
 export const dynamic = "force-dynamic";
 

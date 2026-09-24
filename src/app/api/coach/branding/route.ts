@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parseCoachBranding, serializeCoachBranding, isBrandingStorageUrl, CoachBranding } from "@/lib/branding";
-import { requireBrandingCoach, readCoachBlob, writeCoachBlob } from "@/lib/branding-server";
+import { parseCoachBranding, serializeCoachBranding, CoachBranding } from "@/lib/branding";
+import { requireBrandingCoach, readCoachBlob, writeCoachBlob, isBrandingStorageUrl } from "@/lib/branding-server";
 
 export const dynamic = "force-dynamic";
 

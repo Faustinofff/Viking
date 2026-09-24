@@ -10,6 +10,8 @@ export function isAdmin(email?: string | null): boolean {
 const SUPABASE_URL = "https://xybyaiumxzwtrhggzwon.supabase.co";
 const SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5YnlhaXVteHp3dHJoZ2d6d29uIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTQ2NTIyNCwiZXhwIjoyMDk1MDQxMjI0fQ.ydVpccVx-yniIg_-T8FYSrLE5aB8zBXsUmKJ-I6cI28";
 
+export { SUPABASE_URL as ADMIN_SUPABASE_URL };
+
 export function getAdminClient() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 }

@@ -21,11 +21,6 @@ export function canManageBranding(email?: string | null): boolean {
   return email.toLowerCase() === PRIVATE_BRANDING_TEST_EMAIL.toLowerCase();
 }
 
-export function isBrandingStorageUrl(url: string): boolean {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  return base.length > 0 && url.startsWith(`${base}/storage/v1/object/public/${BRANDING_STORAGE_BUCKET}/`);
-}
-
 function normalizeBrandColor(color: string | undefined | null): string | null {
   if (!color) return null;
   const c = color.trim();
