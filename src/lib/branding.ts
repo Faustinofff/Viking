@@ -9,6 +9,26 @@ export const BRANDING_STORAGE_BUCKET = "branding";
 export const BRANDING_LOGO_MAX_BYTES = 2 * 1024 * 1024;
 export const BRANDING_LOGO_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
+const STORAGE_STUDENT_COACH_KEY = "viking_student_coach";
+
+/** Persiste el coach del alumno para mostrarlo sin esperar a la red. */
+export function saveStudentCoachId(coachId: string) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(STORAGE_STUDENT_COACH_KEY, coachId); } catch {}
+}
+
+/** Coach del alumno desde la caché local (null si no hay o se cerró sesión). */
+export function loadStudentCoachId(): string | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage.getItem(STORAGE_STUDENT_COACH_KEY); } catch { return null; }
+}
+
+/** Limpia la relación alumno→coach (al cerrar sesión). */
+export function clearStudentCoachId() {
+  if (typeof window === "undefined") return;
+  try { localStorage.removeItem(STORAGE_STUDENT_COACH_KEY); } catch {}
+}
+
 export interface CoachBranding {
   brandName: string | null;
   brandLogoUrl: string | null;

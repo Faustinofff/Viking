@@ -55,6 +55,7 @@ import {
   type StudentActivity,
 } from "./data";
 import { trackActivity } from "./telemetry";
+import { getCoachBranding, saveStudentCoachId, clearStudentCoachId, type CoachBranding } from "./branding";
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -405,7 +406,7 @@ function loadTelefono(): string {
   try { return localStorage.getItem(STORAGE_TELEFONO_KEY) ?? ""; } catch { return ""; }
 }
 
-function loadCoaches(): Record<string, { id: string; nombre: string; telefono?: string; email?: string }> {
+function loadCoaches(): Record<string, { id: string; nombre: string; telefono?: string; email?: string; branding?: CoachBranding | null }> {
   if (typeof window === "undefined") return INITIAL_COACHES;
   try {
     const saved = localStorage.getItem(STORAGE_COACHES_KEY);
@@ -437,7 +438,7 @@ interface AppState {
   registrosPeso: RegistroPeso[];
   sesionesEntreno: SesionEntreno[];
   actividades: Actividad[];
-  coaches: Record<string, { id: string; nombre: string; telefono?: string; email?: string }>;
+  coaches: Record<string, { id: string; nombre: string; telefono?: string; email?: string; branding?: CoachBranding | null }>;
   ejerciciosPersonalizados: Ejercicio[];
   premium: PremiumData | null;
   premiumCargado: boolean;
@@ -495,6 +496,7 @@ interface AppState {
   actualizarTelefono: (telefono: string) => void;
   actualizarNombre: (nombre: string) => void;
   actualizarCoachEnAlumnos: () => void;
+  actualizarCoachBranding: (coachId: string, branding: CoachBranding | null) => void;
 
   // Ejercicios personalizados (independiente mode)
   agregarEjercicioPropio: (e: Omit<Ejercicio, "id">) => void;
@@ -577,6 +579,7 @@ export const useAppStore = create<AppState>((set, get) => {
       "viking_last_path",
     ];
     for (const k of storageKeys) { try { localStorage.removeItem(k); } catch {} }
+    clearStudentCoachId();
     set({
       usuarioActual: null, alumnos: [], redes: [], ejercicios: [],
       rutinas: [], planesNutricionales: [], agenda: [], registrosAgua: [],
@@ -1220,6 +1223,7 @@ export const useAppStore = create<AppState>((set, get) => {
           const cid = await getCoachByStudentEmail(email);
           if (cid) {
             resolvedCoachId = cid;
+            saveStudentCoachId(cid);
             const { data: coachProfile } = await supabase
               .from("profiles")
               .select("id, email, display_name")
@@ -1228,7 +1232,9 @@ export const useAppStore = create<AppState>((set, get) => {
             if (coachProfile) {
               let coachPhone = "";
               try { coachPhone = await getCoachPhone(cid); } catch {}
-              const coaches = { ...get().coaches, [cid]: { id: cid, nombre: coachProfile.display_name, email: coachProfile.email, telefono: coachPhone || undefined } };
+              let coachBranding: CoachBranding | null = null;
+              try { coachBranding = (await getCoachBranding(cid)) ?? get().coaches[cid]?.branding ?? null; } catch { coachBranding = get().coaches[cid]?.branding ?? null; }
+              const coaches = { ...get().coaches, [cid]: { id: cid, nombre: coachProfile.display_name, email: coachProfile.email, telefono: coachPhone || undefined, branding: coachBranding } };
               set({ coaches });
               try { localStorage.setItem(STORAGE_COACHES_KEY, JSON.stringify(coaches)); } catch {}
             }
@@ -1644,6 +1650,15 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ coaches });
       try { localStorage.setItem(STORAGE_COACHES_KEY, JSON.stringify(coaches)); } catch {}
     }
+  },
+  actualizarCoachBranding: (coachId, branding) => {
+    const state = get();
+    const coaches = {
+      ...state.coaches,
+      [coachId]: { ...(state.coaches[coachId] ?? { id: coachId, nombre: "" }), branding },
+    };
+    set({ coaches });
+    try { localStorage.setItem(STORAGE_COACHES_KEY, JSON.stringify(coaches)); } catch {}
   },
 
   // ─── Ejercicios propios ───────────────────────────────────
