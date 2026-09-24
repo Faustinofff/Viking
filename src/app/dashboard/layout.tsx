@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { PLANES_PREMIUM } from "@/lib/data";
+import { canManageBranding } from "@/lib/branding";
 import ChatDialog from "@/components/chat";
 
 const BOTTOM_NAV = [
@@ -25,6 +26,8 @@ const NAV = [
   { href: "/dashboard/ayuda", label: "Ayuda", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> },
 ];
 
+const PERSONALIZACION_NAV = { href: "/dashboard/personalizacion", label: "Personalización", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9l2.1 2.1m10 10 2.1 2.1m0-14.2-2.1 2.1m-10 10-2.1 2.1"/></svg> }
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const usuario = useAppStore((s) => s.usuarioActual);
@@ -42,6 +45,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const cerrarSesion = useAppStore((s) => s.cerrarSesion);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const nav = usuario?.rol === "coach" && canManageBranding(usuario.email) ? [...NAV, PERSONALIZACION_NAV] : NAV;
 
   useEffect(() => {
     if (usuario?.rol === "coach") {
@@ -77,7 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       <div className="flex-1 py-3 px-2 space-y-1 overflow-y-auto hide-scrollbar">
-        {NAV.map((item) => {
+        {nav.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
           return (
             <Link
@@ -157,7 +162,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
             </div>
             <div className="flex-1 py-3 px-2 space-y-1 overflow-y-auto hide-scrollbar">
-              {NAV.map((item) => {
+              {nav.map((item) => {
                 const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
                 return (
                   <Link

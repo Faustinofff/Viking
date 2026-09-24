@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useAppStore } from "@/lib/store";
+import { canManageBranding } from "@/lib/branding";
 
 export default function CoachProfilePage() {
   const usuario = useAppStore((s) => s.usuarioActual);
@@ -56,6 +58,19 @@ export default function CoachProfilePage() {
           </div>
         </div>
       </div>
+
+      {canManageBranding(usuario?.email) && (
+        <Link href="/dashboard/personalizacion" className="card flex items-center justify-between p-5 hover:border-accent/30 transition-all">
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center text-xl">🎨</div>
+            <div>
+              <p className="font-bold text-white">Personalización</p>
+              <p className="text-xs text-white/40 mt-0.5">Tu marca en la app de tus alumnos</p>
+            </div>
+          </div>
+          <span className="text-accent text-sm">→</span>
+        </Link>
+      )}
     </div>
   );
 }

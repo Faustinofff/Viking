@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import ChatDialog from "@/components/chat";
+import StudentBranding from "@/components/student-branding";
 
 const NAV = [
   { href: "/alumno", label: "Inicio", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5V20a2 2 0 0 1-2 2h-5v-6h-4v6H5a2 2 0 0 1-2-2z"/></svg> },
@@ -43,8 +44,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       {/* Top bar */}
       <header className="shrink-0 flex items-center justify-between px-5 border-b border-white/[0.06]" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 10px))", paddingBottom: "1rem" }}>
         <div className="flex items-center gap-2.5">
-          <img src="/Viking.png" alt="Viking" className="w-16 h-16 object-contain" />
-          <span className="text-white font-bold">Viking</span>
+          <StudentBranding />
         </div>
         <div className="flex items-center gap-3">
           <Link href="/alumno/agenda"
