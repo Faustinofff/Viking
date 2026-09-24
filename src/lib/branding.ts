@@ -33,6 +33,7 @@ export interface CoachBranding {
   brandName: string | null;
   brandLogoUrl: string | null;
   brandColor: string | null;
+  brandLogoShape: "square" | "circle";
 }
 
 /** Gate: habilita la configuración de branding para un coach. */
@@ -55,11 +56,13 @@ export function parseCoachBranding(raw: unknown): CoachBranding | null {
   const brandName = typeof r.brandName === "string" ? r.brandName.trim().slice(0, 60) : "";
   const brandLogoUrl = typeof r.brandLogoUrl === "string" ? r.brandLogoUrl.trim() : "";
   const brandColor = normalizeBrandColor(typeof r.brandColor === "string" ? r.brandColor : undefined);
+  const brandLogoShape = r.brandLogoShape === "circle" ? "circle" : "square";
   if (!brandName && !brandLogoUrl && !brandColor) return null;
   return {
     brandName: brandName || null,
     brandLogoUrl: brandLogoUrl || null,
     brandColor,
+    brandLogoShape,
   };
 }
 
@@ -69,6 +72,7 @@ export function serializeCoachBranding(b: CoachBranding): Record<string, unknown
   if (b.brandName) out.brandName = b.brandName;
   if (b.brandLogoUrl) out.brandLogoUrl = b.brandLogoUrl;
   if (b.brandColor) out.brandColor = b.brandColor;
+  if (b.brandLogoShape === "circle") out.brandLogoShape = "circle";
   if (Object.keys(out).length === 0) return { _v1: true };
   return out;
 }

@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { BRANDING_LOGO_MAX_BYTES, BRANDING_LOGO_TYPES } from "@/lib/branding";
 
-export default function LogoUpload({ value, onChange }: { value: string | null; onChange: (url: string | null) => void }) {
+export default function LogoUpload({ value, onChange, shape = "square" }: { value: string | null; onChange: (url: string | null) => void; shape?: "square" | "circle" }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<string | null>(value);
@@ -58,7 +58,7 @@ export default function LogoUpload({ value, onChange }: { value: string | null; 
           <img
             src={preview}
             alt="Logo actual"
-            className="w-16 h-16 object-contain rounded-xl border border-white/10 bg-white/[0.03] p-1"
+            className={`w-16 h-16 object-contain rounded-xl border border-white/10 bg-white/[0.03] ${shape === "circle" ? "rounded-full object-cover" : ""}`}
             onError={() => setPreview(null)}
           />
         ) : (

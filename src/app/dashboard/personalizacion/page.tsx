@@ -13,6 +13,7 @@ export default function CoachPersonalizacionPage() {
   const [brandName, setBrandName] = useState("");
   const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(null);
   const [brandColor, setBrandColor] = useState("#ffffff");
+  const [brandLogoShape, setBrandLogoShape] = useState<"square" | "circle">("square");
 
   const allowed = usuario?.rol === "coach" && canManageBranding(usuario.email);
 
@@ -28,6 +29,7 @@ export default function CoachPersonalizacionPage() {
           setBrandName(b.brandName ?? "");
           setBrandLogoUrl(b.brandLogoUrl);
           setBrandColor(b.brandColor ?? "#ffffff");
+          setBrandLogoShape(b.brandLogoShape ?? "square");
         }
       })
       .catch(() => {})
@@ -61,7 +63,7 @@ export default function CoachPersonalizacionPage() {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
-      const body = { brandName: brandName.trim(), brandLogoUrl: brandLogoUrl ?? "", brandColor };
+      const body = { brandName: brandName.trim(), brandLogoUrl: brandLogoUrl ?? "", brandColor, brandLogoShape };
       const res = await fetch("/api/coach/branding", {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token ?? ""}` },
@@ -83,13 +85,18 @@ export default function CoachPersonalizacionPage() {
   const headerPreview = (
     <div className="flex items-center gap-2.5">
       {brandLogoUrl ? (
-        <img src={brandLogoUrl} alt="Logo" className="w-16 h-16 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        <img
+          src={brandLogoUrl}
+          alt="Logo"
+          className={`w-16 h-16 object-contain ${brandLogoShape === "circle" ? "rounded-full object-cover" : ""}`}
+          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+        />
       ) : (
         <div className="w-16 h-16 rounded-full bg-accent/15 flex items-center justify-center text-2xl font-bold text-accent">
           {(brandName.trim() || usuario.nombre)[0]}
         </div>
       )}
-      <span className="text-white font-bold" style={{ color: brandColor }}>
+      <span className="font-bold" style={{ color: brandColor }}>
         {brandName.trim() || "Viking"}
       </span>
     </div>
@@ -117,7 +124,33 @@ export default function CoachPersonalizacionPage() {
 
         <div>
           <label className="label block mb-1.5">Logo</label>
-          <LogoUpload value={brandLogoUrl} onChange={setBrandLogoUrl} />
+          <LogoUpload value={brandLogoUrl} onChange={setBrandLogoUrl} shape={brandLogoShape} />
+        </div>
+
+        <div>
+          <label className="label block mb-1.5">Forma del logo</label>
+          <div className="flex gap-2">
+            {(["square", "circle"] as const).map((shape) => (
+              <button
+                key={shape}
+                type="button"
+                onClick={() => setBrandLogoShape(shape)}
+                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                  brandLogoShape === shape
+                    ? "bg-accent/10 text-accent border-accent/30"
+                    : "text-white/50 border-white/[0.08] hover:text-white/80 hover:bg-white/[0.04]"
+                }`}
+              >
+                {shape === "square" ? (
+                  <span className="w-5 h-5 rounded-md bg-accent/30" />
+                ) : (
+                  <span className="w-5 h-5 rounded-full bg-accent/30" />
+                )}
+                {shape === "square" ? "Cuadrado" : "Circular"}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-white/20 mt-1.5">Cómo se recorta el logo en el encabezado de la app.</p>
         </div>
 
         <div>
