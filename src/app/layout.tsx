@@ -3,20 +3,16 @@ import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import InstallPrompt from "@/components/install-prompt";
 import SplashScreen from "@/components/splash";
+import DynamicPwaHead from "@/components/dynamic-pwa-head";
 
 export const metadata: Metadata = {
   title: "Viking — Plataforma de Entrenamiento",
   description: "Plataforma premium para coaches y alumnos",
   icons: {
     icon: "/app-icon.png",
-    apple: {
-      url: "/app-icon.png",
-      sizes: "180x180",
-    },
   },
   appleWebApp: {
     capable: true,
-    title: "Viking",
     statusBarStyle: "black-translucent",
   },
 };
@@ -34,7 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className="dark">
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link id="pwa-manifest" rel="manifest" href="/manifest.json" />
+        <link id="pwa-apple-icon" rel="apple-touch-icon" sizes="180x180" href="/app-icon.png" />
+        <meta id="pwa-apple-title" name="apple-mobile-web-app-title" content="Viking" />
         <link rel="preload" href="/app-icon.png" as="image" />
         <script
           dangerouslySetInnerHTML={{
@@ -44,7 +42,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <SplashScreen>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            <DynamicPwaHead />
+          </AuthProvider>
           <InstallPrompt />
         </SplashScreen>
       </body>

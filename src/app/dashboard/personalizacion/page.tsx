@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { canManageBranding, getCoachBranding, CoachBranding } from "@/lib/branding";
-import LogoUpload from "@/components/logo-upload";
+import LogoUpload, { BrandingIcons } from "@/components/logo-upload";
 
 export default function CoachPersonalizacionPage() {
   const usuario = useAppStore((s) => s.usuarioActual);
@@ -14,6 +14,9 @@ export default function CoachPersonalizacionPage() {
   const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(null);
   const [brandColor, setBrandColor] = useState("#ffffff");
   const [brandLogoShape, setBrandLogoShape] = useState<"square" | "circle">("square");
+  const [brandIcon192, setBrandIcon192] = useState<string | null>(null);
+  const [brandIcon512, setBrandIcon512] = useState<string | null>(null);
+  const [brandIcon180, setBrandIcon180] = useState<string | null>(null);
 
   const allowed = usuario?.rol === "coach" && canManageBranding(usuario.email);
 
@@ -30,6 +33,9 @@ export default function CoachPersonalizacionPage() {
           setBrandLogoUrl(b.brandLogoUrl);
           setBrandColor(b.brandColor ?? "#ffffff");
           setBrandLogoShape(b.brandLogoShape ?? "square");
+          setBrandIcon192(b.brandIcon192 ?? null);
+          setBrandIcon512(b.brandIcon512 ?? null);
+          setBrandIcon180(b.brandIcon180 ?? null);
         }
       })
       .catch(() => {})
@@ -57,13 +63,34 @@ export default function CoachPersonalizacionPage() {
     );
   }
 
-  const guardar = async () => {
+  const handleLogoChange = (url: string | null, icons?: BrandingIcons) => {
+      setBrandLogoUrl(url);
+      if (icons) {
+        setBrandIcon192(icons.icon192);
+        setBrandIcon512(icons.icon512);
+        setBrandIcon180(icons.icon180);
+      } else if (url === null) {
+        setBrandIcon192(null);
+        setBrandIcon512(null);
+        setBrandIcon180(null);
+      }
+    };
+
+    const guardar = async () => {
     setSaving(true);
     setMessage(null);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
-      const body = { brandName: brandName.trim(), brandLogoUrl: brandLogoUrl ?? "", brandColor, brandLogoShape };
+      const body = {
+        brandName: brandName.trim(),
+        brandLogoUrl: brandLogoUrl ?? "",
+        brandColor,
+        brandLogoShape,
+        brandIcon192: brandIcon192 ?? "",
+        brandIcon512: brandIcon512 ?? "",
+        brandIcon180: brandIcon180 ?? "",
+      };
       const res = await fetch("/api/coach/branding", {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token ?? ""}` },
@@ -124,7 +151,7 @@ export default function CoachPersonalizacionPage() {
 
         <div>
           <label className="label block mb-1.5">Logo</label>
-          <LogoUpload value={brandLogoUrl} onChange={setBrandLogoUrl} shape={brandLogoShape} />
+          <LogoUpload value={brandLogoUrl} onChange={handleLogoChange} shape={brandLogoShape} />
         </div>
 
         <div>

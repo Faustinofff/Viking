@@ -3,7 +3,40 @@ import { useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { BRANDING_LOGO_MAX_BYTES, BRANDING_LOGO_TYPES } from "@/lib/branding";
 
-export default function LogoUpload({ value, onChange, shape = "square" }: { value: string | null; onChange: (url: string | null) => void; shape?: "square" | "circle" }) {
+export interface BrandingIcons {
+  icon192: string;
+  icon512: string;
+  icon180: string;
+}
+
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("No se pudo leer la imagen"));
+    img.src = url;
+  });
+}
+
+function drawToSize(img: HTMLImageElement, size: number): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return Promise.reject(new Error("Canvas no disponible"));
+  const scale = Math.min(size / img.width, size / img.height);
+  const w = img.width * scale;
+  const h = img.height * scale;
+  const x = (size - w) / 2;
+  const y = (size - h) / 2;
+  ctx.clearRect(0, 0, size, size);
+  ctx.drawImage(img, x, y, w, h);
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("No se pudo convertir el logo"))), "image/png")
+  );
+}
+
+export default function LogoUpload({ value, onChange, shape = "square" }: { value: string | null; onChange: (url: string | null, icons?: BrandingIcons) => void; shape?: "square" | "circle" }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<string | null>(value);
@@ -21,15 +54,26 @@ export default function LogoUpload({ value, onChange, shape = "square" }: { valu
       return;
     }
 
-    const localPreview = URL.createObjectURL(file);
-    setPreview(localPreview);
+    let localPreview = "";
+    try { localPreview = URL.createObjectURL(file); setPreview(localPreview); } catch {}
     setUploading(true);
 
     try {
+      let iconsBlobs: Record<string, Blob> = {};
+      try {
+        const img = await loadImage(localPreview);
+        const sizes: [string, number][] = [["icon512", 512], ["icon192", 192], ["icon180", 180]];
+        for (const [name, s] of sizes) iconsBlobs[name] = await drawToSize(img, s);
+      } catch {}
+
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       const form = new FormData();
       form.append("file", file);
+      if (iconsBlobs.icon512) form.append("icon512", iconsBlobs.icon512, "icon-512.png");
+      if (iconsBlobs.icon192) form.append("icon192", iconsBlobs.icon192, "icon-192.png");
+      if (iconsBlobs.icon180) form.append("icon180", iconsBlobs.icon180, "icon-180.png");
+
       const res = await fetch("/api/coach/branding/upload", {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -41,7 +85,7 @@ export default function LogoUpload({ value, onChange, shape = "square" }: { valu
         setPreview(value);
         return;
       }
-      onChange(result.url);
+      onChange(result.url, result.icons ?? undefined);
       setPreview(result.url);
     } catch {
       setError("Error de conexión al subir el logo.");

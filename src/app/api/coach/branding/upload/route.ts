@@ -50,6 +50,18 @@ export async function POST(req: NextRequest) {
   const ext = EXT_BY_TYPE[file.type] ?? "png";
   const path = `${coach.id}/logo.${ext}`;
 
+  // Íconos PNG generados en el cliente para la PWA (opcionales)
+  const iconFields: { field: string; name: string }[] = [
+    { field: "icon192", name: "icon-192.png" },
+    { field: "icon512", name: "icon-512.png" },
+    { field: "icon180", name: "icon-180.png" },
+  ];
+  const iconFiles: { name: string; data: File }[] = [];
+  for (const { field, name } of iconFields) {
+    const f = form.get(field);
+    if (f instanceof File && f.size) iconFiles.push({ name, data: f });
+  }
+
   try {
     const client = getAdminClient();
     await ensurePublicBucket(client);
@@ -70,7 +82,19 @@ export async function POST(req: NextRequest) {
     const url = data.publicUrl;
     if (!isBrandingStorageUrl(url)) return json({ error: "Error generando la URL del logo." }, 500);
 
-    return json({ success: true, url });
+    const icons: Record<string, string> = {};
+    for (const icon of iconFiles) {
+      const iconPath = `${coach.id}/${icon.name}`;
+      const iconBuffer = Buffer.from(await icon.data.arrayBuffer());
+      const { error: iconErr } = await client.storage
+        .from(BRANDING_STORAGE_BUCKET)
+        .upload(iconPath, iconBuffer, { contentType: "image/png", upsert: true, cacheControl: "31536000" });
+      if (iconErr) continue;
+      const { data: iconData } = client.storage.from(BRANDING_STORAGE_BUCKET).getPublicUrl(iconPath);
+      icons[icon.name.replace("icon-", "icon").replace(".png", "")] = iconData.publicUrl;
+    }
+
+    return json({ success: true, url, icons });
   } catch (err: any) {
     return json({ error: err?.message ?? "Error subiendo el logo." }, 500);
   }

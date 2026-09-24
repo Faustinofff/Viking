@@ -1,7 +1,6 @@
 "use client";
-import { useEffect, useMemo } from "react";
-import { useAppStore } from "@/lib/store";
-import { getCoachBranding, loadStudentCoachId, CoachBranding } from "@/lib/branding";
+import { useStudentBranding } from "@/lib/use-student-branding";
+import type { CoachBranding } from "@/lib/branding";
 
 const VIKING_MARK = (
   <>
@@ -37,30 +36,7 @@ function BrandedMark({ branding }: { branding: CoachBranding }) {
 }
 
 export default function StudentBranding() {
-  const usuario = useAppStore((s) => s.usuarioActual);
-  const alumnos = useAppStore((s) => s.alumnos);
-  const actualizarCoachBranding = useAppStore((s) => s.actualizarCoachBranding);
-
-  // Prefer the store (authoritative after sync); fallback to the local cache
-  // so the brand is visible on the very first paint without waiting for a fetch.
-  const coachId = useMemo(() => {
-    const alumno = alumnos.find((a) => a.id === usuario?.id);
-    const fromStore = alumno?.coachId?.trim();
-    return fromStore || loadStudentCoachId() || "";
-  }, [alumnos, usuario?.id]);
-
-  const branding = useAppStore((s) => (coachId ? s.coaches[coachId]?.branding ?? null : null));
-
-  // Silent refresh in the background: keeps the cache in sync with the coach's
-  // current settings without blocking render (no flash).
-  useEffect(() => {
-    if (!coachId) return;
-    let cancelled = false;
-    getCoachBranding(coachId)
-      .then((b) => { if (!cancelled) actualizarCoachBranding(coachId, b); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [coachId]);
+  const { branding } = useStudentBranding();
 
   const hasMark = branding?.brandName?.trim();
   const hasLogo = branding?.brandLogoUrl?.trim();

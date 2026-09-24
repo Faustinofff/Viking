@@ -33,8 +33,9 @@ export async function PUT(req: NextRequest) {
 
   const branding = parseCoachBranding(body);
   if (body && typeof body === "object" && branding) {
-    const { brandLogoUrl } = branding;
-    if (brandLogoUrl && !isBrandingStorageUrl(brandLogoUrl)) {
+    const { brandLogoUrl, brandIcon192, brandIcon512, brandIcon180 } = branding;
+    const storageUrls = [brandLogoUrl, brandIcon192, brandIcon512, brandIcon180].filter(Boolean) as string[];
+    if (storageUrls.some((u) => !isBrandingStorageUrl(u))) {
       return json({ error: "La URL del logo no es válida." }, 400);
     }
   }

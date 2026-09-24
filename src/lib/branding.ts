@@ -34,6 +34,10 @@ export interface CoachBranding {
   brandLogoUrl: string | null;
   brandColor: string | null;
   brandLogoShape: "square" | "circle";
+  /** Íconos PWA generados (192/512/180) para que la app instalada use el logo del coach. */
+  brandIcon192?: string | null;
+  brandIcon512?: string | null;
+  brandIcon180?: string | null;
 }
 
 /** Gate: habilita la configuración de branding para un coach. */
@@ -57,12 +61,16 @@ export function parseCoachBranding(raw: unknown): CoachBranding | null {
   const brandLogoUrl = typeof r.brandLogoUrl === "string" ? r.brandLogoUrl.trim() : "";
   const brandColor = normalizeBrandColor(typeof r.brandColor === "string" ? r.brandColor : undefined);
   const brandLogoShape = r.brandLogoShape === "circle" ? "circle" : "square";
-  if (!brandName && !brandLogoUrl && !brandColor) return null;
+  const str = (k: string) => (typeof r[k] === "string" && (r[k] as string).trim() ? (r[k] as string).trim() : null);
+  if (!brandName && !brandLogoUrl && !brandColor && !str("brandIcon192")) return null;
   return {
     brandName: brandName || null,
     brandLogoUrl: brandLogoUrl || null,
     brandColor,
     brandLogoShape,
+    brandIcon192: str("brandIcon192"),
+    brandIcon512: str("brandIcon512"),
+    brandIcon180: str("brandIcon180"),
   };
 }
 
@@ -73,6 +81,9 @@ export function serializeCoachBranding(b: CoachBranding): Record<string, unknown
   if (b.brandLogoUrl) out.brandLogoUrl = b.brandLogoUrl;
   if (b.brandColor) out.brandColor = b.brandColor;
   if (b.brandLogoShape === "circle") out.brandLogoShape = "circle";
+  if (b.brandIcon192) out.brandIcon192 = b.brandIcon192;
+  if (b.brandIcon512) out.brandIcon512 = b.brandIcon512;
+  if (b.brandIcon180) out.brandIcon180 = b.brandIcon180;
   if (Object.keys(out).length === 0) return { _v1: true };
   return out;
 }
