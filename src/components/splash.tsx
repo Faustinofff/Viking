@@ -76,7 +76,8 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
             width: 96,
             height: 96,
             objectFit: circleLogo ? "cover" : "contain",
-            borderRadius: circleLogo ? 9999 : 0,
+            borderRadius: circleLogo ? 9999 : 18,
+            backgroundColor: circleLogo ? undefined : "rgba(255,255,255,0.04)",
             animation: "splashLogo 0.4s ease-out 0.15s both, splashPulse 0.15s ease-in-out 0.55s 1",
           }}
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}

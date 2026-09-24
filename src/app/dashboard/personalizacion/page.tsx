@@ -121,7 +121,7 @@ export default function CoachPersonalizacionPage() {
         <img
           src={brandLogoUrl}
           alt="Logo"
-          className={`w-16 h-16 object-contain ${brandLogoShape === "circle" ? "rounded-full object-cover" : ""}`}
+          className={`w-16 h-16 object-contain ${brandLogoShape === "circle" ? "rounded-full object-cover" : "rounded-xl bg-white/[0.03] border border-white/[0.06]"}`}
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
         />
       ) : (

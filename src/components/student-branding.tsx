@@ -20,7 +20,7 @@ function BrandedMark({ branding }: { branding: CoachBranding }) {
         <img
           src={branding.brandLogoUrl!}
           alt={hasMark ?? "Logo"}
-          className={`w-16 h-16 object-contain ${branding.brandLogoShape === "circle" ? "rounded-full object-cover" : ""}`}
+          className={`w-16 h-16 object-contain ${branding.brandLogoShape === "circle" ? "rounded-full object-cover" : "rounded-xl bg-white/[0.03] border border-white/[0.06]"}`}
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
         />
       ) : (

@@ -48,13 +48,16 @@ export async function POST(req: NextRequest) {
   }
 
   const ext = EXT_BY_TYPE[file.type] ?? "png";
-  const path = `${coach.id}/logo.${ext}`;
+  // Filename con versión: al re-subir se genera una URL nueva, así los
+  // navegadores quiosk/iOS no sirven el logo cacheado de la vez anterior.
+  const nonce = Date.now();
+  const path = `${coach.id}/logo-${nonce}.${ext}`;
 
   // Íconos PNG generados en el cliente para la PWA (opcionales)
   const iconFields: { field: string; name: string }[] = [
-    { field: "icon192", name: "icon-192.png" },
-    { field: "icon512", name: "icon-512.png" },
-    { field: "icon180", name: "icon-180.png" },
+    { field: "icon192", name: `icon-${nonce}-192.png` },
+    { field: "icon512", name: `icon-${nonce}-512.png` },
+    { field: "icon180", name: `icon-${nonce}-180.png` },
   ];
   const iconFiles: { name: string; data: File }[] = [];
   for (const { field, name } of iconFields) {

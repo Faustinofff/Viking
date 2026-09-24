@@ -33,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link id="pwa-manifest" rel="manifest" href="/manifest.json" />
         <link id="pwa-apple-icon" rel="apple-touch-icon" sizes="180x180" href="/app-icon.png" />
         <meta id="pwa-apple-title" name="apple-mobile-web-app-title" content="Viking" />
+        <meta id="pwa-app-name" name="application-name" content="Viking" />
         <link rel="preload" href="/app-icon.png" as="image" />
         <script
           dangerouslySetInnerHTML={{
