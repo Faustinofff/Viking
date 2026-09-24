@@ -20,6 +20,12 @@ function loadLastPath(): string | null {
   try { return localStorage.getItem(STORAGE_LAST_PATH); } catch { return null; }
 }
 
+// Conserva la query string: la ruta del entrenamiento activo lleva ?rutinaId=&diaId=
+// y perderlos al relanzar es lo que descarta la sesión en curso.
+function currentFullPath(): string {
+  return window.location.pathname + window.location.search;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const setUsuario = useAppStore((s) => s.setUsuario);
@@ -29,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && pathname && !pathname.startsWith("/auth/")) {
-      saveLastPath(pathname);
+      saveLastPath(currentFullPath());
     }
   }, [pathname, loading]);
 
@@ -90,12 +96,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUsuario({ id: user.id, nombre, email: user.email ?? "", rol });
           trackLogin();
           if (isAdmin(user.email)) {
-            router.replace("/admin");
+            if (window.location.pathname !== "/admin") {
+              window.setTimeout(() => { window.location.replace("/admin"); }, 50);
+            }
           } else {
+            const section = rol === "coach" ? "/dashboard" : "/alumno";
+            const currentPath = window.location.pathname;
+            const alreadyInside = currentPath === section || currentPath.startsWith(section + "/");
+            if (alreadyInside) {
+              // Ya está dentro del app logueada (p.ej. en el medio de un entreno):
+              // NO navegar ni recargar. supabase emite SIGNED_IN en cada vuelta al
+              // foreground; recargar aquí descarta la sesión activa. El reload SSR
+              // de branding ya lo gestiona init() una vez por pestaña.
+              return;
+            }
             const lastPath = loadLastPath();
-            const target = lastPath && lastPath.startsWith(rol === "coach" ? "/dashboard" : "/alumno")
-              ? lastPath
-              : (rol === "coach" ? "/dashboard" : "/alumno");
+            const target = lastPath && lastPath.startsWith(section) ? lastPath : section;
             // Recarga completa: garantiza que el servidor (SSR) renderice la
             // cookie viking_uid y el branding PWA en el HTML del primer paint
             // (iOS toma el nombre de la app de ese HTML original).

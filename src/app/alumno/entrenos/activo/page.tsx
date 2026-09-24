@@ -100,8 +100,18 @@ export default function ActiveWorkoutPage() {
         useAppStore.setState({ rutinas: parsed });
 
         // Find matching routine and day
-        const targetRutinaId = rutinaIdParam;
-        const targetDiaId = diaIdParam;
+        let targetRutinaId = rutinaIdParam;
+        let targetDiaId = diaIdParam;
+        // Si faltan los params (p.ej. la URL se abrió sin ellos tras un relanzamiento),
+        // resolver rutina/día desde la sesión en curso persistida: el estado activo
+        // lo define el entrenamiento en curso, no la URL.
+        if ((!targetRutinaId || !targetDiaId)) {
+          const snap = loadSessionSnapshot(usuario.id);
+          if (snap && !snap.sesion.completada && snap.alumnoId === usuario.id) {
+            targetRutinaId = snap.sesion.rutinaId;
+            targetDiaId = snap.sesion.diaRutinaId;
+          }
+        }
         if (targetRutinaId && targetDiaId) {
           const r = parsed.find((p) => p.id === targetRutinaId);
           if (r) {
