@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { getCurrentUser, onAuthStateChange } from "@/lib/auth";
+import { getCurrentUser, onAuthStateChange, setUidCookie, clearUidCookie } from "@/lib/auth";
 import { createProfile, getProfile } from "@/lib/data";
 import { isAdmin } from "@/lib/admin";
 import { trackLogin } from "@/lib/telemetry";
@@ -37,6 +37,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const init = async () => {
       const user = await getCurrentUser();
       if (user) {
+        setUidCookie(user.id);
+        if (!isAdmin(user.email)) {
+          const reloaded = (() => { try { return sessionStorage.getItem("viking_ssr_reloaded") === "1"; } catch { return true; } })();
+          if (!reloaded && !pathname.startsWith("/auth/")) {
+            try { sessionStorage.setItem("viking_ssr_reloaded", "1"); } catch {}
+            window.location.replace(pathname + window.location.search);
+            return;
+          }
+        }
         const meta = user.user_metadata as Record<string, string> || {};
         const nombre = meta.nombre ?? meta.full_name ?? user.email?.split("@")[0] ?? "";
         const rol = meta.rol as "coach" | "alumno" | undefined;
@@ -67,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         const user = session.user;
+        setUidCookie(user.id);
         const meta = user.user_metadata as Record<string, string> || {};
         const nombre = meta.nombre ?? meta.full_name ?? user.email?.split("@")[0] ?? "";
         const rol = meta.rol as "coach" | "alumno" | undefined;
@@ -86,7 +96,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const target = lastPath && lastPath.startsWith(rol === "coach" ? "/dashboard" : "/alumno")
               ? lastPath
               : (rol === "coach" ? "/dashboard" : "/alumno");
-            router.replace(target);
+            // Recarga completa: garantiza que el servidor (SSR) renderice la
+            // cookie viking_uid y el branding PWA en el HTML del primer paint
+            // (iOS toma el nombre de la app de ese HTML original).
+            window.setTimeout(() => { window.location.replace(target); }, 50);
           }
         } else {
           router.replace("/auth/onboarding");
@@ -94,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (event === "SIGNED_OUT") {
+        clearUidCookie();
         cerrarSesion();
       }
     });

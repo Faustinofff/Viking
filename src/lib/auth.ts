@@ -22,3 +22,18 @@ export async function signOut() {
 export function onAuthStateChange(callback: (event: string, session: any) => void) {
   return supabase.auth.onAuthStateChange(callback);
 }
+
+/** Cookie para que el servidor (SSR) renderice el branding PWA del usuario. */
+export function setUidCookie(uid: string) {
+  if (typeof document === "undefined") return;
+  try {
+    document.cookie = `viking_uid=${encodeURIComponent(uid)}; path=/; max-age=2592000; SameSite=Lax`;
+  } catch {}
+}
+
+export function clearUidCookie() {
+  if (typeof document === "undefined") return;
+  try {
+    document.cookie = "viking_uid=; path=/; max-age=0";
+  } catch {}
+}

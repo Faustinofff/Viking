@@ -1,21 +1,31 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import InstallPrompt from "@/components/install-prompt";
 import SplashScreen from "@/components/splash";
 import DynamicPwaHead from "@/components/dynamic-pwa-head";
+import { resolvePwaBrand, UID_COOKIE, type PwaBrand } from "@/lib/pwa-ssr";
 
-export const metadata: Metadata = {
-  title: "Viking — Plataforma de Entrenamiento",
-  description: "Plataforma premium para coaches y alumnos",
-  icons: {
-    icon: "/app-icon.png",
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-  },
-};
+const DEFAULT_TITLE = "Viking — Plataforma de Entrenamiento";
+
+export async function generateMetadata(): Promise<Metadata> {
+  let title = DEFAULT_TITLE;
+  try {
+    const uid = cookies().get(UID_COOKIE)?.value ?? null;
+    const brand = await resolvePwaBrand(uid);
+    if (brand.name && brand.name !== "Viking") title = brand.name;
+  } catch {}
+  return {
+    title,
+    description: "Plataforma premium para coaches y alumnos",
+    icons: { icon: "/app-icon.png" },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -26,14 +36,19 @@ export const viewport: Viewport = {
   themeColor: "#0a0a0a",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  let brand: PwaBrand = { name: "Viking", color: "#0a0a0a", icon: "/app-icon.png" };
+  try {
+    const uid = cookies().get(UID_COOKIE)?.value ?? null;
+    brand = await resolvePwaBrand(uid);
+  } catch {}
   return (
     <html lang="es" className="dark">
       <head>
         <link id="pwa-manifest" rel="manifest" href="/manifest.json" />
-        <link id="pwa-apple-icon" rel="apple-touch-icon" sizes="180x180" href="/app-icon.png" />
-        <meta id="pwa-apple-title" name="apple-mobile-web-app-title" content="Viking" />
-        <meta id="pwa-app-name" name="application-name" content="Viking" />
+        <link id="pwa-apple-icon" rel="apple-touch-icon" sizes="180x180" href={brand.icon} />
+        <meta id="pwa-apple-title" name="apple-mobile-web-app-title" content={brand.name} />
+        <meta id="pwa-app-name" name="application-name" content={brand.name} />
         <link rel="preload" href="/app-icon.png" as="image" />
         <script
           dangerouslySetInnerHTML={{
