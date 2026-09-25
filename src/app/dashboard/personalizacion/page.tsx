@@ -108,6 +108,9 @@ export default function CoachPersonalizacionPage() {
         return;
       }
       setMessage({ type: "ok", text: "Guardado. Tus alumnos verán tu marca en su app." });
+      getCoachBranding(usuario.id)
+        .then((b) => useAppStore.getState().actualizarCoachBranding(usuario.id, b))
+        .catch(() => {});
     } catch {
       setMessage({ type: "err", text: "Error de conexión." });
     } finally {

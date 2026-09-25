@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { PLANES_PREMIUM } from "@/lib/data";
 import ChatDialog from "@/components/chat";
+import AppBrandMark from "@/components/app-brand";
 
 const BOTTOM_NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
@@ -89,8 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const sidebarContent = (
     <>
       <div className="flex items-center gap-3 h-16 px-4 border-b border-white/[0.06]">
-        <img src="/Viking.png" alt="Viking" className="w-16 h-16 object-contain flex-shrink-0" />
-        {!collapsed && <span className="text-white font-bold">Viking</span>}
+        <AppBrandMark size={64} showName={!collapsed} />
       </div>
 
       <div className="flex-1 py-3 px-2 space-y-1 overflow-y-auto hide-scrollbar">
@@ -149,7 +149,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button onClick={() => setMobileMenuOpen(true)} className="text-white/60 hover:text-white p-1" aria-label="Abrir menú">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
-          <img src="/Viking.png" alt="Viking" className="w-9 h-9 object-contain" />
+          <AppBrandMark size={36} showName={false} />
         </div>
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-medium text-accent">
@@ -166,8 +166,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <aside className="absolute left-0 top-0 bottom-0 w-64 bg-bg-secondary flex flex-col border-r border-white/[0.06] shadow-2xl">
             <div className="flex items-center justify-between px-4 border-b border-white/[0.06]" style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top, 10px))", paddingBottom: "0.75rem", height: "calc(3.5rem + env(safe-area-inset-top, 0px))" }}>
               <div className="flex items-center gap-2.5">
-                <img src="/Viking.png" alt="Viking" className="w-10 h-10 object-contain" />
-                <span className="text-white font-bold">Viking</span>
+                <AppBrandMark size={40} />
               </div>
               <button onClick={() => setMobileMenuOpen(false)} className="text-white/40 hover:text-white p-1" aria-label="Cerrar menú">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
