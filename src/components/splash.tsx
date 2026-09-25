@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { onAuthReady, isAuthReady } from "@/lib/splash-ready";
 import { useStudentBranding } from "@/lib/use-student-branding";
+import type { CoachBranding } from "@/lib/branding";
 
 const SPLASH_KEY = "__viking_splash";
 const LOGO_HOLD_MS = 700;
@@ -23,30 +24,35 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
   const [authReady, setAuthReady] = useState(isAuthReady);
   const [fading, setFading] = useState(false);
   const [done, setDone] = useState(() => !needsSplash() && isAuthReady());
-  const [forceLogo, setForceLogo] = useState(false);
   const [forceDone, setForceDone] = useState(false);
 
-  // Si el branding tarda demasiado, se cae a Viking y queda fijo: la marca que
-  // llegue después no provoca ningún swap visible dentro del splash.
-  const effectiveBranding = forceLogo ? null : branding;
-  const brandName = effectiveBranding?.brandName?.trim();
-  const brandLogoUrl = effectiveBranding?.brandLogoUrl?.trim();
-  const branded = effectiveBranding && (brandName || brandLogoUrl);
-  // Se muestra el logo recién cuando la marca es definitiva: branding presente
-  // (cache o fetch) o resuelto que no hay ninguna. Antes: fondo neutro.
-  const showLogo = effectiveBranding != null || resolved || forceLogo;
+  // El branding se decide UNA sola vez y se congela: ni un cambio posterior de
+  // cache/fetch puede alterar el logo durante la animación del splash. Si al
+  // resolver no hay marca, queda Viking fijo (nunca Viking seguido de la marca).
+  const [brandReady, setBrandReady] = useState(false);
+  const [finalBrand, setFinalBrand] = useState<CoachBranding | null>(null);
 
   useEffect(() => {
     if (authReady) return;
     onAuthReady(() => setAuthReady(true));
   }, [authReady]);
 
-  // Red de seguridad del branding: nunca muestra Viking seguido de un swap.
+  // Red de seguridad del branding: resuelve la marca con cache (sincrónica) o
+  // fetch; si tarda demasiado, asume que no hay marca. Decisión irreversible.
   useEffect(() => {
-    if (showLogo) return;
-    const t = setTimeout(() => setForceLogo(true), BRAND_RESOLVE_TIMEOUT);
+    if (brandReady) return;
+    if (branding != null) { setFinalBrand(branding); setBrandReady(true); return; }
+    if (resolved) { setFinalBrand(null); setBrandReady(true); return; }
+    const t = setTimeout(() => { setFinalBrand(null); setBrandReady(true); }, BRAND_RESOLVE_TIMEOUT);
     return () => clearTimeout(t);
-  }, [showLogo]);
+  }, [branding, resolved, brandReady]);
+
+  const brandName = finalBrand?.brandName?.trim() ?? "";
+  const brandLogoUrl = finalBrand?.brandLogoUrl?.trim() ?? "";
+  const branded = finalBrand != null && (brandName || brandLogoUrl);
+  // El logo se muestra solo cuando la marca es definitiva: branding ya resuelto
+  // (cache o fetch) o confirmado que no hay ninguna. Antes: fondo neutro.
+  const showLogo = brandReady;
 
   // Red de seguridad global: el splash jamás queda colgado.
   useEffect(() => {
@@ -83,8 +89,8 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
 
   const name = brandName ? brandName.toUpperCase() : "VIKING";
   const logoSrc = brandLogoUrl ?? "/Viking.png";
-  const color = branded && effectiveBranding?.brandColor ? effectiveBranding.brandColor : "rgba(255,255,255,0.85)";
-  const circleLogo = branded && effectiveBranding?.brandLogoShape === "circle";
+  const color = branded && finalBrand?.brandColor ? finalBrand.brandColor : "rgba(255,255,255,0.85)";
+  const circleLogo = branded && finalBrand?.brandLogoShape === "circle";
 
   return (
     <div

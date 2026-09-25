@@ -43,13 +43,32 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     brand = await resolvePwaBrand(uid);
   } catch {}
   return (
-    <html lang="es" className="dark">
+    <html lang="es" className="dark" style={{ background: "#0a0a0b" }}>
       <head>
         <link id="pwa-manifest" rel="manifest" href="/api/pwa-manifest" />
         <link id="pwa-apple-icon" rel="apple-touch-icon" sizes="180x180" href={brand.icon} />
         <meta id="pwa-apple-title" name="apple-mobile-web-app-title" content={brand.name} />
         <meta id="pwa-app-name" name="application-name" content={brand.name} />
         <link rel="preload" href="/app-icon.png" as="image" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){
+/* Reload de branding SSR ANTES del primer paint: si el usuario ya tiene
+   cookie (viking_uid), la primera carga recarga el HTML para que el server
+   entregue el branding correcto. Así el splash se ve UNA sola vez, ya con
+   la marca, y nunca "Viking → recarga → marca". Misma condición que usa
+   AuthProvider (sessionStorage viking_ssr_reloaded), para que AuthProvider
+   no tenga que recargar después. */
+try{
+  if(location.pathname.indexOf('/auth/')===0){return;}
+  if(document.cookie.indexOf('viking_uid=')===-1){return;}
+  if((sessionStorage.getItem('viking_ssr_reloaded')||'0')==='1'){return;}
+  sessionStorage.setItem('viking_ssr_reloaded','1');
+  location.replace(location.href);
+}catch(e){}
+})();`,
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){
