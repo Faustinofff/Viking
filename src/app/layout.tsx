@@ -83,13 +83,13 @@ setTimeout(apply,0); setTimeout(apply,200);
         />
       </head>
       <body>
-        <SplashScreen>
-          <AuthProvider>
+        <AuthProvider>
+          <SplashScreen>
             {children}
             <DynamicPwaHead />
-          </AuthProvider>
-          <InstallPrompt />
-        </SplashScreen>
+            <InstallPrompt />
+          </SplashScreen>
+        </AuthProvider>
       </body>
     </html>
   );

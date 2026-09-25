@@ -131,7 +131,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription?.unsubscribe();
   }, []);
 
-  if (loading) return null;
-
+  // El render condicional lo resuelve el SplashScreen (layout): mientras está
+  // activo NO se monta el contenido de rutas (ni Login ni App). Acá la auth
+  // corre en paralelo detrás de la animación y marca "ready" al terminar.
   return <>{children}</>;
 }
