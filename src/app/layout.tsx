@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import InstallPrompt from "@/components/install-prompt";
-import SplashScreen from "@/components/splash";
 import DynamicPwaHead from "@/components/dynamic-pwa-head";
 import { resolvePwaBrand, UID_COOKIE, type PwaBrand } from "@/lib/pwa-ssr";
 
@@ -55,10 +54,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             __html: `(function(){
 /* Reload de branding SSR ANTES del primer paint: si el usuario ya tiene
    cookie (viking_uid), la primera carga recarga el HTML para que el server
-   entregue el branding correcto. Así el splash se ve UNA sola vez, ya con
-   la marca, y nunca "Viking → recarga → marca". Misma condición que usa
-   AuthProvider (sessionStorage viking_ssr_reloaded), para que AuthProvider
-   no tenga que recargar después. */
+   entregue el branding correcto (iOS toma nombre/ícono de ese HTML original).
+   Misma condición que usa AuthProvider (sessionStorage viking_ssr_reloaded),
+   para que AuthProvider no tenga que recargar después. */
 try{
   if(location.pathname.indexOf('/auth/')===0){return;}
   if(document.cookie.indexOf('viking_uid=')===-1){return;}
@@ -103,11 +101,9 @@ setTimeout(apply,0); setTimeout(apply,200);
       </head>
       <body>
         <AuthProvider>
-          <SplashScreen>
-            {children}
-            <DynamicPwaHead />
-            <InstallPrompt />
-          </SplashScreen>
+          {children}
+          <DynamicPwaHead />
+          <InstallPrompt />
         </AuthProvider>
       </body>
     </html>

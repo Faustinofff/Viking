@@ -6,7 +6,6 @@ import { getCurrentUser, onAuthStateChange, setUidCookie, clearUidCookie } from 
 import { createProfile, getProfile } from "@/lib/data";
 import { isAdmin } from "@/lib/admin";
 import { trackLogin } from "@/lib/telemetry";
-import { markAuthReady } from "@/lib/splash-ready";
 
 const STORAGE_LAST_PATH = "viking_last_path";
 
@@ -73,7 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       setLoading(false);
-      markAuthReady();
     };
     init();
   }, []);
@@ -131,8 +129,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription?.unsubscribe();
   }, []);
 
-  // El render condicional lo resuelve el SplashScreen (layout): mientras está
-  // activo NO se monta el contenido de rutas (ni Login ni App). Acá la auth
-  // corre en paralelo detrás de la animación y marca "ready" al terminar.
+  // Guard de render (solo visual): mientras se resuelve la sesión existente no
+  // se monta ninguna página (ni Login ni App). Sin splash, sin loader, sin
+  // timer: usa el estado loading ya existente y renderiza vacío (fondo de la
+  // app). El Login decide después si pintarse con el estado que ya usa para
+  // redirigir (usuarioActual). No modifica sesión, redirects ni navegación.
+  if (loading) return null;
   return <>{children}</>;
 }

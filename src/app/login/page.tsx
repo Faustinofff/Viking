@@ -15,6 +15,13 @@ export default function LoginPage() {
     }
   }, [usuarioActual]);
 
+  // Guard visual: si ya existe sesión válida, Login no se pinta (ni formulario,
+  // ni logo, ni botones). El redirect existente (useEffect) es el que lleva al
+  // usuario a su app. No modifica el redirect ni la navegación.
+  if (usuarioActual) {
+    return <div className="min-h-screen bg-bg-primary" />;
+  }
+
   const handleGoogleSignIn = async (rol: "coach" | "alumno") => {
     localStorage.setItem("viking_rol", rol);
     try {
