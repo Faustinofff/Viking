@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
-import { esPilotoPaginaWeb, normalizarSlug, PAGINA_WEB_PORTADA_MAX_BYTES, PAGINA_WEB_PORTADA_TYPES } from "@/lib/pagina-web";
+import { esPilotoPaginaWeb, normalizarSlug, PAGINA_WEB_PORTADA_MAX_BYTES, PAGINA_WEB_PORTADA_TYPES, PAGINA_WEB_GALERIA_MAX } from "@/lib/pagina-web";
 import { getCoachPhone } from "@/lib/data";
 
 function PortadaUpload({ value, onChange }: { value: string | null; onChange: (url: string | null) => void }) {
@@ -32,6 +32,7 @@ function PortadaUpload({ value, onChange }: { value: string | null; onChange: (u
       const token = sessionData.session?.access_token;
       const form = new FormData();
       form.append("file", file);
+      form.append("kind", "portada");
       const res = await fetch("/api/coach/landing/upload", {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -85,6 +86,89 @@ function PortadaUpload({ value, onChange }: { value: string | null; onChange: (u
   );
 }
 
+function GaleriaUpload({ value, onChange, max }: { value: string[]; onChange: (urls: string[]) => void; max: number }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File | undefined) => {
+    setError("");
+    if (!file) return;
+    if (!PAGINA_WEB_PORTADA_TYPES.includes(file.type)) {
+      setError("Formato no válido. Usá PNG, JPG o WebP.");
+      return;
+    }
+    if (file.size > PAGINA_WEB_PORTADA_MAX_BYTES) {
+      setError("La imagen es muy grande. Máximo 5 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const form = new FormData();
+      form.append("file", file);
+      form.append("kind", "galeria");
+      const res = await fetch("/api/coach/landing/upload", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form,
+      });
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        setError(result.error ?? "Error subiendo la foto.");
+        return;
+      }
+      onChange([...value, result.url].slice(0, max));
+    } catch {
+      setError("Error de conexión al subir la foto.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {value.length > 0 && (
+        <div className="grid grid-cols-3 gap-2">
+          {value.map((url, i) => (
+            <div key={url} className="relative group rounded-xl overflow-hidden border border-white/10 aspect-square">
+              <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => onChange(value.filter((_, j) => j !== i))}
+                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white/80 text-xs hover:bg-red-500/80 transition-colors"
+                aria-label={`Quitar foto ${i + 1}`}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="flex items-center gap-3">
+        <input
+          ref={inputRef}
+          type="file"
+          accept={PAGINA_WEB_PORTADA_TYPES.join(",")}
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading || value.length >= max}
+          className="btn-secondary text-xs"
+        >
+          {uploading ? "Subiendo..." : "+ Agregar foto"}
+        </button>
+        {value.length >= max && <p className="text-xs text-white/30">Máximo {max} fotos.</p>}
+      </div>
+      {error && <p className="text-xs text-red-400">{error}</p>}
+    </div>
+  );
+}
+
 export default function CoachPaginaWebPage() {
   const usuario = useAppStore((s) => s.usuarioActual);
   const [loading, setLoading] = useState(true);
@@ -94,6 +178,9 @@ export default function CoachPaginaWebPage() {
   const [slug, setSlug] = useState("");
   const [portadaUrl, setPortadaUrl] = useState<string | null>(null);
   const [descripcion, setDescripcion] = useState("");
+  const [sobreMi, setSobreMi] = useState("");
+  const [galeria, setGaleria] = useState<string[]>([]);
+  const [instagram, setInstagram] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [whatsappText, setWhatsappText] = useState("Hola, vengo de tu página web.");
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
@@ -119,6 +206,9 @@ export default function CoachPaginaWebPage() {
           setSlug(result.landing.slug ?? "");
           setPortadaUrl(result.landing.portadaUrl ?? null);
           setDescripcion(result.landing.descripcion ?? "");
+          setSobreMi(result.landing.sobreMi ?? "");
+          setGaleria(result.landing.galeria ?? []);
+          setInstagram(result.landing.instagram ?? "");
           setWhatsapp(result.landing.whatsapp ?? "");
           setWhatsappText(result.landing.whatsappText || "Hola, vengo de tu página web.");
         } else {
@@ -177,6 +267,9 @@ export default function CoachPaginaWebPage() {
           slug,
           portadaUrl: portadaUrl ?? "",
           descripcion,
+          sobreMi,
+          galeria,
+          instagram,
           whatsapp,
           whatsappText,
         }),
@@ -216,6 +309,9 @@ export default function CoachPaginaWebPage() {
       setSlug(normalizarSlug(usuario.nombre));
       setPortadaUrl(null);
       setDescripcion("");
+      setSobreMi("");
+      setGaleria([]);
+      setInstagram("");
       setWhatsapp("");
       setMessage({ type: "ok", text: "Página web quitada." });
     } catch {
@@ -249,10 +345,29 @@ export default function CoachPaginaWebPage() {
         </div>
         <p className="font-bold mt-2 truncate">{usuario.nombre}</p>
         {descripcion && <p className="text-xs text-white/50 mt-1 line-clamp-2">{descripcion}</p>}
-        <div className="inline-flex items-center gap-2 mt-3 rounded-xl bg-[#25D366] px-4 py-2 text-xs font-bold text-bg-primary">
-          <span className="w-3 h-3 rounded-full bg-bg-primary/80" />
-          Chatear por WhatsApp
+        {sobreMi && <p className="text-xs text-white/40 mt-2 line-clamp-3 text-left leading-relaxed">{sobreMi}</p>}
+        {galeria.length > 0 && (
+          <div className="grid grid-cols-3 gap-1.5 mt-3">
+            {galeria.map((u, i) => (
+              <img key={u} src={u} alt={`Foto ${i + 1}`} className="aspect-square object-cover rounded-lg border border-white/10" />
+            ))}
+          </div>
+        )}
+        <div className="flex items-center justify-center gap-2 mt-3">
+          <div className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2 text-xs font-bold text-bg-primary">
+            <span className="w-3 h-3 rounded-full bg-bg-primary/80" />
+            Chatear por WhatsApp
+          </div>
+          {instagram && (
+            <div className="inline-flex items-center gap-1.5 rounded-xl bg-white/[0.08] border border-white/10 px-3.5 py-2 text-xs font-semibold text-white/80">
+              <span className="w-3 h-3 rounded-full bg-gradient-to-tr from-[#f58529] via-[#dd2a7b] to-[#8134af]" />
+              IG
+            </div>
+          )}
         </div>
+        <p className="text-[10px] text-white/25 mt-3">
+          © {new Date().getFullYear()} {usuario.nombre} · Derechos reservados
+        </p>
       </div>
     </div>
   );
@@ -290,13 +405,45 @@ export default function CoachPaginaWebPage() {
         <div>
           <label className="label block mb-1.5">Descripción</label>
           <textarea
-            className="input min-h-[96px] resize-y"
-            placeholder="Contá brevemente quién sos y cómo entrenar con vos..."
+            className="input min-h-[80px] resize-y"
+            placeholder="Texto corto que acompaña tu nombre al abrir la página..."
             value={descripcion}
             maxLength={400}
             onChange={(e) => setDescripcion(e.target.value)}
           />
           <p className="text-xs text-white/20 mt-1.5 text-right">{descripcion.length}/400</p>
+        </div>
+
+        <div>
+          <label className="label block mb-1.5">Sobre mí</label>
+          <textarea
+            className="input min-h-[120px] resize-y"
+            placeholder="Contá quién sos, tu experiencia, cómo trabajás..."
+            value={sobreMi}
+            maxLength={1000}
+            onChange={(e) => setSobreMi(e.target.value)}
+          />
+          <p className="text-xs text-white/20 mt-1.5 text-right">{sobreMi.length}/1000</p>
+        </div>
+
+        <div>
+          <label className="label block mb-1.5">Galería de fotos</label>
+          <GaleriaUpload value={galeria} onChange={setGaleria} max={PAGINA_WEB_GALERIA_MAX} />
+          <p className="text-xs text-white/20 mt-1.5">Fotos de tu trabajo o de tus entrenamientos.</p>
+        </div>
+
+        <div>
+          <label className="label block mb-1.5">Instagram</label>
+          <input
+            className="input"
+            placeholder="@tuusuario"
+            value={instagram}
+            maxLength={80}
+            onChange={(e) => setInstagram(e.target.value)}
+          />
+          <p className="text-xs text-white/20 mt-1.5">
+            Ej: faustino_fit → se abre instagram.com/faustino_fit
+          </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">

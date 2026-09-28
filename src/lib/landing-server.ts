@@ -17,6 +17,31 @@ export function isLandingStorageUrl(url: string): boolean {
   return url.startsWith(`${ADMIN_SUPABASE_URL}/storage/v1/object/public/${PAGINA_WEB_STORAGE_BUCKET}/`);
 }
 
+function landingPathFromUrl(url: string): string | null {
+  if (!isLandingStorageUrl(url)) return null;
+  const prefix = `${ADMIN_SUPABASE_URL}/storage/v1/object/public/${PAGINA_WEB_STORAGE_BUCKET}/`;
+  return url.slice(prefix.length);
+}
+
+/** Borra del storage las fotos del coach que ya no están en uso (huérfanas al quitar/admitir). */
+export async function pruneLandingFiles(coachId: string, activeUrls: string[]): Promise<void> {
+  const active = new Set(
+    activeUrls
+      .filter(Boolean)
+      .map((u) => landingPathFromUrl(u))
+      .filter((p): p is string => p !== null)
+  );
+  const client = getAdminClient();
+  const { data: files } = await client.storage.from(PAGINA_WEB_STORAGE_BUCKET).list(coachId);
+  const orphans = (files ?? [])
+    .map((f: any) => f.name)
+    .filter((name: string) => !active.has(`${coachId}/${name}`))
+    .map((name: string) => `${coachId}/${name}`);
+  if (orphans.length) {
+    await client.storage.from(PAGINA_WEB_STORAGE_BUCKET).remove(orphans);
+  }
+}
+
 export interface LandingAuthUser {
   id: string;
   email: string;

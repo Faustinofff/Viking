@@ -48,18 +48,14 @@ export async function POST(req: NextRequest) {
   }
 
   const ext = EXT_BY_TYPE[file.type] ?? "png";
+  const kind = form.get("kind") === "galeria" ? "galeria" : "portada";
   const nonce = Date.now();
-  const path = `${coach.id}/portada-${nonce}.${ext}`;
+  const prefix = kind === "galeria" ? "galeria" : "portada";
+  const path = `${coach.id}/${prefix}-${nonce}.${ext}`;
 
   try {
     const client = getAdminClient();
     await ensurePublicBucket(client);
-
-    // Limpiar portadas anteriores en la carpeta del coach
-    const { data: existingFiles } = await client.storage.from(PAGINA_WEB_STORAGE_BUCKET).list(coach.id);
-    for (const f of existingFiles ?? []) {
-      await client.storage.from(PAGINA_WEB_STORAGE_BUCKET).remove([`${coach.id}/${f.name}`]);
-    }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const { error: uploadErr } = await client.storage

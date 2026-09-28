@@ -4,8 +4,9 @@ import {
   serializeCoachLanding,
   normalizarSlug,
 } from "@/lib/pagina-web";
-import { requireLandingCoach, isLandingStorageUrl, landingSlugOcupado, clearCoachLanding } from "@/lib/landing-server";
+import { requireLandingCoach, isLandingStorageUrl, landingSlugOcupado, clearCoachLanding, pruneLandingFiles } from "@/lib/landing-server";
 import { readCoachBlob, writeCoachBlob } from "@/lib/branding-server";
+import { PAGINA_WEB_GALERIA_MAX } from "@/lib/pagina-web";
 
 export const dynamic = "force-dynamic";
 
@@ -46,13 +47,20 @@ export async function PUT(req: NextRequest) {
     slug,
     portadaUrl: null,
     descripcion: "",
+    sobreMi: "",
+    galeria: [],
+    instagram: "",
     whatsapp: "",
     whatsappText: "",
   };
   landing.slug = slug;
 
-  if (landing.portadaUrl && !isLandingStorageUrl(landing.portadaUrl)) {
-    return json({ error: "La URL de la portada no es válida." }, 400);
+  const storageUrls = [landing.portadaUrl, ...landing.galeria].filter(Boolean) as string[];
+  if (storageUrls.some((u) => !isLandingStorageUrl(u))) {
+    return json({ error: "La URL de una foto no es válida." }, 400);
+  }
+  if (landing.galeria.length > PAGINA_WEB_GALERIA_MAX) {
+    return json({ error: `Podés subir hasta ${PAGINA_WEB_GALERIA_MAX} fotos en la galería.` }, 400);
   }
 
   if (await landingSlugOcupado(slug, coach.id)) {
@@ -63,6 +71,8 @@ export async function PUT(req: NextRequest) {
   blob.landing = serializeCoachLanding(landing);
   const ok = await writeCoachBlob(coach.id, blob, originalUrl);
   if (!ok) return json({ error: "Error guardando la página web" }, 500);
+
+  await pruneLandingFiles(coach.id, storageUrls);
 
   return json({ success: true, landing, url: `/l/${slug}` });
 }
@@ -75,5 +85,7 @@ export async function DELETE(req: NextRequest) {
 
   const ok = await clearCoachLanding(coach.id);
   if (!ok) return json({ error: "Error quitando la página web" }, 500);
+
+  await pruneLandingFiles(coach.id, []);
   return json({ success: true });
 }
