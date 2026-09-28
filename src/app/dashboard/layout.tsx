@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { PLANES_PREMIUM } from "@/lib/data";
+import { esPilotoPaginaWeb } from "@/lib/pagina-web";
 import ChatDialog from "@/components/chat";
 import AppBrandMark from "@/components/app-brand";
 
@@ -28,6 +29,8 @@ const NAV = [
 
 const PERSONALIZACION_NAV = { href: "/dashboard/personalizacion", label: "Personalización", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9l2.1 2.1m10 10 2.1 2.1m0-14.2-2.1 2.1m-10 10-2.1 2.1"/></svg> }
 
+const PAGINA_WEB_NAV = { href: "/dashboard/pagina-web", label: "Página web", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></svg> }
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const usuario = useAppStore((s) => s.usuarioActual);
@@ -46,7 +49,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const nav = usuario?.rol === "coach" && usuario?.brandingEnabled === true ? [...NAV, PERSONALIZACION_NAV] : NAV;
+  const nav = usuario?.rol === "coach"
+    ? [...NAV, ...(usuario?.brandingEnabled === true ? [PERSONALIZACION_NAV] : []), ...(esPilotoPaginaWeb(usuario.email) ? [PAGINA_WEB_NAV] : [])]
+    : NAV;
 
   useEffect(() => {
     if (usuario?.rol === "coach") {
