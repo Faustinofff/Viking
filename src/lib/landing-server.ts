@@ -79,7 +79,7 @@ async function listCoachesWithLanding(client: any): Promise<string[]> {
   const { data, error } = await client.storage.from(LANDING_DATA_BUCKET).list("");
   if (error) return [];
   return (data ?? [])
-    .filter((f: any) => f.name && f.id)
+    .filter((f: any) => f.name && (f.metadata === null || !f.metadata?.size))
     .map((f: any) => f.name);
 }
 
