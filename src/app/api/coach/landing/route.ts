@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   parseCoachLanding,
-  serializeCoachLanding,
   normalizarSlug,
+  PAGINA_WEB_GALERIA_MAX,
 } from "@/lib/pagina-web";
-import { requireLandingCoach, isLandingStorageUrl, landingSlugOcupado, clearCoachLanding, pruneLandingFiles } from "@/lib/landing-server";
-import { readCoachBlob, writeCoachBlob } from "@/lib/branding-server";
-import { PAGINA_WEB_GALERIA_MAX } from "@/lib/pagina-web";
+import {
+  requireLandingCoach,
+  readLandingFile,
+  writeLandingFile,
+  clearLandingFile,
+  isLandingStorageUrl,
+  landingSlugOcupado,
+  pruneLandingFiles,
+} from "@/lib/landing-server";
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +26,11 @@ export async function GET(req: NextRequest) {
   const coach = await requireLandingCoach(token);
   if (!coach) return json({ error: "No autorizado" }, 401);
 
-  const { blob } = await readCoachBlob(coach.id);
-  return json({ landing: parseCoachLanding(blob.landing) });
+  const landing = await readLandingFile(coach.id);
+  return json({ landing });
 }
 
-// PUT /api/coach/landing → guarda la landing (slug, portada, descripción, WhatsApp)
+// PUT /api/coach/landing → guarda la landing (slug, portada, galería, sobre mí, Instagram, WhatsApp)
 export async function PUT(req: NextRequest) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
   const coach = await requireLandingCoach(token);
@@ -67,9 +73,7 @@ export async function PUT(req: NextRequest) {
     return json({ error: "Ese enlace ya lo usa otro coach. Probá con otro nombre." }, 409);
   }
 
-  const { blob, originalUrl } = await readCoachBlob(coach.id);
-  blob.landing = serializeCoachLanding(landing);
-  const ok = await writeCoachBlob(coach.id, blob, originalUrl);
+  const ok = await writeLandingFile(coach.id, landing);
   if (!ok) return json({ error: "Error guardando la página web" }, 500);
 
   await pruneLandingFiles(coach.id, storageUrls);
@@ -83,7 +87,7 @@ export async function DELETE(req: NextRequest) {
   const coach = await requireLandingCoach(token);
   if (!coach) return json({ error: "No autorizado" }, 401);
 
-  const ok = await clearCoachLanding(coach.id);
+  const ok = await clearLandingFile(coach.id);
   if (!ok) return json({ error: "Error quitando la página web" }, 500);
 
   await pruneLandingFiles(coach.id, []);

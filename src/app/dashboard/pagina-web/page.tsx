@@ -280,6 +280,13 @@ export default function CoachPaginaWebPage() {
         return;
       }
       setSlug(result.landing?.slug ?? slug);
+      setPortadaUrl(result.landing?.portadaUrl ?? null);
+      setDescripcion(result.landing?.descripcion ?? "");
+      setSobreMi(result.landing?.sobreMi ?? "");
+      setGaleria(result.landing?.galeria ?? []);
+      setInstagram(result.landing?.instagram ?? "");
+      setWhatsapp(result.landing?.whatsapp ?? "");
+      setWhatsappText(result.landing?.whatsappText || "Hola, vengo de tu página web.");
       setLiveUrl(result.url);
       setMessage({ type: "ok", text: "Página guardada. Ya podés copiar el enlace." });
     } catch {
