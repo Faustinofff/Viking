@@ -211,7 +211,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 pointer-events-none" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.875rem)" }}>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 pointer-events-none" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.4rem)" }}>
         <div className="pointer-events-auto mx-auto max-w-md px-5">
           <div className="flex items-stretch overflow-hidden rounded-full bg-bg-secondary/65 backdrop-blur-2xl border border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.45)] px-4 py-2">
             {BOTTOM_NAV.map((item) => {
