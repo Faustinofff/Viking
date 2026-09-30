@@ -170,15 +170,22 @@ export interface LandingAuthUser {
   email: string;
 }
 
-/** Server-side auth: logueado + coach + piloto de página web (luego será flag de admin). */
+/** Server-side auth: logueado + coach + permiso de página web (flag del admin o piloto). */
 export async function requireLandingCoach(token: string | null | undefined): Promise<LandingAuthUser | null> {
   if (!token) return null;
   const anonClient = createClient(supabaseUrl, supabaseAnonKey);
   const { data: { user }, error } = await anonClient.auth.getUser(token);
   if (error || !user) return null;
   const email = user.email ?? "";
-  if (!esPilotoPaginaWeb(email)) return null;
   const rol = user.user_metadata?.rol;
   if (rol !== "coach") return null;
-  return { id: user.id, email };
+  if (esPilotoPaginaWeb(email)) return { id: user.id, email };
+  const client = getAdminClient();
+  const { data: profile } = await client
+    .from("profiles")
+    .select("pagina_web_enabled")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (profile?.pagina_web_enabled === true) return { id: user.id, email };
+  return null;
 }

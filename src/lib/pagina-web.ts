@@ -1,12 +1,51 @@
-// ─── Página Web del coach (pilot) ─────────────────────────────────
-// Sección pública en /l/<slug> que el admin habilitará por coach en el futuro.
-// Durante el pilot solo está disponible para el coach de prueba.
+// ─── Página Web del coach ─────────────────────────────────────
+// Sección pública en /l/<slug>. El permiso lo otorga el admin por coach
+// (columna profiles.pagina_web_enabled), igual que el branding. Sin el
+// permiso la sección no aparece en el panel del coach y no puede guardar.
+
+import { supabase } from "@/lib/supabase";
 
 export const PILOTO_PAGINA_WEB_EMAIL = "faustinofiordalisi@gmail.com";
 
 export function esPilotoPaginaWeb(email?: string | null): boolean {
   if (!email) return false;
   return email.toLowerCase() === PILOTO_PAGINA_WEB_EMAIL.toLowerCase();
+}
+
+/** Gate: habilita la sección "Página web" para un coach (flag otorgado por el admin). */
+export async function getPaginaWebEnabled(userId: string): Promise<boolean> {
+  if (!userId) return false;
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("pagina_web_enabled")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error || !data) return false;
+  return data.pagina_web_enabled === true;
+}
+
+function paginaWebPermissionCacheKey(userId: string) {
+  return `viking_pagina_web_${userId}`;
+}
+
+/** Cachea el permiso para que la sección aparezca de forma síncrona al reentrar. */
+export function cachePaginaWebEnabled(userId: string, enabled: boolean) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(paginaWebPermissionCacheKey(userId), enabled ? "1" : "0"); } catch {}
+}
+
+/** Permiso desde la caché local (null si no hay dato). */
+export function loadCachedPaginaWebEnabled(userId: string): boolean | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = localStorage.getItem(paginaWebPermissionCacheKey(userId));
+    return v === "1" ? true : v === "0" ? false : null;
+  } catch { return null; }
+}
+
+/** Gate combinado del panel del coach: permiso del admin (DB/caché) o piloto vigente. */
+export function esPaginaWebVisible(email: string | null | undefined, dbEnabled?: boolean): boolean {
+  return dbEnabled === true || esPilotoPaginaWeb(email);
 }
 
 export const PAGINA_WEB_STORAGE_BUCKET = "landing";

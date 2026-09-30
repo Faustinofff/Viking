@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
-import { esPilotoPaginaWeb, normalizarSlug, PAGINA_WEB_PORTADA_MAX_BYTES, PAGINA_WEB_PORTADA_TYPES, PAGINA_WEB_GALERIA_MAX } from "@/lib/pagina-web";
+import { esPaginaWebVisible, normalizarSlug, PAGINA_WEB_PORTADA_MAX_BYTES, PAGINA_WEB_PORTADA_TYPES, PAGINA_WEB_GALERIA_MAX } from "@/lib/pagina-web";
 import { getCoachPhone } from "@/lib/data";
 
 function PortadaUpload({ value, onChange }: { value: string | null; onChange: (url: string | null) => void }) {
@@ -186,7 +186,7 @@ export default function CoachPaginaWebPage() {
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const allowed = usuario?.rol === "coach" && esPilotoPaginaWeb(usuario.email);
+  const allowed = usuario?.rol === "coach" && esPaginaWebVisible(usuario.email, usuario.paginaWebEnabled);
 
   useEffect(() => {
     if (!usuario) return;

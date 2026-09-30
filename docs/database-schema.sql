@@ -14,12 +14,14 @@ CREATE TABLE public.profiles (
   avatar_url  TEXT,
   role        TEXT NOT NULL CHECK (role IN ('independent', 'student', 'coach', 'admin')),
   branding_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  pagina_web_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   onboarded   BOOLEAN DEFAULT FALSE,
   created_at  TIMESTAMPTZ DEFAULT NOW(),
   updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX idx_profiles_role ON public.profiles(role);
+CREATE INDEX idx_profiles_pagina_web_enabled ON public.profiles(pagina_web_enabled);
 
 -- ─── Coach Profiles ────────────────────────────────────────
 CREATE TABLE public.coach_profiles (

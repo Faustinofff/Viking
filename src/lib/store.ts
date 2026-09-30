@@ -56,6 +56,7 @@ import {
 } from "./data";
 import { trackActivity } from "./telemetry";
 import { getCoachBranding, saveStudentCoachId, clearStudentCoachId, getBrandingEnabled, cacheBrandingEnabled, loadCachedBrandingEnabled, type CoachBranding } from "./branding";
+import { getPaginaWebEnabled, cachePaginaWebEnabled, loadCachedPaginaWebEnabled } from "./pagina-web";
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -74,6 +75,8 @@ export interface Usuario {
   avatar?: string;
   /** Permiso de branding otorgado por el admin (solo coaches). */
   brandingEnabled?: boolean;
+  /** Permiso de página web otorgado por el admin (solo coaches). */
+  paginaWebEnabled?: boolean;
 }
 
 export interface Alumno {
@@ -428,6 +431,7 @@ interface AppState {
   iniciarSesion: (rol: Rol, nombre: string, email: string) => void;
   cerrarSesion: () => void;
   refreshBrandingEnabled: () => Promise<void>;
+  refreshPaginaWebEnabled: () => Promise<void>;
   _cerrandoSesion: boolean;
 
   // Datos
@@ -564,7 +568,7 @@ export const useAppStore = create<AppState>((set, get) => {
   // Auth
   usuarioActual: null,
   _cerrandoSesion: false,
-  setUsuario: (u) => set({ usuarioActual: { ...u, telefono: u.telefono || loadTelefono() || undefined, brandingEnabled: u.rol === "coach" ? (u.brandingEnabled ?? loadCachedBrandingEnabled(u.id) ?? undefined) : undefined } }),
+  setUsuario: (u) => set({ usuarioActual: { ...u, telefono: u.telefono || loadTelefono() || undefined, brandingEnabled: u.rol === "coach" ? (u.brandingEnabled ?? loadCachedBrandingEnabled(u.id) ?? undefined) : undefined, paginaWebEnabled: u.rol === "coach" ? (u.paginaWebEnabled ?? loadCachedPaginaWebEnabled(u.id) ?? undefined) : undefined } }),
   refreshBrandingEnabled: async () => {
     const u = get().usuarioActual;
     if (!u || u.rol !== "coach") return;
@@ -572,12 +576,19 @@ export const useAppStore = create<AppState>((set, get) => {
     cacheBrandingEnabled(u.id, enabled);
     set({ usuarioActual: { ...get().usuarioActual!, brandingEnabled: enabled } });
   },
+  refreshPaginaWebEnabled: async () => {
+    const u = get().usuarioActual;
+    if (!u || u.rol !== "coach") return;
+    const enabled = await getPaginaWebEnabled(u.id);
+    cachePaginaWebEnabled(u.id, enabled);
+    set({ usuarioActual: { ...get().usuarioActual!, paginaWebEnabled: enabled } });
+  },
   iniciarSesion: async (rol, nombre, email) => {
     const { data: { user } } = await supabase.auth.getUser();
     const id = user?.id ?? `anon_${Date.now()}`;
     const telefono = loadTelefono() || undefined;
-    set({ usuarioActual: { id, nombre, email, rol, telefono, brandingEnabled: rol === "coach" ? (loadCachedBrandingEnabled(id) ?? undefined) : undefined } });
-    if (rol === "coach") get().refreshBrandingEnabled();
+    set({ usuarioActual: { id, nombre, email, rol, telefono, brandingEnabled: rol === "coach" ? (loadCachedBrandingEnabled(id) ?? undefined) : undefined, paginaWebEnabled: rol === "coach" ? (loadCachedPaginaWebEnabled(id) ?? undefined) : undefined } });
+    if (rol === "coach") { get().refreshBrandingEnabled(); get().refreshPaginaWebEnabled(); }
   },
   cerrarSesion: async () => {
     if (get()._cerrandoSesion) return;

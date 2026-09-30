@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { PLANES_PREMIUM } from "@/lib/data";
-import { esPilotoPaginaWeb } from "@/lib/pagina-web";
+import { esPaginaWebVisible } from "@/lib/pagina-web";
 import ChatDialog from "@/components/chat";
 import AppBrandMark from "@/components/app-brand";
 
@@ -50,19 +50,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const nav = usuario?.rol === "coach"
-    ? [...NAV, ...(usuario?.brandingEnabled === true ? [PERSONALIZACION_NAV] : []), ...(esPilotoPaginaWeb(usuario.email) ? [PAGINA_WEB_NAV] : [])]
+    ? [...NAV, ...(usuario?.brandingEnabled === true ? [PERSONALIZACION_NAV] : []), ...(esPaginaWebVisible(usuario.email, usuario.paginaWebEnabled) ? [PAGINA_WEB_NAV] : [])]
     : NAV;
 
   useEffect(() => {
     if (usuario?.rol === "coach") {
       useAppStore.getState().syncCoachData();
-      useAppStore.getState().refreshBrandingEnabled();
+useAppStore.getState().refreshBrandingEnabled();
+      useAppStore.getState().refreshPaginaWebEnabled();
     }
   }, [usuario?.id]);
 
   useEffect(() => {
     const onFocus = () => {
-      if (usuario?.rol === "coach") useAppStore.getState().refreshBrandingEnabled();
+      if (usuario?.rol === "coach") { useAppStore.getState().refreshBrandingEnabled(); useAppStore.getState().refreshPaginaWebEnabled(); }
     };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onFocus);
