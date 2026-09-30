@@ -6,6 +6,7 @@ import { getCurrentUser, onAuthStateChange, setUidCookie, clearUidCookie } from 
 import { createProfile, getProfile } from "@/lib/data";
 import { isAdmin } from "@/lib/admin";
 import { trackLogin } from "@/lib/telemetry";
+import AppLoader from "@/components/app-loader";
 
 const STORAGE_LAST_PATH = "viking_last_path";
 
@@ -130,10 +131,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Guard de render (solo visual): mientras se resuelve la sesión existente no
-  // se monta ninguna página (ni Login ni App). Sin splash, sin loader, sin
-  // timer: usa el estado loading ya existente y renderiza vacío (fondo de la
-  // app). El Login decide después si pintarse con el estado que ya usa para
+  // se monta ninguna página (ni Login ni App). Sin splash, sin timer: usa el
+  // estado loading ya existente y mientras tanto muestra el loader real de
+  // Viking (que desaparece en cuanto la sesión se resuelve y loading pasa a
+  // false). El Login decide después si pintarse con el estado que ya usa para
   // redirigir (usuarioActual). No modifica sesión, redirects ni navegación.
-  if (loading) return null;
+  if (loading) return <AppLoader />;
   return <>{children}</>;
 }

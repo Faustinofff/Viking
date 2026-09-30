@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { signInWithGoogle } from "@/lib/auth";
+import AppLoader from "@/components/app-loader";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,9 +18,11 @@ export default function LoginPage() {
 
   // Guard visual: si ya existe sesión válida, Login no se pinta (ni formulario,
   // ni logo, ni botones). El redirect existente (useEffect) es el que lleva al
-  // usuario a su app. No modifica el redirect ni la navegación.
+  // usuario a su app. Se muestra el loader real de Viking en vez de una
+  // pantalla vacía, y desaparece solo cuando el redirect ejecuta al montar la
+  // app. No modifica el redirect ni la navegación.
   if (usuarioActual) {
-    return <div className="min-h-screen bg-bg-primary" />;
+    return <AppLoader />;
   }
 
   const handleGoogleSignIn = async (rol: "coach" | "alumno") => {
