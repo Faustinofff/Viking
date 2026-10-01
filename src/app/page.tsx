@@ -346,28 +346,20 @@ export default function LandingPage() {
             </div>
           </FadeIn>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
-              { name: "Prueba", price: "1.000", desc: "Acceso premium completo por 24 horas", period: "", badge: null, popular: false, bestValue: false, features: ["Alumnos ilimitados", "Acceso premium completo", "Todas las funciones incluidas", "Sin límite de contenido"], cta: "Activar Prueba" },
-              { name: "Mensual", price: "14.999", desc: "Flexibilidad mes a mes", period: "/mes", badge: null, popular: false, bestValue: false, features: ["Alumnos ilimitados", "Rutinas + nutrición", "Progreso automático", "Agenda integrada", "Asistente IA"], cta: "Elegir Mensual" },
-              { name: "Trimestral", price: "31.999", desc: "Ahorrá 29% vs. el plan mensual", period: "/mes", badge: "Más popular", popular: true, bestValue: false, features: ["Todo el plan Mensual", "Descuento por trimestre", "Soporte prioritario", "Reportes avanzados"], cta: "Elegir Trimestral" },
-              { name: "Semestral", price: "54.999", desc: "Ahorrá 39% vs. el plan mensual", period: "/mes", badge: null, popular: false, bestValue: false, features: ["Todo el plan Trimestral", "Descuento por semestre", "Soporte premium", "Exportación de datos"], cta: "Elegir Semestral" },
-              { name: "Anual", price: "89.999", desc: "Ahorrá 50% vs. el plan mensual", period: "/mes", badge: "Mejor valor", popular: false, bestValue: true, features: ["Todo el plan Semestral", "Máximo descuento", "Soporte VIP 24/7", "Features beta anticipadas"], cta: "Elegir Anual" },
+              { name: "Viking", price: "16.999", desc: "El plan completo para entrenar a tus alumnos sin límites.", period: "/mes", badge: null, popular: false, features: ["Gestión de alumnos", "Rutinas y ejercicios", "Videos e indicaciones", "Series, repeticiones y descansos", "Nutrición", "Seguimiento del progreso", "Viking IA"], cta: "Elegir Viking" },
+              { name: "Viking Marca", price: "24.999", desc: "Todo lo de Viking, con tu identidad en la app de tus alumnos.", period: "/mes", badge: "Más popular", popular: true, features: ["Todo lo incluido en Viking", "Logo personalizado", "Nombre e identidad personalizada", "Experiencia del alumno con tu marca", "Ícono personalizado de la app en el celular del alumno"], cta: "Elegir Viking Marca" },
+              { name: "Viking Marca + Página web", price: "34.999", desc: "Todo lo de Viking Marca, más tu página web profesional.", period: "/mes", badge: null, popular: false, features: ["Todo lo incluido en Viking Marca", "Página web profesional personalizada", "Espacio para presentar tus servicios", "Presencia online profesional"], cta: "Elegir Viking Marca + Página web" },
             ].map((plan, i) => (
               <FadeIn key={plan.name} delay={i * 80}>
                 <div className={`relative flex flex-col rounded-2xl border p-5 transition-all duration-300 hover:scale-[1.02] ${
                   plan.popular
                     ? "border-accent bg-accent/[0.04]"
-                    : plan.bestValue
-                    ? "border-accent/40 bg-white/[0.04]"
                     : "border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.05]"
                 }`}>
                   {plan.badge && (
-                    <div className={`absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
-                      plan.popular
-                        ? "bg-accent text-bg-primary"
-                        : "bg-accent/20 text-accent border border-accent/30"
-                    }`}>
+                    <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-accent text-bg-primary">
                       {plan.badge}
                     </div>
                   )}

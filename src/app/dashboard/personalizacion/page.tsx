@@ -3,10 +3,12 @@ import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { getCoachBranding } from "@/lib/branding";
+import { premiumHabilitaPersonalizacion } from "@/lib/data";
 import LogoUpload, { BrandingIcons } from "@/components/logo-upload";
 
 export default function CoachPersonalizacionPage() {
   const usuario = useAppStore((s) => s.usuarioActual);
+  const premium = useAppStore((s) => s.premium);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -18,7 +20,7 @@ export default function CoachPersonalizacionPage() {
   const [brandIcon512, setBrandIcon512] = useState<string | null>(null);
   const [brandIcon180, setBrandIcon180] = useState<string | null>(null);
 
-  const allowed = usuario?.rol === "coach" && usuario?.brandingEnabled === true;
+  const allowed = usuario?.rol === "coach" && (usuario?.brandingEnabled === true || premiumHabilitaPersonalizacion(premium));
 
   useEffect(() => {
     if (usuario?.rol === "coach") {

@@ -537,7 +537,7 @@ interface AppState {
   setPremiumError: (msg: string | null) => void;
   cargarSuscripcion: () => Promise<void>;
   cambiarPlan: (planId: string) => Promise<void>;
-  contratarPremium: (plan: PremiumPlan) => Promise<void>;
+  contratarPremium: (plan: PremiumPlan, meses?: number) => Promise<void>;
   getLimiteAlumnos: () => number;
 
   // Current Week
@@ -1758,9 +1758,11 @@ export const useAppStore = create<AppState>((set, get) => {
   cambiarPlan: async (planId) => {
     // Premium plans are handled via MP payment flow
   },
-  contratarPremium: async (plan: PremiumPlan) => {
+  contratarPremium: async (plan: PremiumPlan, meses = 1) => {
     const coachId = get().usuarioActual?.id;
     if (!coachId) throw new Error("Debés iniciar sesión como coach");
+    const cantidad = Math.min(Math.max(Number(meses) || 1, 1), 36);
+    const dias = plan.dias * cantidad;
     const isDev = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.search.includes("dev"));
     const isTest = typeof window !== "undefined" && window.location.search.includes("test=1");
     const usaMp = typeof window !== "undefined" && window.location.search.includes("mp=1");
@@ -1773,9 +1775,9 @@ export const useAppStore = create<AppState>((set, get) => {
       const premium: PremiumData = {
         planId: plan.id,
         planName: plan.nombre,
-        planDurationDays: plan.dias,
-        planPrice: plan.precio,
-        premiumExpiresAt: new Date(base.getTime() + plan.dias * 86400000).toISOString(),
+        planDurationDays: dias,
+        planPrice: plan.precio * cantidad,
+        premiumExpiresAt: new Date(base.getTime() + dias * 86400000).toISOString(),
         paymentStatus: "approved",
         paymentDate: now.toISOString(),
       };
@@ -1786,7 +1788,7 @@ export const useAppStore = create<AppState>((set, get) => {
     const res = await fetch("/api/mp/create-preference", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planId: plan.id }),
+      body: JSON.stringify({ planId: plan.id, months: cantidad }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? "Error al crear pago");

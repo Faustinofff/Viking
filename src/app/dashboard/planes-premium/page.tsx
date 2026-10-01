@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useAppStore } from "@/lib/store";
-import { PLANES_PREMIUM, esCoachGratuito } from "@/lib/data";
+import { PLANES_PREMIUM, PLANES_TIER, esCoachGratuito } from "@/lib/data";
 
 export default function PlanesPremiumPage() {
   const usuarioActual = useAppStore((s) => s.usuarioActual);
@@ -17,6 +17,11 @@ export default function PlanesPremiumPage() {
   const [linkPago, setLinkPago] = useState<string | null>(null);
   const [planPagando, setPlanPagando] = useState<string | null>(null);
   const enPwa = typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches;
+  const [mesesPorPlan, setMesesPorPlan] = useState<Record<string, number>>({});
+  const definirMeses = (planId: string, valor: number) => {
+    setMesesPorPlan((prev) => ({ ...prev, [planId]: Math.min(Math.max(valor, 1), 36) }));
+  };
+  const mesesDe = (planId: string) => mesesPorPlan[planId] ?? 1;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -48,7 +53,7 @@ export default function PlanesPremiumPage() {
     }, 3000);
   };
 
-  const handleContratar = async (planId: string) => {
+  const handleContratar = async (planId: string, meses = 1) => {
     setCargando(planId);
     setError("");
     setExito("");
@@ -59,7 +64,7 @@ export default function PlanesPremiumPage() {
       const res = await fetch("/api/mp/create-preference", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId, coachId: usuarioActual?.id }),
+        body: JSON.stringify({ planId, coachId: usuarioActual?.id, months: meses }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error al crear pago");
@@ -67,7 +72,7 @@ export default function PlanesPremiumPage() {
       const isDev = window.location.hostname === "localhost" || params.has("dev");
       const isTest = params.has("test");
       if (isDev || isTest) {
-        const simRes = await fetch(`/api/mp/confirm-payment?external_reference=${usuarioActual?.id}:${planId}&status=approved&payment_id=sandbox_${Date.now()}`, { redirect: "manual" });
+        const simRes = await fetch(`/api/mp/confirm-payment?external_reference=${usuarioActual?.id}:${planId}&months=${meses}&status=approved&payment_id=sandbox_${Date.now()}`, { redirect: "manual" });
         if (simRes.status === 302) {
           await cargarSuscripcion();
           const p = useAppStore.getState().premium;
@@ -76,7 +81,7 @@ export default function PlanesPremiumPage() {
             return;
           }
         }
-        await contratarPremium(plan);
+        await contratarPremium(plan, meses);
         setExito(`Plan ${plan.nombre} activado correctamente (fallback test)`);
         return;
       }
@@ -173,9 +178,15 @@ export default function PlanesPremiumPage() {
       )}
 
       {!esGratuito && !linkPago && (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {PLANES_PREMIUM.map((plan) => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {PLANES_TIER.map((plan) => {
           const contratando = cargando === plan.id;
+          const meses = mesesDe(plan.id);
+          const total = plan.precio * meses;
+          const descripcion =
+            plan.id === "viking" ? "Funciones esenciales para entrenar a tus alumnos" :
+            plan.id === "viking_marca" ? "Todo lo de Viking + tu marca personalizada" :
+            "Todo lo de Viking Marca + página web profesional";
           return (
             <div key={plan.id} className="card flex flex-col relative overflow-hidden transition-all hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5">
               {plan.destacado && (
@@ -185,19 +196,40 @@ export default function PlanesPremiumPage() {
               )}
               <div className="flex-1">
                 <h3 className="text-lg font-bold text-white">{plan.nombre}</h3>
-                <p className="text-sm text-white/50">{plan.dias} días de acceso</p>
+                <p className="text-sm text-white/40 mt-0.5">{descripcion}</p>
+                <p className="text-sm text-white/50 mt-2">${plan.precio.toLocaleString("es-AR")} / mes</p>
                 <div className="mt-3">
-                  <span className="text-3xl font-extrabold text-white">${plan.precio.toLocaleString("es-AR")}</span>
+                  <span className="text-3xl font-extrabold text-white">${total.toLocaleString("es-AR")}</span>
                   <span className="text-sm text-white/40 ml-1">total</span>
                 </div>
-                {plan.ahorro && <p className="text-xs text-green-400 font-semibold mt-1">{plan.ahorro}</p>}
+                <div className="mt-4 flex items-center justify-between bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2">
+                  <span className="text-xs text-white/50">Cantidad de meses</span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => definirMeses(plan.id, meses - 1)}
+                      disabled={meses <= 1}
+                      aria-label="Quitar un mes"
+                      className="w-7 h-7 rounded-lg bg-white/5 text-white font-bold flex items-center justify-center transition-all hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5"
+                    >−</button>
+                    <span className="w-6 text-center font-semibold text-white">{meses}</span>
+                    <button
+                      onClick={() => definirMeses(plan.id, meses + 1)}
+                      disabled={meses >= 36}
+                      aria-label="Agregar un mes"
+                      className="w-7 h-7 rounded-lg bg-accent text-bg-primary font-bold flex items-center justify-center transition-all hover:bg-accent/90 disabled:opacity-30"
+                    >+</button>
+                  </div>
+                </div>
+                <p className="text-xs text-white/30 mt-2">
+                  {meses === 1 ? `${plan.dias} día de acceso` : `${plan.dias * meses} días de acceso`}
+                </p>
               </div>
               <button
-                onClick={() => handleContratar(plan.id)}
+                onClick={() => handleContratar(plan.id, meses)}
                 disabled={contratando}
                 className="mt-4 w-full py-2.5 rounded-xl text-sm font-medium transition-all bg-accent text-bg-primary hover:bg-accent/90 disabled:opacity-50"
               >
-                {contratando ? "Preparando pago..." : "Contratar"}
+                {contratando ? "Preparando pago..." : `Contratar por ${meses} ${meses === 1 ? "mes" : "meses"}`}
               </button>
             </div>
           );

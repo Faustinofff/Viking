@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "MP no configurado" }, { status: 500 });
     }
 
-    const { token, payment_method_id, transaction_amount, installments, issuer_id, plan_id, email } = await req.json();
+    const { token, payment_method_id, transaction_amount, installments, issuer_id, plan_id, email, months } = await req.json();
     if (!token || !transaction_amount || !plan_id || !email) {
       return NextResponse.json({ error: "Faltan datos del pago" }, { status: 400 });
     }
@@ -28,6 +28,9 @@ export async function POST(req: Request) {
     if (!plan) {
       return NextResponse.json({ error: "Plan no válido" }, { status: 400 });
     }
+
+    const meses = Math.min(Math.max(Number(months) || 1, 1), 36);
+    const dias = plan.dias * meses;
 
     const body: Record<string, any> = {
       token,
@@ -78,13 +81,13 @@ export async function POST(req: Request) {
         }
 
         const existingPremium = blob.premium as PremiumData | undefined;
-        const newExpiresAt = calcularNuevoVencimiento(existingPremium?.premiumExpiresAt ?? null, plan.dias);
+        const newExpiresAt = calcularNuevoVencimiento(existingPremium?.premiumExpiresAt ?? null, dias);
 
         blob.premium = {
           planId: plan.id,
           planName: plan.nombre,
-          planDurationDays: plan.dias,
-          planPrice: plan.precio,
+          planDurationDays: dias,
+          planPrice: plan.precio * meses,
           premiumExpiresAt: newExpiresAt,
           paymentStatus: "approved",
           paymentDate: new Date().toISOString(),

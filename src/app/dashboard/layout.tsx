@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { PLANES_PREMIUM } from "@/lib/data";
+import { PLANES_PREMIUM, premiumHabilitaPersonalizacion, premiumHabilitaPaginaWeb } from "@/lib/data";
 import { esPaginaWebVisible } from "@/lib/pagina-web";
 import ChatDialog from "@/components/chat";
 import AppBrandMark from "@/components/app-brand";
@@ -50,7 +50,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const nav = usuario?.rol === "coach"
-    ? [...NAV, ...(usuario?.brandingEnabled === true ? [PERSONALIZACION_NAV] : []), ...(esPaginaWebVisible(usuario.email, usuario.paginaWebEnabled) ? [PAGINA_WEB_NAV] : [])]
+    ? [...NAV,
+      ...(usuario?.brandingEnabled === true || premiumHabilitaPersonalizacion(premium) ? [PERSONALIZACION_NAV] : []),
+      ...(esPaginaWebVisible(usuario.email, usuario.paginaWebEnabled) || premiumHabilitaPaginaWeb(premium) ? [PAGINA_WEB_NAV] : [])]
     : NAV;
 
   useEffect(() => {

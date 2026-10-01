@@ -60,6 +60,9 @@ export async function POST(req: Request) {
       const plan = PLANES_PREMIUM.find((p) => p.id === planId);
       if (!plan) return NextResponse.json({ ok: true });
 
+      const meses = Math.min(Math.max(Number(payment.metadata?.months) || 1, 1), 36);
+      const dias = plan.dias * meses;
+
       let coachId: string | null = refParts.length >= 2 ? refParts[0] : null;
       if (!coachId) {
         const payerEmail = payment.payer?.email;
@@ -79,14 +82,14 @@ export async function POST(req: Request) {
       const existingPremium = blob.premium as PremiumData | undefined;
       const newExpiresAt = calcularNuevoVencimiento(
         existingPremium?.premiumExpiresAt ?? null,
-        plan.dias
+        dias
       );
 
       const premium: PremiumData = {
         planId: plan.id,
         planName: plan.nombre,
-        planDurationDays: plan.dias,
-        planPrice: plan.precio,
+        planDurationDays: dias,
+        planPrice: plan.precio * meses,
         premiumExpiresAt: newExpiresAt,
         paymentStatus: "approved",
         paymentDate: new Date().toISOString(),

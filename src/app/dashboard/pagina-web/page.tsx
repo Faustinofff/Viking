@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { esPaginaWebVisible, normalizarSlug, PAGINA_WEB_PORTADA_MAX_BYTES, PAGINA_WEB_PORTADA_TYPES, PAGINA_WEB_GALERIA_MAX } from "@/lib/pagina-web";
-import { getCoachPhone } from "@/lib/data";
+import { getCoachPhone, premiumHabilitaPaginaWeb } from "@/lib/data";
 
 function PortadaUpload({ value, onChange }: { value: string | null; onChange: (url: string | null) => void }) {
   const [uploading, setUploading] = useState(false);
@@ -171,6 +171,7 @@ function GaleriaUpload({ value, onChange, max }: { value: string[]; onChange: (u
 
 export default function CoachPaginaWebPage() {
   const usuario = useAppStore((s) => s.usuarioActual);
+  const premium = useAppStore((s) => s.premium);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -186,7 +187,7 @@ export default function CoachPaginaWebPage() {
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const allowed = usuario?.rol === "coach" && esPaginaWebVisible(usuario.email, usuario.paginaWebEnabled);
+  const allowed = usuario?.rol === "coach" && (esPaginaWebVisible(usuario.email, usuario.paginaWebEnabled) || premiumHabilitaPaginaWeb(premium));
 
   useEffect(() => {
     if (!usuario) return;

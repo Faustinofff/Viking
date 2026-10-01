@@ -44,6 +44,7 @@ export async function GET(req: Request) {
     const externalRef = url.searchParams.get("external_reference") || "";
     const paymentId = url.searchParams.get("payment_id");
     const status = url.searchParams.get("status");
+    const meses = Math.min(Math.max(Number(url.searchParams.get("months")) || 1, 1), 36);
 
     let redirectUrl = `/dashboard/planes-premium?ok=true`;
 
@@ -57,16 +58,17 @@ export async function GET(req: Request) {
     if (coachId && plan && status === "approved") {
       const { data: blob, originalUrl } = await readBlob(coachId);
       const existingPremium = blob.premium as PremiumData | undefined;
+      const dias = plan.dias * meses;
       const newExpiresAt = calcularNuevoVencimiento(
         existingPremium?.premiumExpiresAt ?? null,
-        plan.dias
+        dias
       );
 
       const premium: PremiumData = {
         planId: plan.id,
         planName: plan.nombre,
-        planDurationDays: plan.dias,
-        planPrice: plan.precio,
+        planDurationDays: dias,
+        planPrice: plan.precio * meses,
         premiumExpiresAt: newExpiresAt,
         paymentStatus: "approved",
         paymentDate: new Date().toISOString(),
@@ -86,16 +88,17 @@ export async function GET(req: Request) {
           if (payment.status === "approved") {
             const { data: blob, originalUrl } = await readBlob(coachId);
             const existingPremium = blob.premium as PremiumData | undefined;
+            const dias = plan.dias * meses;
             const newExpiresAt = calcularNuevoVencimiento(
               existingPremium?.premiumExpiresAt ?? null,
-              plan.dias
+              dias
             );
 
             const premium: PremiumData = {
               planId: plan.id,
               planName: plan.nombre,
-              planDurationDays: plan.dias,
-              planPrice: plan.precio,
+              planDurationDays: dias,
+              planPrice: plan.precio * meses,
               premiumExpiresAt: newExpiresAt,
               paymentStatus: "approved",
               paymentDate: new Date().toISOString(),

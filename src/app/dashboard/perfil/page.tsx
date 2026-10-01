@@ -2,9 +2,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/lib/store";
+import { premiumHabilitaPersonalizacion } from "@/lib/data";
 
 export default function CoachProfilePage() {
   const usuario = useAppStore((s) => s.usuarioActual);
+  const premium = useAppStore((s) => s.premium);
   const actualizarTelefono = useAppStore((s) => s.actualizarTelefono);
   const actualizarNombre = useAppStore((s) => s.actualizarNombre);
   const actualizarCoachEnAlumnos = useAppStore((s) => s.actualizarCoachEnAlumnos);
@@ -58,7 +60,7 @@ export default function CoachProfilePage() {
         </div>
       </div>
 
-      {usuario?.rol === "coach" && usuario?.brandingEnabled === true && (
+      {usuario?.rol === "coach" && (usuario?.brandingEnabled === true || premiumHabilitaPersonalizacion(premium)) && (
         <Link href="/dashboard/personalizacion" className="card flex items-center justify-between p-5 hover:border-accent/30 transition-all">
           <div className="flex items-center gap-4">
             <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center text-xl">🎨</div>

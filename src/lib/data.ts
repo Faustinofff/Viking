@@ -800,15 +800,54 @@ export interface PremiumPlan {
   precio: number;
   ahorro?: string;
   destacado?: string;
+  /** Mostrado en la grilla pública/de planes (los 3 planes Viking). */
+  tier?: boolean;
+  /** El plan incluye Personalización (marca del coach) mientras esté vigente. */
+  personalizacion?: boolean;
+  /** El plan incluye la Página web (landing pública /l/<slug>) mientras esté vigente. */
+  paginaWeb?: boolean;
 }
 
 export const PLANES_PREMIUM: PremiumPlan[] = [
-  { id: "prueba",      nombre: "Prueba (1 día)", dias: 1,  precio: 1000,   ahorro: undefined,              destacado: undefined },
-  { id: "mensual",     nombre: "Mensual",     dias: 30,  precio: 14999,  ahorro: undefined,                destacado: undefined },
+  // ── Planes Viking (mensuales, con selector de meses) ────────
+  { id: "viking",          nombre: "Viking",                          dias: 30, precio: 16999, tier: true, destacado: undefined },
+  { id: "viking_marca",    nombre: "Viking Marca",                    dias: 30, precio: 24999, tier: true, personalizacion: true, destacado: "Más popular" },
+  { id: "viking_marca_web",nombre: "Viking Marca + Página web",       dias: 30, precio: 34999, tier: true, personalizacion: true, paginaWeb: true },
+
+  // ── Prueba interna (activación manual del admin) ────────────
+  { id: "prueba",          nombre: "Prueba (1 día)",                   dias: 1,  precio: 1000 },
+
+  // ── Planes legacy (históricos, ocultos; se conservan para que los
+  //    PremiumData existentes sigan resolviéndose con find()) ───
+  { id: "mensual",     nombre: "Mensual",     dias: 30,  precio: 14999,  ahorro: undefined,              destacado: undefined },
   { id: "trimestral",  nombre: "Trimestral",  dias: 90,  precio: 31999,  ahorro: "Ahorra 29%",             destacado: "Más Popular" },
   { id: "semestral",   nombre: "Semestral",   dias: 180, precio: 54999,  ahorro: "Ahorra 39%",             destacado: undefined },
   { id: "anual",       nombre: "Anual",       dias: 365, precio: 89999,  ahorro: "Ahorra 50%",             destacado: "Mejor Valor" },
 ] as const;
+
+/** Los 3 planes Viking que se ofrecen (los únicos que se muestran). */
+export const PLANES_TIER = PLANES_PREMIUM.filter((p) => p.tier === true);
+
+export function esPlanConPersonalizacion(planId?: string | null): boolean {
+  if (!planId) return false;
+  const plan = PLANES_PREMIUM.find((p) => p.id === planId);
+  return plan?.personalizacion === true;
+}
+
+export function esPlanConPaginaWeb(planId?: string | null): boolean {
+  if (!planId) return false;
+  const plan = PLANES_PREMIUM.find((p) => p.id === planId);
+  return plan?.paginaWeb === true;
+}
+
+/** Permisos que otorga el plan actual, solo mientras el premium esté vigente. */
+export function premiumHabilitaPersonalizacion(premium?: PremiumData | null): boolean {
+  return !!premium && new Date(premium.premiumExpiresAt).getTime() > Date.now() && esPlanConPersonalizacion(premium.planId);
+}
+
+export function premiumHabilitaPaginaWeb(premium?: PremiumData | null): boolean {
+  return !!premium && new Date(premium.premiumExpiresAt).getTime() > Date.now() && esPlanConPaginaWeb(premium.planId);
+}
 
 export interface PremiumData {
   planId: string;
