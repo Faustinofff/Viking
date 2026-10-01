@@ -187,6 +187,10 @@ export default function PlanesPremiumPage() {
             plan.id === "viking" ? "Funciones esenciales para entrenar a tus alumnos" :
             plan.id === "viking_marca" ? "Todo lo de Viking + tu marca personalizada" :
             "Todo lo de Viking Marca + página web profesional";
+          const caracteristicas =
+            plan.id === "viking" ? ["Gestión de alumnos", "Rutinas y ejercicios", "Videos e indicaciones", "Series, repeticiones y descansos", "Nutrición", "Seguimiento del progreso", "Viking IA"] :
+            plan.id === "viking_marca" ? ["Todo lo incluido en Viking", "Logo personalizado", "Nombre e identidad personalizada", "Experiencia del alumno con tu marca", "Ícono personalizado de la app en el celular del alumno"] :
+            ["Todo lo incluido en Viking Marca", "Página web profesional personalizada", "Espacio para presentar tus servicios", "Presencia online profesional"];
           return (
             <div key={plan.id} className="card flex flex-col relative overflow-hidden transition-all hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5">
               {plan.destacado && (
@@ -201,6 +205,17 @@ export default function PlanesPremiumPage() {
                 <div className="mt-3">
                   <span className="text-3xl font-extrabold text-white">${total.toLocaleString("es-AR")}</span>
                   <span className="text-sm text-white/40 ml-1">total</span>
+                </div>
+                <div className="mt-4 border-t border-white/[0.06] pt-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-white/30 mb-2">Incluye</p>
+                  <ul className="space-y-1.5">
+                    {caracteristicas.map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-xs text-white/60">
+                        <span className="text-accent mt-0.5 shrink-0">✓</span>
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
                 <div className="mt-4 flex items-center justify-between bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2">
                   <span className="text-xs text-white/50">Cantidad de meses</span>
