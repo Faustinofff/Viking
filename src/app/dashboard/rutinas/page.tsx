@@ -611,7 +611,7 @@ export default function RutinasPage() {
                           {/* Filters */}
                           <div className="flex flex-col sm:flex-row gap-2 mb-2">
                             <input className="input text-sm flex-1" placeholder="Buscar ejercicio..." value={searchText}
-                              onChange={(e) => setSearchText(e.target.value)} autoFocus />
+                              onChange={(e) => setSearchText(e.target.value)} />
                             <div className="flex gap-2">
                               <select className="input flex-1 sm:w-36 text-sm" value={muscleFilter} onChange={(e) => setMuscleFilter(e.target.value)}>
                                 <option value="">Todos</option>
