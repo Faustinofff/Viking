@@ -160,12 +160,6 @@ export default function LandingPage() {
           </div>
         )}
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center max-w-2xl mx-auto">
-          <FadeIn>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 backdrop-blur-sm border border-accent/20 text-accent text-sm mb-6">
-              <span>🚀</span>
-              <span>Plataforma premium para coaches</span>
-            </div>
-          </FadeIn>
           <FadeIn delay={100}>
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
               Tu negocio de
