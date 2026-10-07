@@ -314,7 +314,8 @@ export default function LandingPage() {
                 <h3 className="text-xl font-bold text-white">Gratuito</h3>
                 <p className="text-sm text-white/50 mt-1">Ideal para empezar a conocer Viking.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1.5 mt-4">
-                  <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Hasta <strong className="text-white font-semibold">3 alumnos</strong></span>
+                  <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Hasta <strong className="text-white font-semibold">2 alumnos</strong></span>
+                  <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Hasta <strong className="text-white font-semibold">3 rutinas</strong></span>
                   <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Todas las funciones disponibles</span>
                   <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Rutinas</span>
                   <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Planes alimenticios</span>
@@ -324,7 +325,7 @@ export default function LandingPage() {
                   <span className="text-xs text-white/60 flex items-center gap-1.5"><span className="text-accent shrink-0">✓</span>Gestión de alumnos</span>
                 </div>
                 <p className="text-[11px] text-white/30 mt-4 border-t border-white/[0.06] pt-3 leading-relaxed">
-                  El coach no puede agregar más de 3 alumnos con este plan. Si querés gestionar 4 o más alumnos, necesitás un plan Premium.
+                  La prueba gratuita incluye hasta 2 alumnos y 3 rutinas. Si querés gestionar más alumnos y rutinas, necesitás un plan Premium (alumnos y rutinas ilimitadas).
                 </p>
               </div>
               <div className="text-center lg:text-right shrink-0 w-full lg:w-auto">
@@ -471,7 +472,7 @@ export default function LandingPage() {
             Empezá gratis.
           </h2>
           <p className="text-lg sm:text-xl text-white/50 mb-10">
-            Probá Viking gratis hasta 3 alumnos.
+            Probá Viking gratis con hasta 2 alumnos y 3 rutinas.
           </p>
           <Link href="/login" className="btn-primary text-base sm:text-lg px-10 py-4 inline-block">
             Comenzar ahora
