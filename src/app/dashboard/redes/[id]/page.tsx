@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
+import { esCoachGratuito } from "@/lib/data";
 import { useConfirmToast } from "@/components/toast";
 
 export default function RedDetailPage() {
@@ -37,6 +38,19 @@ export default function RedDetailPage() {
 
   const alumnosRed = alumnos.filter((a) => red.alumnoIds.includes(a.id));
   const alumnosDisponibles = alumnos.filter((a) => !red.alumnoIds.includes(a.id));
+
+  const abrirNuevoAlumno = () => {
+    const st = useAppStore.getState();
+    const premiumActivo = st.premium && new Date(st.premium.premiumExpiresAt) > new Date();
+    if (st.usuarioActual?.rol === "coach" && !esCoachGratuito(st.usuarioActual?.email) && !premiumActivo) {
+      const limite = st.getLimiteAlumnos();
+      if (st.alumnos.length >= limite) {
+        st.abrirUpgrade("students", `Llegaste al límite de ${limite} alumnos de tu cuenta de prueba. Suscribite a un plan para agregar más.`);
+        return;
+      }
+    }
+    setShowModal(true);
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,7 +125,7 @@ export default function RedDetailPage() {
         </div>
         <div className="flex gap-1.5 items-start sm:items-center flex-col sm:flex-row w-full sm:w-auto">
           <button onClick={() => setShowExistingModal(true)} className="btn-secondary text-sm !px-3 !py-1.5 w-full sm:w-auto">+ Agregar Existente</button>
-          <button onClick={() => setShowModal(true)} className="btn-primary text-sm !px-3 !py-1.5 w-full sm:w-auto">+ Nuevo Alumno</button>
+          <button onClick={abrirNuevoAlumno} className="btn-primary text-sm !px-3 !py-1.5 w-full sm:w-auto">+ Nuevo Alumno</button>
         </div>
       </div>
 
@@ -121,7 +135,7 @@ export default function RedDetailPage() {
           <p className="text-white/20 text-sm mb-4">Agregá tu primer alumno para empezar</p>
           <div className="flex gap-1.5 justify-center">
             <button onClick={() => setShowExistingModal(true)} className="btn-secondary text-sm !px-3 !py-1.5">+ Agregar Existente</button>
-            <button onClick={() => setShowModal(true)} className="btn-primary text-sm !px-3 !py-1.5">+ Nuevo Alumno</button>
+            <button onClick={abrirNuevoAlumno} className="btn-primary text-sm !px-3 !py-1.5">+ Nuevo Alumno</button>
           </div>
         </div>
       ) : (

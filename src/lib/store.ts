@@ -534,11 +534,16 @@ interface AppState {
 
   // Premium
   premiumError: string | null;
+  upgradeReason: "students" | "routines" | null;
   setPremiumError: (msg: string | null) => void;
+  abrirUpgrade: (tipo: "students" | "routines", msg: string) => void;
+  cerrarPaywall: () => void;
   cargarSuscripcion: () => Promise<void>;
   cambiarPlan: (planId: string) => Promise<void>;
   contratarPremium: (plan: PremiumPlan, meses?: number) => Promise<void>;
   getLimiteAlumnos: () => number;
+  getLimiteRutinas: () => number;
+  verificarCupoRutinas: (nuevas: number) => void;
 
   // Current Week
   currentWeek: number | null;
@@ -560,6 +565,20 @@ export const useAppStore = create<AppState>((set, get) => {
     if (total > 3) {
       const msg = "Tu plan premium ha vencido. Contratá un plan para seguir gestionando.";
       set({ premiumError: msg });
+      throw new Error(msg);
+    }
+  };
+
+  const verificarCupoRutinas = (nuevas: number) => {
+    const { usuarioActual, premium } = get();
+    if (usuarioActual?.rol !== "coach") return;
+    if (esCoachGratuito(usuarioActual?.email)) return;
+    if (premium && new Date(premium.premiumExpiresAt) > new Date()) return;
+    const limite = get().getLimiteRutinas();
+    const total = get().rutinas.length + get().unassignedRoutines.length;
+    if (total + nuevas > limite) {
+      const msg = `Llegaste al límite de ${limite} rutinas de tu cuenta de prueba. Suscribite a un plan para crear más.`;
+      set({ premiumError: msg, upgradeReason: "routines" });
       throw new Error(msg);
     }
   };
@@ -608,7 +627,7 @@ export const useAppStore = create<AppState>((set, get) => {
       registrosPeso: [], sesionesEntreno: [], actividades: [], coaches: {},
       ejerciciosPersonalizados: [], premium: null, premiumCargado: false,
       unassignedRoutines: [], unassignedPlans: [], currentWeek: null,
-      premiumError: null, ejercicioTutoriales: {},
+      premiumError: null, upgradeReason: null, ejercicioTutoriales: {},
     });
     await supabaseSignOut().catch(() => {});
     set({ _cerrandoSesion: false });
@@ -636,6 +655,7 @@ export const useAppStore = create<AppState>((set, get) => {
   premium: null,
   premiumCargado: false,
   premiumError: null,
+  upgradeReason: null,
   currentWeek: null,
   unassignedRoutines: loadUnassignedRoutines(),
   unassignedPlans: loadUnassignedPlans(),
@@ -655,10 +675,11 @@ export const useAppStore = create<AppState>((set, get) => {
       const premiumActivo = premium && new Date(premium.premiumExpiresAt) > new Date();
       if (!premiumActivo) {
         const total = get().alumnos.length;
-        if (total >= 3) {
+        const limite = get().getLimiteAlumnos();
+        if (total >= limite) {
           const msg =
-            `Límite de 3 alumnos en el plan Gratis. Para agregar otro alumno necesitás un plan Premium.`;
-          set({ premiumError: msg });
+            `Llegaste al límite de ${limite} alumnos de tu cuenta de prueba. Suscribite a un plan para agregar más.`;
+          set({ premiumError: msg, upgradeReason: "students" });
           throw new Error(msg);
         }
       }
@@ -827,6 +848,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
   asignarRutina: async (r) => {
     requierePremium();
+    verificarCupoRutinas(1);
     const coachId = get().usuarioActual?.id ?? r.coachId;
     const ejercicios = get().ejercicios;
     const plan = await createWorkoutPlan(coachId, r.alumnoId, r.nombre, r.descripcion, r.mes, r.anio, r.dias, ejercicios, r.indicacionesSemanales);
@@ -1736,14 +1758,24 @@ export const useAppStore = create<AppState>((set, get) => {
 
   // ─── Premium ─────────────────────────────────────────
 
-  setPremiumError: (msg) => set({ premiumError: msg }),
+  setPremiumError: (msg) => set({ premiumError: msg, upgradeReason: null }),
+  abrirUpgrade: (tipo, msg) => set({ premiumError: msg, upgradeReason: tipo }),
+  cerrarPaywall: () => set({ premiumError: null, upgradeReason: null }),
   getLimiteAlumnos: () => {
+    const user = get().usuarioActual;
+    if (esCoachGratuito(user?.email)) return 9999;
+    const premium = get().premium;
+    if (premium && new Date(premium.premiumExpiresAt) > new Date()) return 9999;
+    return 2;
+  },
+  getLimiteRutinas: () => {
     const user = get().usuarioActual;
     if (esCoachGratuito(user?.email)) return 9999;
     const premium = get().premium;
     if (premium && new Date(premium.premiumExpiresAt) > new Date()) return 9999;
     return 3;
   },
+  verificarCupoRutinas,
   cargarSuscripcion: async () => {
     const coachId = get().usuarioActual?.id;
     if (!coachId) return;
@@ -1819,6 +1851,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
   saveUnassignedRoutine: async (r) => {
     requierePremium();
+    verificarCupoRutinas(1);
     const coachId = get().usuarioActual?.id ?? r.coachId;
     const state = get();
     const nueva: Rutina = { ...r, id: `rut_prop_${Date.now()}`, creadoEn: new Date().toISOString() };

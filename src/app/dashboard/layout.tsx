@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
+import { supabase } from "@/lib/supabase";
+import { PLANES_SUSCRIPCION, formatearPrecio } from "@/lib/experimental";
 import { PLANES_PREMIUM, premiumHabilitaPersonalizacion, premiumHabilitaPaginaWeb } from "@/lib/data";
 import { esPaginaWebVisible } from "@/lib/pagina-web";
 import ChatDialog from "@/components/chat";
@@ -31,23 +33,66 @@ const PERSONALIZACION_NAV = { href: "/dashboard/personalizacion", label: "Person
 
 const PAGINA_WEB_NAV = { href: "/dashboard/pagina-web", label: "Página web", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></svg> }
 
+const PLAN_UPGRADE_BTN: Record<string, string> = {
+  viking: "Suscribirme al Plan Inicial",
+  viking_marca: "Suscribirme al Plan Marca",
+  viking_marca_web: "Suscribirme al Plan Landing",
+};
+
+const PLAN_UPGRADE_BENEFICIO: Record<string, string> = {
+  viking: "Alumnos y rutinas ilimitadas",
+  viking_marca: "Todo lo anterior + logo y nombre personalizado en la app",
+  viking_marca_web: "Todo lo anterior + página web propia",
+};
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const usuario = useAppStore((s) => s.usuarioActual);
   const premium = useAppStore((s) => s.premium);
   const premiumError = useAppStore((s) => s.premiumError);
-  const setPremiumError = useAppStore((s) => s.setPremiumError);
+  const upgradeReason = useAppStore((s) => s.upgradeReason);
+  const cerrarPaywall = useAppStore((s) => s.cerrarPaywall);
   const planActual = premium ? PLANES_PREMIUM.find((p) => p.id === premium.planId) ?? PLANES_PREMIUM[0] : null;
 
-  useEffect(() => {
-    if (premiumError) {
-      const t = setTimeout(() => setPremiumError(null), 6000);
-      return () => clearTimeout(t);
-    }
-  }, [premiumError]);
   const cerrarSesion = useAppStore((s) => s.cerrarSesion);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [planCargando, setPlanCargando] = useState<string | null>(null);
+  const [planError, setPlanError] = useState<string | null>(null);
+
+  const suscribirse = async (planId: string) => {
+    if (planCargando) return;
+    setPlanCargando(planId);
+    setPlanError(null);
+    try {
+      const { data: sesion } = await supabase.auth.getSession();
+      const token = sesion.session?.access_token;
+      if (!token) {
+        setPlanError("Sesión no iniciada. Iniciá sesión e intentá de nuevo.");
+        return;
+      }
+      const res = await fetch("/api/experimental/subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ plan_id: planId }),
+        cache: "no-store",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPlanError(data?.error ?? "No pudimos iniciar el pago. Probá de nuevo.");
+        return;
+      }
+      if (!data?.init_point) {
+        setPlanError("Mercado Pago no devolvió el checkout. Probá de nuevo.");
+        return;
+      }
+      window.location.href = data.init_point;
+    } catch {
+      setPlanError("No pudimos iniciar el pago. Probá de nuevo.");
+    } finally {
+      setPlanCargando(null);
+    }
+  };
 
   const nav = usuario?.rol === "coach"
     ? [...NAV,
@@ -240,19 +285,45 @@ useAppStore.getState().refreshBrandingEnabled();
       <style>{`@media (max-width:767px){.main-content{padding-top:calc(3.5rem + env(safe-area-inset-top, 0px))!important;padding-bottom:calc(6rem + env(safe-area-inset-bottom, 0px))!important}}`}</style>
       <main className="flex-1 overflow-y-auto md:pt-0 pt-14 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] main-content relative">
         {premiumError && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setPremiumError(null)}>
-            <div className="card max-w-sm w-full p-6 text-center animate-fade-in" onClick={(e) => e.stopPropagation()}>
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-accent/15 flex items-center justify-center text-2xl">👑</div>
-              <p className="text-white font-medium mb-1">Plan Premium</p>
-              <p className="text-sm text-white/60 mb-6 leading-relaxed">{premiumError}</p>
-              <div className="flex flex-col gap-2">
-                <Link href="/dashboard/planes-premium" onClick={() => setPremiumError(null)}
-                  className="btn-primary w-full text-center">
-                  Ver planes
-                </Link>
-                <button onClick={() => setPremiumError(null)} className="text-xs text-white/40 hover:text-white/70 pt-1">
-                  Ahora no
-                </button>
+          <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/60 backdrop-blur-sm p-4" onClick={() => cerrarPaywall()}>
+            <div className="min-h-full flex items-center justify-center py-6">
+              <div className="card relative w-full max-w-md p-6 text-center animate-fade-in" onClick={(e) => e.stopPropagation()}>
+                <button onClick={() => cerrarPaywall()} className="absolute top-4 right-4 text-white/40 hover:text-white/80 text-xl leading-none">✕</button>
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-accent/15 flex items-center justify-center text-2xl">👑</div>
+                <p className="text-white font-semibold text-base leading-snug mb-1">
+                  {upgradeReason === "students"
+                    ? "Llegaste al límite de 2 alumnos de tu cuenta de prueba"
+                    : upgradeReason === "routines"
+                    ? "Llegaste al límite de 3 rutinas de tu cuenta de prueba"
+                    : "Esta función es Premium"}
+                </p>
+                <p className="text-sm text-white/50 mb-5 leading-relaxed">
+                  {upgradeReason === "students" || upgradeReason === "routines"
+                    ? "Para sumar alumnos y rutinas ilimitadas, seguimiento en tiempo real y soporte prioritario, activá tu suscripción."
+                    : premiumError}
+                </p>
+                <div className="space-y-2.5 text-left">
+                  {PLANES_SUSCRIPCION.map((p) => (
+                    <button
+                      key={p.id}
+                      disabled={planCargando !== null}
+                      onClick={() => suscribirse(p.id)}
+                      className="w-full flex items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-left transition-all hover:border-accent/40 hover:bg-white/[0.06] disabled:opacity-60"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-white">
+                          {PLAN_UPGRADE_BTN[p.id] ?? `Suscribirme al plan ${p.nombre}`}
+                          {planCargando === p.id && " …"}
+                        </p>
+                        <p className="text-xs text-white/45 leading-snug">{PLAN_UPGRADE_BENEFICIO[p.id] ?? ""}</p>
+                      </div>
+                      <span className="shrink-0 text-sm font-bold text-accent">${formatearPrecio(p.precioMuestra)} ARS</span>
+                    </button>
+                  ))}
+                </div>
+                {planError && <p className="text-xs text-red-400 mt-3">{planError}</p>}
+                <p className="text-[11px] text-white/35 mt-4 leading-relaxed">Débito automático mensual con Mercado Pago. Podés cancelar en cualquier momento con un clic.</p>
+                <button onClick={() => cerrarPaywall()} className="btn-secondary w-full mt-4">Ahora no</button>
               </div>
             </div>
           </div>

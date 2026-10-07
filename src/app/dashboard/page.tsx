@@ -60,6 +60,33 @@ function SubscriptionWidget() {
   );
 }
 
+function FreeCupoBadge() {
+  const alumnosCount = useAppStore((s) => s.alumnos.length);
+  const unassignedRoutines = useAppStore((s) => s.unassignedRoutines);
+  const premium = useAppStore((s) => s.premium);
+  const usuarioActual = useAppStore((s) => s.usuarioActual);
+  const rutinasCount = useAppStore((s) => s.rutinas.length) + unassignedRoutines.length;
+  const abrirUpgrade = useAppStore((s) => s.abrirUpgrade);
+  if (esCoachGratuito(usuarioActual?.email)) return null;
+  if (premium && new Date(premium.premiumExpiresAt) > new Date()) return null;
+  const limiteAlumnos = useAppStore.getState().getLimiteAlumnos();
+  const limiteRutinas = useAppStore.getState().getLimiteRutinas();
+  return (
+    <div className="card !py-3 flex items-center justify-between gap-3 flex-wrap">
+      <div className="text-sm text-white/60">
+        <span className="text-white font-semibold mr-2">Plan Free</span>
+        Alumnos: {alumnosCount}/{limiteAlumnos} · Rutinas: {rutinasCount}/{limiteRutinas}
+      </div>
+      <button
+        onClick={() => abrirUpgrade("students", "Tu cuenta de prueba incluye 2 alumnos y 3 rutinas. Hacé un plan para desbloquear todo.")}
+        className="btn-secondary text-xs !px-3 !py-1.5 shrink-0"
+      >
+        Pasar a Premium
+      </button>
+    </div>
+  );
+}
+
 export default function CoachDashboard() {
   const alumnos = useAppStore((s) => s.alumnos);
   const redes = useAppStore((s) => s.redes);
@@ -130,11 +157,24 @@ export default function CoachDashboard() {
           <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Dashboard</h1>
           <p className="text-white/40 mt-1 text-xs md:text-sm">Bienvenido de vuelta. Este es tu resumen.</p>
         </div>
-        <Link href="/dashboard/rutinas" className="btn-primary text-xs md:text-sm shrink-0">+ Nueva Rutina</Link>
+        <Link href="/dashboard/rutinas" onClick={(e) => {
+          const st = useAppStore.getState();
+          const premiumActivo = st.premium && new Date(st.premium.premiumExpiresAt) > new Date();
+          if (st.usuarioActual?.rol === "coach" && !esCoachGratuito(st.usuarioActual?.email) && !premiumActivo) {
+            const totalRutinas = st.rutinas.length + st.unassignedRoutines.length;
+            if (totalRutinas >= 3) {
+              e.preventDefault();
+              st.abrirUpgrade("routines", "Llegaste al límite de 3 rutinas de tu cuenta de prueba. Suscribite a un plan para crear más.");
+            }
+          }
+        }} className="btn-primary text-xs md:text-sm shrink-0">+ Nueva Rutina</Link>
       </div>
 
       {/* Premium Widget */}
       <SubscriptionWidget />
+
+      {/* Free trial quota */}
+      <FreeCupoBadge />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

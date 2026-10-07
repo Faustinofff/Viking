@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAppStore, type WeekDay, type DiaRutina, type Rutina } from "@/lib/store";
 import { useConfirmToast } from "@/components/toast";
-import { getCurrentWeekIndex, ejercicioWeekValue, updateWorkoutPlan } from "@/lib/data";
+import { getCurrentWeekIndex, ejercicioWeekValue, updateWorkoutPlan, esCoachGratuito } from "@/lib/data";
 
 const DIAS_SEMANA: { value: WeekDay; label: string }[] = [
   { value: "lunes", label: "Lunes" },
@@ -161,6 +161,9 @@ export default function RutinasPage() {
     if (!noAssign && alumnoIds.length === 0) return;
     const coachId = useAppStore.getState().usuarioActual?.id ?? "";
     const wi = indicacionesSemanales.some((s) => s.trim()) ? indicacionesSemanales : undefined;
+    const stPre = useAppStore.getState();
+    if (noAssign && !editandoId) stPre.verificarCupoRutinas(1);
+    else if (!noAssign && !editandoId) stPre.verificarCupoRutinas(alumnoIds.length);
     setSaving(true);
     setSaveError("");
     try {
@@ -336,7 +339,18 @@ export default function RutinasPage() {
           <button onClick={handleSync} disabled={syncing} className="btn-ghost text-sm !px-2" title="Sincronizar datos">
             <span className={`inline-block ${syncing ? "animate-spin" : ""}`}>⟳</span>
           </button>
-          <button onClick={() => { resetForm(); setShowBuilder(true); }} className="btn-primary">+ Nueva Rutina</button>
+          <button onClick={() => {
+            const st = useAppStore.getState();
+            const premiumActivo = st.premium && new Date(st.premium.premiumExpiresAt) > new Date();
+            if (st.usuarioActual?.rol === "coach" && !esCoachGratuito(st.usuarioActual?.email) && !premiumActivo) {
+              const totalRutinas = st.rutinas.length + st.unassignedRoutines.length;
+              if (totalRutinas >= 3) {
+                st.abrirUpgrade("routines", "Llegaste al límite de 3 rutinas de tu cuenta de prueba. Suscribite a un plan para crear más.");
+                return;
+              }
+            }
+            resetForm(); setShowBuilder(true);
+          }} className="btn-primary">+ Nueva Rutina</button>
         </div>
       </div>
 
