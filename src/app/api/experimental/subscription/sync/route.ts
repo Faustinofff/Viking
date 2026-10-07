@@ -65,24 +65,9 @@ export async function POST(req: NextRequest) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  // Indica si esta suscripción es un cambio de plan programado (plan distinto al
-  // Premium vigente) para que la página muestre el estado correcto.
-  let cambioEnCurso = false;
-  const { data: profileSync } = await client
-    .from("profiles")
-    .select("avatar_url")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (profileSync?.avatar_url) {
-    try {
-      const blob = JSON.parse(profileSync.avatar_url);
-      if (blob && typeof blob === "object" && !Array.isArray(blob)) {
-        cambioEnCurso = cambioDePlanEnCurso(fresco ?? null, blob?.premium ?? null);
-      }
-    } catch {
-      cambioEnCurso = false;
-    }
-  }
+  // Indica si esta suscripción es un cambio de plan programado (external_reference
+  // con sufijo :prog y sin período pagado todavía) para la vista correcta en la página.
+  const cambioEnCurso = cambioDePlanEnCurso(fresco ?? null);
 
   return NextResponse.json(
     {

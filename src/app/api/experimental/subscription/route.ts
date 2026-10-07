@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
   }
   premiumHasta = premiumBlob?.premium?.premiumExpiresAt ?? null;
 
-  const cambioEnCurso = cambioDePlanEnCurso(data ?? null, premiumBlob?.premium ?? null);
+  const cambioEnCurso = cambioDePlanEnCurso(data ?? null);
 
   return NextResponse.json(
     {
@@ -147,8 +147,8 @@ export async function POST(req: NextRequest) {
   const planActualId = planIdDesdeRef(existente?.external_reference ?? "");
   const mismoPlan = !!planActualId && planActualId === plan.id;
 
-  // Ya tiene una suscripción en curso para ESTE plan: no creamos otra.
-  if ((activa || estadoActual === "pending") && mismoPlan) {
+  // Ya tiene una suscripción ACTIVA para ESTE plan: no creamos otra ni duplicamos el cobro.
+  if (activa && mismoPlan) {
     return NextResponse.json(
       { error: `Ya estás suscrito al plan ${plan.nombre}.`, subscription: existente },
       { status: 409, headers: noStore() }
@@ -195,8 +195,8 @@ export async function POST(req: NextRequest) {
     plan_name: plan.nombre,
     amount: plan.precioCobro,
     currency: EXPERIMENTAL_CURRENCY,
-    status: "pending",
-    external_reference: refSuscripcion(user.id, plan.id),
+status: "pending",
+    external_reference: refSuscripcion(user.id, plan.id, cambioDePlan),
     created_at: ahora,
     updated_at: ahora,
   };

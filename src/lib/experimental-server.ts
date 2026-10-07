@@ -12,6 +12,7 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import {
   EXPERIMENTAL_CURRENCY,
+  esCambioProgramadoPorRef,
   planIdDesdeRef,
   planSuscripcionPorId,
   refSuscripcion,
@@ -258,13 +259,14 @@ export async function activarPremiumDesdeSuscripcion(
   const proximoCobro = Date.parse(String(mp?.next_payment_date ?? "")) || 0;
   const ahora = Date.now();
 
-  // Cambio de plan programado (creado con auto_recurring.start_date en el futuro):
-  // mientras no exista un período ya PAGADO del plan nuevo, NO se tocan los beneficios
-  // actuales. El plan nuevo recién se hace efectivo cuando Mercado Pago registra su
-  // primer cobro (current_period_end futuro), no en el momento de confirmar el cambio.
+  // Cambio de plan programado (creado por la API con external_reference "...:prog" y
+  // start_date futuro): mientras no exista un período ya PAGADO del plan nuevo, NO se
+  // tocan los beneficios actuales. El plan nuevo recién se hace efectivo cuando
+  // Mercado Pago registra su primer cobro (current_period_end futuro).
+  const programado = esCambioProgramadoPorRef(mp?.external_reference);
   const inicioRaw = String((mp as any)?.auto_recurring?.start_date ?? "");
   const inicioProgramado = inicioRaw ? (Date.parse(inicioRaw) || 0) > ahora + 60 * 1000 : false;
-  if (inicioProgramado && !(finPeriodo > ahora)) {
+  if ((programado || inicioProgramado) && !(finPeriodo > ahora)) {
     return { ok: false, motivo: "inicio_futuro_programado" };
   }
 
@@ -389,19 +391,17 @@ export async function upsertDesdePreapproval(
 // ─────────────────────────── Cambio de plan programado ───────────────────────────
 
 /**
- * True cuando la suscripción apunta a un plan DISTINTO al Premium vigente y su
- * inicio está programado para el futuro (cambio de plan en curso). El usuario
- * conserva su plan actual hasta esa fecha; el plan nuevo ya está confirmado.
+ * True cuando la suscripción fue creada como cambio de plan PROGRAMADO
+ * (external_reference con sufijo `:prog`, inicio en el futuro) y todavía no comenzó
+ * su período pagado. El usuario conserva su plan actual hasta esa fecha.
+ * NO compara contra el plan del Premium: el Premium previo puede ser un resto de un
+ * pago único y no implica ningún cambio de plan real.
  */
-export function cambioDePlanEnCurso(
-  subRow: Record<string, any> | null | undefined,
-  premium: Record<string, any> | null | undefined
-): boolean {
-  if (!subRow?.external_reference || !premium?.planId) return false;
-  const planDeSub = planIdDesdeRef(subRow.external_reference);
-  if (!planDeSub || planDeSub === premium.planId) return false;
+export function cambioDePlanEnCurso(subRow: Record<string, any> | null | undefined): boolean {
+  if (!subRow?.external_reference) return false;
   const est = String(subRow.status ?? "").trim().toLowerCase();
-  if (!["pending", "active", "authorized"].includes(est)) return false;
-  const v = Date.parse(String(premium.premiumExpiresAt ?? "")) || 0;
-  return v > Date.now();
+  if (!["pending", "authorized", "active"].includes(est)) return false;
+  if (!esCambioProgramadoPorRef(subRow.external_reference)) return false;
+  const finPeriodo = Date.parse(String(subRow.current_period_end ?? "")) || 0;
+  return !(finPeriodo > Date.now());
 }

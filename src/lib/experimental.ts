@@ -54,9 +54,18 @@ export function formatearPrecio(precio: number): string {
   return precio.toLocaleString("es-AR");
 }
 
-/** external_reference de la suscripción: exp:<viking_user_id>:<planId>. */
-export function refSuscripcion(userId: string, planId: string): string {
-  return `${SUSCRIPCION_REF_PREFIX}${userId}:${planId}`;
+/** external_reference de la suscripción: exp:<viking_user_id>:<planId>.
+ *  Con `programado` se agrega el sufijo `:prog` → cambio de plan con inicio futuro. */
+export function refSuscripcion(userId: string, planId: string, programado = false): string {
+  return `${SUSCRIPCION_REF_PREFIX}${userId}:${planId}${programado ? ":prog" : ""}`;
+}
+
+/** True si la suscripción se creó como CAMBIO DE PLAN programado (inicio futuro,
+ *  sin cobro hoy). Se determina por el sufijo `:prog` del external_reference,
+ *  no por comparar planes (el Premium previo puede ser un resto de un pago único). */
+export function esCambioProgramadoPorRef(ref?: string | null): boolean {
+  const r = (ref ?? "").trim();
+  return r.startsWith(SUSCRIPCION_REF_PREFIX) && r.endsWith(":prog");
 }
 
 export function userIdDesdeRef(ref?: string | null): string | null {
