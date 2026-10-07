@@ -59,9 +59,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [planCargando, setPlanCargando] = useState<string | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
+  const [payerEmail, setPayerEmail] = useState("");
 
   const suscribirse = async (planId: string) => {
     if (planCargando) return;
+    const email = payerEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setPlanError("Escribí el email de tu cuenta de Mercado Pago para poder suscribirte.");
+      return;
+    }
     setPlanCargando(planId);
     setPlanError(null);
     try {
@@ -74,7 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const res = await fetch("/api/experimental/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ plan_id: planId }),
+        body: JSON.stringify({ plan_id: planId, payer_email: email }),
         cache: "no-store",
       });
       const data = await res.json().catch(() => ({}));
@@ -302,6 +308,23 @@ useAppStore.getState().refreshBrandingEnabled();
                     ? "Para sumar alumnos y rutinas ilimitadas, seguimiento en tiempo real y soporte prioritario, activá tu suscripción."
                     : premiumError}
                 </p>
+                <label className="block mb-4 text-left">
+                  <span className="text-xs text-white/40">
+                    Email de tu cuenta de Mercado Pago <span className="text-red-400">(obligatorio)</span>
+                  </span>
+                  <input
+                    type="email"
+                    inputMode="email"
+                    value={payerEmail}
+                    onChange={(e) => setPayerEmail(e.target.value.trim())}
+                    placeholder="tuemail@ejemplo.com"
+                    className="mt-1.5 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-white/25 outline-none focus:border-accent"
+                  />
+                  <span className="block mt-1 text-[11px] text-white/40">
+                    Tiene que ser el email con el que entrás a tu cuenta de Mercado Pago. Si ponés otro, el pago
+                    falla y no se procesa la suscripción.
+                  </span>
+                </label>
                 <div className="space-y-2.5 text-left">
                   {PLANES_SUSCRIPCION.map((p) => (
                     <button
