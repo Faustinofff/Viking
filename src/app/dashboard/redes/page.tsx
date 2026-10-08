@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/lib/store";
 import { useConfirmToast } from "@/components/toast";
+import { MapPin, Laptop } from "lucide-react";
 
 export default function RedesPage() {
   const redes = useAppStore((s) => s.redes);
@@ -35,8 +36,8 @@ export default function RedesPage() {
       <div className="grid gap-4 md:grid-cols-2">
         {redes.map((red) => (
           <Link key={red.id} href={`/dashboard/redes/${red.id}`} className="card-hover flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-2xl flex-shrink-0">
-              {red.tipo === "gimnasio" ? "🏋️" : "💻"}
+            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+              {red.tipo === "gimnasio" ? <MapPin className="w-6 h-6 text-accent" strokeWidth={2} /> : <Laptop className="w-6 h-6 text-accent" strokeWidth={2} />}
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-white font-semibold">{red.nombre}</h3>
@@ -75,11 +76,11 @@ export default function RedesPage() {
               <div>
                 <label className="label block mb-1.5">Tipo</label>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setTipo("gimnasio")} className={`flex-1 p-3 rounded-xl border text-sm transition-all ${tipo === "gimnasio" ? "bg-accent/10 border-accent/30 text-accent" : "border-white/[0.08] text-white/50 hover:border-white/20"}`}>
-                    🏋️ Presencial
+                  <button type="button" onClick={() => setTipo("gimnasio")} className={`flex-1 p-3 rounded-xl border text-sm transition-all flex items-center justify-center gap-1.5 ${tipo === "gimnasio" ? "bg-accent/10 border-accent/30 text-accent" : "border-white/[0.08] text-white/50 hover:border-white/20"}`}>
+                    <MapPin className="w-4 h-4" strokeWidth={2} /> Presencial
                   </button>
-                  <button type="button" onClick={() => setTipo("online")} className={`flex-1 p-3 rounded-xl border text-sm transition-all ${tipo === "online" ? "bg-accent/10 border-accent/30 text-accent" : "border-white/[0.08] text-white/50 hover:border-white/20"}`}>
-                    💻 Online
+                  <button type="button" onClick={() => setTipo("online")} className={`flex-1 p-3 rounded-xl border text-sm transition-all flex items-center justify-center gap-1.5 ${tipo === "online" ? "bg-accent/10 border-accent/30 text-accent" : "border-white/[0.08] text-white/50 hover:border-white/20"}`}>
+                    <Laptop className="w-4 h-4" strokeWidth={2} /> Online
                   </button>
                 </div>
               </div>

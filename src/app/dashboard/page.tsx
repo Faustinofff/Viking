@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/lib/store";
 import { esCoachGratuito } from "@/lib/data";
+import { MapPin, Laptop } from "lucide-react";
 
 function SubscriptionWidget() {
   const premium = useAppStore((s) => s.premium);
@@ -199,8 +200,8 @@ export default function CoachDashboard() {
           <div className="space-y-3">
             {redes.map((red) => (
               <Link key={red.id} href={`/dashboard/redes/${red.id}`} className="flex items-center gap-4 p-4 glass rounded-xl hover:bg-white/[0.02] transition-all border border-white/[0.06]">
-                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-lg">
-                  {red.tipo === "gimnasio" ? "🏋️" : "💻"}
+                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                  {red.tipo === "gimnasio" ? <MapPin className="w-5 h-5 text-accent" strokeWidth={2} /> : <Laptop className="w-5 h-5 text-accent" strokeWidth={2} />}
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-white">{red.nombre}</p>

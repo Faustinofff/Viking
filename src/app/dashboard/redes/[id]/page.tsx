@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { esCoachGratuito } from "@/lib/data";
 import { useConfirmToast } from "@/components/toast";
+import { MapPin, Laptop } from "lucide-react";
 
 export default function RedDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -121,7 +122,10 @@ export default function RedDetailPage() {
             <Link href="/dashboard/redes" className="text-sm text-white/30 hover:text-white/50">← Redes</Link>
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">{red.nombre}</h1>
-          <p className="text-white/40 mt-1">{red.tipo === "gimnasio" ? "🏋️ Presencial" : "💻 Online"} · {alumnosRed.length} alumnos</p>
+          <p className="text-white/40 mt-1 flex items-center gap-1.5">
+            {red.tipo === "gimnasio" ? <><MapPin className="w-4 h-4" strokeWidth={2} /> Presencial</> : <><Laptop className="w-4 h-4" strokeWidth={2} /> Online</>}
+            {" · "}{alumnosRed.length} alumnos
+          </p>
         </div>
         <div className="flex gap-1.5 items-start sm:items-center flex-col sm:flex-row w-full sm:w-auto">
           <button onClick={() => setShowExistingModal(true)} className="btn-secondary text-sm !px-3 !py-1.5 w-full sm:w-auto">+ Agregar Existente</button>
