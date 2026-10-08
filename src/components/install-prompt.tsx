@@ -40,9 +40,14 @@ export default function InstallPrompt() {
     <>
       <button
         onClick={() => setModalOpen(true)}
-        className="fixed top-4 left-[55%] -translate-x-1/2 z-40 flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/[0.1] text-white/80 hover:text-white hover:bg-white/[0.1] hover:border-accent/30 transition-all shadow-2xl text-sm font-medium animate-fade-in"
+        className="fixed top-4 left-[55%] -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#16191F] border border-white/10 text-white/80 hover:text-white hover:border-accent/30 transition-all shadow-2xl text-xs font-medium animate-fade-in"
       >
-        <span>📲</span> Instalar App
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 15V3" />
+          <path d="M7 10l5 5 5-5" />
+          <path d="M5 21h14" />
+        </svg>
+        Instalar App
       </button>
 
       {modalOpen && createPortal(
