@@ -54,7 +54,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const cerrarPaywall = useAppStore((s) => s.cerrarPaywall);
   const planActual = premium ? PLANES_PREMIUM.find((p) => p.id === premium.planId) ?? PLANES_PREMIUM[0] : null;
 
-  const cerrarSesion = useAppStore((s) => s.cerrarSesion);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [planCargando, setPlanCargando] = useState<string | null>(null);
@@ -141,11 +140,6 @@ useAppStore.getState().refreshBrandingEnabled();
     );
   }
 
-  const handleLogout = async () => {
-    await cerrarSesion();
-    window.location.href = "/login";
-  };
-
   const sidebarContent = (
     <>
       <div className="flex items-center gap-3 h-16 px-4 border-b border-white/[0.06]">
@@ -178,15 +172,13 @@ useAppStore.getState().refreshBrandingEnabled();
 
       <div className="p-2 border-t border-white/[0.06] space-y-1">
         <div className="flex items-center gap-2 px-3 py-2 text-xs text-white/40 truncate">
-          <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-xs font-medium text-accent flex-shrink-0">
-            {usuario.nombre[0]}
-          </div>
-          {!collapsed && <span>{usuario.nombre}</span>}
+          <Link href="/dashboard/perfil" className={`flex items-center gap-2 rounded-xl transition-all ${pathname === "/dashboard/perfil" ? "text-accent" : "hover:text-white/70"}`}>
+            <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-xs font-medium text-accent flex-shrink-0">
+              {usuario.nombre[0]}
+            </div>
+            {!collapsed && <span>{usuario.nombre}</span>}
+          </Link>
         </div>
-        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-white/30 hover:text-red-400 hover:bg-red-500/5 transition-all text-sm">
-          <span>🚪</span>
-          {!collapsed && <span>Cerrar sesión</span>}
-        </button>
         <button onClick={() => setCollapsed(!collapsed)} className="w-full hidden md:flex justify-center py-1 text-white/20 hover:text-white/50 transition-all text-xs">
           {collapsed ? "→" : "←"}
         </button>
@@ -211,10 +203,17 @@ useAppStore.getState().refreshBrandingEnabled();
           <AppBrandMark size={36} showName={false} />
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-medium text-accent">
-            {usuario.nombre[0]}
-          </div>
-          <button onClick={handleLogout} className="text-white/20 hover:text-red-400 text-xs">Salir</button>
+          <Link
+            href="/dashboard/perfil"
+            className={`flex flex-col items-center gap-0.5 rounded-lg p-1 transition-all hover:bg-white/[0.04] ${
+              pathname === "/dashboard/perfil" ? "bg-accent/10" : ""
+            }`}
+          >
+            <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-xs font-medium text-accent">
+              {usuario.nombre[0]}
+            </div>
+            <span className="text-[10px] text-white/30 text-center">Perfil</span>
+          </Link>
         </div>
       </div>
 
@@ -253,12 +252,6 @@ useAppStore.getState().refreshBrandingEnabled();
                 );
               })}
               <ChatDialog collapsed={false} />
-            </div>
-            <div className="p-2 border-t border-white/[0.06]">
-              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/30 hover:text-red-400 hover:bg-red-500/5 transition-all text-sm">
-                <span>🚪</span>
-                <span>Cerrar sesión</span>
-              </button>
             </div>
           </aside>
         </div>

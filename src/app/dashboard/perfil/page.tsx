@@ -11,6 +11,7 @@ export default function CoachProfilePage() {
   const actualizarTelefono = useAppStore((s) => s.actualizarTelefono);
   const actualizarNombre = useAppStore((s) => s.actualizarNombre);
   const actualizarCoachEnAlumnos = useAppStore((s) => s.actualizarCoachEnAlumnos);
+  const cerrarSesion = useAppStore((s) => s.cerrarSesion);
 
   const [editNombre, setEditNombre] = useState(false);
   const [nombreInput, setNombreInput] = useState(usuario?.nombre ?? "");
@@ -86,6 +87,13 @@ export default function CoachProfilePage() {
           <span className="text-accent text-sm">→</span>
         </Link>
       )}
+
+      <button
+        onClick={async () => { await cerrarSesion(); window.location.href = "/login"; }}
+        className="w-full border border-red-500/30 bg-red-500/5 text-red-400 rounded-xl py-3 text-sm font-semibold transition-colors hover:bg-red-500/10 hover:border-red-500/50"
+      >
+        Cerrar sesión
+      </button>
     </div>
   );
 }
