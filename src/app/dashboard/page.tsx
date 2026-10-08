@@ -88,6 +88,7 @@ function FreeCupoBadge() {
 }
 
 export default function CoachDashboard() {
+  const usuario = useAppStore((s) => s.usuarioActual);
   const alumnos = useAppStore((s) => s.alumnos);
   const redes = useAppStore((s) => s.redes);
   const agenda = useAppStore((s) => s.agenda);
@@ -154,8 +155,10 @@ export default function CoachDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Dashboard</h1>
-          <p className="text-white/40 mt-1 text-xs md:text-sm">Bienvenido de vuelta. Este es tu resumen.</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Hola, {usuario?.nombre?.split(" ")[0]}</h1>
+          <p className="text-white/40 mt-1 text-xs md:text-sm">
+            {new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
+          </p>
         </div>
         <Link href="/dashboard/rutinas" onClick={(e) => {
           const st = useAppStore.getState();
@@ -177,14 +180,13 @@ export default function CoachDashboard() {
       <FreeCupoBadge />
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {[
           { label: "Alumnos", value: totalAlumnos, change: "totales", color: "text-accent" },
           { label: "Redes", value: totalRedes, change: "grupos", color: "text-blue-400" },
-          { label: "Sesiones Hoy", value: sesionesHoy.length, change: "programadas", color: "text-yellow-500" },
           { label: "Adherencia Prom.", value: `${adherencePct}%`, change: changeText, color: "text-accent" },
         ].map((s) => (
-          <div key={s.label} className="card">
+          <div key={s.label} className="card text-center">
             <p className="text-xs text-white/40 font-medium uppercase tracking-wider">{s.label}</p>
             <p className={`text-3xl font-bold mt-1 ${s.color}`}>{s.value}</p>
             <p className="text-xs text-white/30 mt-1">{s.change}</p>
