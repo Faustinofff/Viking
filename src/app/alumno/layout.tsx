@@ -42,7 +42,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   return (
     <div className="h-screen bg-bg-primary flex flex-col">
       {/* Top bar */}
-      <header className="shrink-0 flex items-center justify-between px-5 border-b border-white/[0.06]" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 10px))", paddingBottom: "1rem" }}>
+      <header className="shrink-0 flex items-center justify-between px-5 border-b border-white/[0.06]" style={{ paddingTop: "calc(0.5rem + env(safe-area-inset-top, 10px))", paddingBottom: "1rem" }}>
         <div className="flex items-center gap-2.5">
           <StudentBranding />
         </div>
