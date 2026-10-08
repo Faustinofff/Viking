@@ -29,10 +29,6 @@ export default function OnboardingPage() {
       if (!u) { router.replace("/login"); return; }
       setUser(u);
       setRolGuardado(rol);
-      if (rol === "coach") {
-        await finalizar(u, rol, "");
-        return;
-      }
       setLoading(false);
     };
     init();
@@ -46,10 +42,9 @@ export default function OnboardingPage() {
       await supabase.auth.updateUser({ data: { nombre, rol } });
       await createProfile(u.id, u.email ?? "", nombre, rol);
 
-      if (rol === "alumno") {
-        if (phone) {
-          try { await saveStudentPhone(u.id, phone); } catch {}
-        }
+      if (phone) {
+        try { await saveStudentPhone(u.id, phone); } catch {}
+        try { localStorage.setItem("viking_telefono", phone); } catch {}
       }
 
       setUsuario({ id: u.id, nombre, email: u.email ?? "", rol, telefono: phone || undefined });
@@ -104,6 +99,44 @@ export default function OnboardingPage() {
         <div className="text-center">
           <div className="w-8 h-8 rounded-lg bg-accent animate-pulse mx-auto mb-4" />
           <p className="text-white/40 text-sm">Preparando tu cuenta...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleCoachSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !rolGuardado) return;
+    await finalizar(user, rolGuardado, telefono.trim());
+  };
+
+  if (rolGuardado === "coach" && !loading) {
+    return (
+      <div className="min-h-screen bg-bg-primary flex items-center justify-center p-6">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center mb-4">
+              <img src="/Viking.png" alt="Viking" className="w-24 h-24 object-contain" />
+            </div>
+            <h1 className="text-2xl font-extrabold text-white">Bienvenido a Viking</h1>
+            <p className="text-white/40 text-sm mt-1">Contanos un poco de vos para empezar</p>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleCoachSubmit} className="space-y-4">
+            <div>
+              <label className="label block mb-1.5">Teléfono (opcional)</label>
+              <input type="tel" className="input" placeholder="+54 11 5555-1234"
+                value={telefono} onChange={(e) => setTelefono(e.target.value)} autoFocus />
+              <p className="text-[11px] text-white/30 mt-1">Si ponés tu número, tus alumnos van a poder contactarte por WhatsApp con un solo toque.</p>
+            </div>
+            <button type="submit" className="btn-primary w-full">Comenzar</button>
+          </form>
         </div>
       </div>
     );
