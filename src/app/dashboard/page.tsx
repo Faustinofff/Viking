@@ -142,13 +142,6 @@ export default function CoachDashboard() {
   const adherencePct = totalPlannedThisWeek > 0
     ? Math.round((totalCompletedThisWeek / totalPlannedThisWeek) * 100)
     : 0;
-  const lastWeekPct = totalPlannedLastWeek > 0
-    ? Math.round((totalCompletedLastWeek / totalPlannedLastWeek) * 100)
-    : 0;
-  const change = adherencePct - lastWeekPct;
-  const changeText = totalPlannedThisWeek === 0 && totalPlannedLastWeek === 0
-    ? "sin datos"
-    : `${change >= 0 ? "+" : ""}${change}% vs semana pasada`;
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
@@ -180,18 +173,19 @@ export default function CoachDashboard() {
       <FreeCupoBadge />
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: "Alumnos", value: totalAlumnos, change: "totales", color: "text-accent" },
-          { label: "Redes", value: totalRedes, change: "grupos", color: "text-blue-400" },
-          { label: "Adherencia Prom.", value: `${adherencePct}%`, change: changeText, color: "text-accent" },
-        ].map((s) => (
-          <div key={s.label} className="card text-center">
-            <p className="text-xs text-white/40 font-medium uppercase tracking-wider">{s.label}</p>
-            <p className={`text-3xl font-bold mt-1 ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-white/30 mt-1">{s.change}</p>
-          </div>
-        ))}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="card text-center py-4">
+          <p className="text-2xl font-bold text-accent">{totalAlumnos}</p>
+          <p className="text-xs text-white/40">Alumnos</p>
+        </div>
+        <div className="card text-center py-4">
+          <p className="text-2xl font-bold text-blue-400">{totalRedes}</p>
+          <p className="text-xs text-white/40">Redes</p>
+        </div>
+        <div className="card text-center py-4">
+          <p className="text-2xl font-bold text-accent">{adherencePct}%</p>
+          <p className="text-xs text-white/40">Adherencia Prom.</p>
+        </div>
       </div>
 
       {/* Redes + Actividad */}
