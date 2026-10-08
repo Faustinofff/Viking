@@ -30,6 +30,7 @@ export default function StudentDashboard() {
   const [rutinas, setRutinas] = useState<Rutina[]>([]);
   const [checkedMeals, setCheckedMeals] = useState<Set<string>>(loadChecks);
   const [completionDates, setCompletionDates] = useState<Set<string>>(new Set());
+  const [streakListo, setStreakListo] = useState(false);
   const currentWeek = useAppStore((s) => s.currentWeek);
 
   useEffect(() => {
@@ -72,11 +73,11 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     if (!usuario?.id) return;
-    if (usuario.email !== "pruebachequeo430@gmail.com") return;
     getWorkoutCompletionDates(usuario.id)
       .then((dates) => setCompletionDates(new Set(dates)))
-      .catch((e) => console.error("Error loading completion dates:", e));
-  }, [usuario?.id, usuario?.email]);
+      .catch((e) => console.error("Error loading completion dates:", e))
+      .finally(() => setStreakListo(true));
+  }, [usuario?.id]);
 
   const hoy = new Date();
   const diasSemana = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
@@ -93,7 +94,6 @@ export default function StudentDashboard() {
     : 0;
   const sesionActiva = alumno ? getSesionEntrenoActiva(alumno.id) : undefined;
 
-  const verRacha = usuario?.email === "pruebachequeo430@gmail.com";
   const racha = computeStreak(completionDates);
   const semanaRacha = getCurrentWeek(completionDates);
 
@@ -116,7 +116,7 @@ export default function StudentDashboard() {
         </p>
       </div>
 
-      {verRacha && <StreakCard streak={racha} days={semanaRacha} />}
+      {streakListo && <StreakCard streak={racha} days={semanaRacha} />}
 
       {alumno && (
         <>
