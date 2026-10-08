@@ -658,6 +658,29 @@ export async function getLastWeights(
   }
 }
 
+// Devuelve las fechas locales (YYYY-MM-DD) con al menos un entrenamiento completado.
+// Sirve para la tarjeta de racha (un +1 por día, sin importar cuántos entrenos hizo).
+export async function getWorkoutCompletionDates(userId: string): Promise<string[]> {
+  if (!userId) return [];
+  try {
+    const { data } = await readProfileBlob(userId);
+    const completions = data.completions ?? {};
+    const set = new Set<string>();
+    for (const val of Object.values(completions)) {
+      const at = (val as any)?.completedAt;
+      if (!at) continue;
+      const d = new Date(at);
+      if (isNaN(d.getTime())) continue;
+      set.add(
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+      );
+    }
+    return [...set];
+  } catch {
+    return [];
+  }
+}
+
 export async function removeStudentFromCoach(coachId: string, studentId: string) {
   const { data: plans } = await supabase
     .from("workout_plans")

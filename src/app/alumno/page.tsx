@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAppStore, type Rutina } from "@/lib/store";
-import { getStudentWorkoutPlans, ejercicioWeekValue } from "@/lib/data";
+import { getStudentWorkoutPlans, ejercicioWeekValue, getWorkoutCompletionDates } from "@/lib/data";
+import { computeStreak, getCurrentWeek } from "@/lib/streak";
+import StreakCard from "@/components/streak-card";
 import TutorialButton from "@/components/tutorial-button";
 
 const MEAL_CHECK_KEY = "viking_meal_checks";
@@ -27,6 +29,7 @@ export default function StudentDashboard() {
   const registrosAgua = useAppStore((s) => s.registrosAgua);
   const [rutinas, setRutinas] = useState<Rutina[]>([]);
   const [checkedMeals, setCheckedMeals] = useState<Set<string>>(loadChecks);
+  const [completionDates, setCompletionDates] = useState<Set<string>>(new Set());
   const currentWeek = useAppStore((s) => s.currentWeek);
 
   useEffect(() => {
@@ -67,6 +70,14 @@ export default function StudentDashboard() {
     console.log(`[Dashboard] Rutinas: ${rutinas.length}, ejercicios: ${totalEj}`);
   }, [rutinas]);
 
+  useEffect(() => {
+    if (!usuario?.id) return;
+    if (usuario.email !== "pruebachequeo430@gmail.com") return;
+    getWorkoutCompletionDates(usuario.id)
+      .then((dates) => setCompletionDates(new Set(dates)))
+      .catch((e) => console.error("Error loading completion dates:", e));
+  }, [usuario?.id, usuario?.email]);
+
   const hoy = new Date();
   const diasSemana = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
   const diaHoy = diasSemana[hoy.getDay()] as any;
@@ -81,6 +92,10 @@ export default function StudentDashboard() {
         .reduce((s, r) => s + r.vasos, 0)
     : 0;
   const sesionActiva = alumno ? getSesionEntrenoActiva(alumno.id) : undefined;
+
+  const verRacha = usuario?.email === "pruebachequeo430@gmail.com";
+  const racha = computeStreak(completionDates);
+  const semanaRacha = getCurrentWeek(completionDates);
 
   const toggleMeal = (mealId: string) => {
     setCheckedMeals((prev) => {
@@ -100,6 +115,8 @@ export default function StudentDashboard() {
           {hoy.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
+
+      {verRacha && <StreakCard streak={racha} days={semanaRacha} />}
 
       {alumno && (
         <>
