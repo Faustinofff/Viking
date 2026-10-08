@@ -345,15 +345,17 @@ export default function ActiveWorkoutPage() {
     if (sesion?.completada) clearSessionSnapshot(alumnoId);
   }, [sesion?.completada, alumnoId]);
 
-  const totalSets = useMemo(() =>
-    weekEjercicios.reduce((sum: number, e: any) => sum + e.series, 0),
-    [weekEjercicios]
-  );
+  const totalSets = useMemo(() => {
+    // Con una sesión en curso, el total sale de la propia sesión para que
+    // numerador y denominador siempre coincidan (evita >100% al cambiar semana/rutina).
+    if (sesion?.series?.length) return sesion.series.length;
+    return weekEjercicios.reduce((sum: number, e: any) => sum + e.series, 0);
+  }, [sesion, weekEjercicios]);
   const completedSets = useMemo(() =>
     sesion?.series.filter((s) => s.completada).length ?? 0,
     [sesion]
   );
-  const progress = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
+  const progress = totalSets > 0 ? Math.min(100, Math.max(0, (completedSets / totalSets) * 100)) : 0;
 
   const ejerciciosCompletados = useMemo(() => {
     if (!sesion || !weekEjercicios.length) return 0;

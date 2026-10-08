@@ -8,6 +8,11 @@ import { useAppStore, type SesionEntreno } from "@/lib/store";
 
 export const WORKOUT_SESSION_VERSION = 1;
 
+// Una sesión abandonada sin actividad por más de este tiempo se descarta al
+// reabrir el entreno. Evita que un entreno viejo se reanude días después y el
+// "tiempo total" cuente desde aquel entonces (duraciones absurdas).
+export const WORKOUT_SESSION_MAX_AGE_MS = 4 * 60 * 60 * 1000; // 4 horas
+
 export interface WorkoutSessionSnapshot {
   version: number;
   alumnoId: string;
@@ -41,6 +46,11 @@ export function loadSessionSnapshot(alumnoId: string): WorkoutSessionSnapshot | 
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (!data || data.version !== WORKOUT_SESSION_VERSION || data.alumnoId !== alumnoId) return null;
+    const updatedAt = Number(data.updatedAt);
+    if (!Number.isFinite(updatedAt) || Date.now() - updatedAt > WORKOUT_SESSION_MAX_AGE_MS) {
+      localStorage.removeItem(keyFor(alumnoId));
+      return null;
+    }
     return data as WorkoutSessionSnapshot;
   } catch {
     return null;
