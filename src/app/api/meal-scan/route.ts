@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { buscarAlimento, calcularMacros, sumarMacros, type FoodItem, type Macros } from "@/lib/food-catalog";
+import { buscarAlimento, calcularMacros, normalizar, sumarMacros, type FoodItem, type Macros } from "@/lib/food-catalog";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -43,6 +43,74 @@ interface ItemIA {
   proteina?: number;
   carbohidratos?: number;
   grasas?: number;
+}
+
+interface EstimacionPor100 {
+  nombre: string;
+  kcal: number;
+  proteina: number;
+  carbohidratos: number;
+  grasas: number;
+}
+
+// Red de seguridad: estima macros POR 100 g de un alimento por su nombre, sin catálogo.
+// Se usa cuando un alimento fuera del catálogo llega sin macros del análisis visual.
+async function estimarMacrosTexto(nombres: string[]): Promise<EstimacionPor100[] | null> {
+  if (!GROQ_API_KEY || nombres.length === 0) return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(GROQ_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_API_KEY}` },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: "openai/gpt-oss-20b",
+        messages: [
+          {
+            role: "system",
+            content:
+              'Sos un nutricionista experto. Devolvé SOLO un JSON con esta forma exacta: {"alimentos":[{"nombre":"string","kcal":number,"proteina":number,"carbohidratos":number,"grasas":number}]}. ' +
+              'Los valores son POR 100 g de alimento, el campo "nombre" debe repetirse exacto a como viene en la consulta. ' +
+              "Estimá valores realistas para una porción típica de ese alimento, aunque sea un plato preparado.",
+          },
+          { role: "user", content: `Estimá los macros por 100 g de: ${nombres.join(", ")}` },
+        ],
+        temperature: 0.2,
+        max_tokens: 400,
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const content: string = data?.choices?.[0]?.message?.content ?? "";
+    let parsed: any = {};
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      const match = content.match(/\{[\s\S]*\}/);
+      if (match) {
+        try { parsed = JSON.parse(match[0]); } catch { return null; }
+      } else {
+        return null;
+      }
+    }
+    const arr = Array.isArray(parsed) ? parsed : parsed?.alimentos;
+    if (!Array.isArray(arr)) return null;
+    return arr
+      .filter((e: any) => e && typeof e.nombre === "string")
+      .map((e: any) => ({
+        nombre: e.nombre,
+        kcal: Math.max(0, Math.round(Number(e.kcal) || 0)),
+        proteina: Math.round((Number(e.proteina) || 0) * 10) / 10,
+        carbohidratos: Math.round((Number(e.carbohidratos) || 0) * 10) / 10,
+        grasas: Math.round((Number(e.grasas) || 0) * 10) / 10,
+      }));
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -174,6 +242,34 @@ export async function POST(req: NextRequest) {
             macros,
           };
         });
+
+      // Garantía: si algún alimento fuera del catálogo llegó sin macros, lo estimamos por nombre.
+      const faltantes = alimentos
+        .map((a, idx) => ({ a, idx }))
+        .filter(({ a }) => a.fuente === "ia" && a.macros.kcal <= 0);
+      if (faltantes.length > 0) {
+        try {
+          const est = await estimarMacrosTexto(faltantes.map(({ a }) => a.nombre));
+          if (est && est.length > 0) {
+            const estMap = new Map(est.map((e) => [normalizar(e.nombre), e]));
+            for (const { a, idx } of faltantes) {
+              const v = estMap.get(normalizar(a.nombre));
+              if (v && v.kcal > 0) {
+                const ref: FoodItem = {
+                  id: `ia_${idx}`,
+                  nombre: a.nombre,
+                  aliases: [],
+                  kcal: v.kcal,
+                  proteina: v.proteina,
+                  carbohidratos: v.carbohidratos,
+                  grasas: v.grasas,
+                };
+                alimentos[idx] = { ...a, food: ref, macros: calcularMacros(ref, a.gramos) };
+              }
+            }
+          }
+        } catch {}
+      }
 
       const totales = sumarMacros(alimentos.map((a) => a.macros));
 
