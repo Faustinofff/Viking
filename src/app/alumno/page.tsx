@@ -5,6 +5,7 @@ import { useAppStore, type Rutina } from "@/lib/store";
 import { getStudentWorkoutPlans, ejercicioWeekValue, getWorkoutCompletionDates } from "@/lib/data";
 import { computeStreak, getCurrentWeek } from "@/lib/streak";
 import StreakCard from "@/components/streak-card";
+import MealScanner from "@/components/meal-scanner";
 import TutorialButton from "@/components/tutorial-button";
 
 const MEAL_CHECK_KEY = "viking_meal_checks";
@@ -117,6 +118,8 @@ export default function StudentDashboard() {
       </div>
 
       {streakListo && <StreakCard streak={racha} days={semanaRacha} />}
+
+      <MealScanner email={usuario?.email} />
 
       {alumno && (
         <>
