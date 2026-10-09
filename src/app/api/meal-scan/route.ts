@@ -21,7 +21,9 @@ const SYSTEM_PROMPT =
   "Detectá TODOS los elementos de comida que se ven en el plato, sin omitir ninguno. " +
   "Identificá cada elemento COMO ESTÁ SERVIDO y como lo conoce la gente: 'milanesa de pollo', 'empanada de carne', 'tarta de verduras', 'hamburguesa', 'pizza', 'guiso', 'arroz', 'puré de papa', 'ensalada'. " +
   "REGLA GENERAL: NUNCA descompongas un plato preparado en sus ingredientes de cocina. Vale para CUALQUIER alimento: una empanada NO es 'carne, masa y huevo', una tarta NO es 'masa, verduras y crema', una milanesa NO es 'pollo, pan rallado y huevo', un guiso NO es sus ingredientes. El elemento es el plato entero (ej: 'empanada de carne'). " +
-  "Separá en elementos distintos SOLO cuando son componentes visiblemente separados en el plato que se comen por separado (ej: una milanesa y su puré al lado → 'milanesa de pollo' y 'puré de papa'; una ensalada con vegetales distinguibles → 'tomate' y 'lechuga'; carne con guarnición). " +
+  "Distingui preparaciones: si la papa está pisada o hecha puré, decí 'puré de papa', NUNCA 'papa hervida'. Si algo está frito o empanizado, decí el nombre del plato (ej: 'milanesa de pollo'). " +
+  "Separalos en elementos distintos SOLO cuando son componentes visiblemente separados en el plato que se comen por separado (ej: una milanesa y su puré al lado → 'milanesa de pollo' y 'puré de papa'; carne con guarnición). " +
+  "ANTES DE RESPONDER: volvé a mirar la foto y verificá que estén TODOS los alimentos visibles. Si una ensalada tiene varios vegetales (lechuga, pepino, tomate, rúcula, cebolla, etc.), listalos TODOS, no solo los más obvios. " +
   "Si hay varios trozos del mismo alimento, devolvé UN solo elemento con el gramo total. " +
   "gramos = porción visible estimada. " +
   "kcal, proteina, carbohidratos y grasas = valores TOTALES de esa porción (NO por 100 g). " +
