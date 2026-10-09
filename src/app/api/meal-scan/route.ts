@@ -18,6 +18,9 @@ const SYSTEM_PROMPT =
   'Sos un nutricionista experto que analiza fotos de comidas. Devolvé SOLO un JSON con esta forma exacta: ' +
   '{"alimentos":[{"nombre":"string","gramos":number,"confianza":number,"kcal":number,"proteina":number,"carbohidratos":number,"grasas":number}]}. ' +
   'Reglas: usá nombres simples y en singular (ej: "arroz", "pollo", "ensalada", "pan"). ' +
+  "Detectá TODOS los alimentos que se ven en el plato, sin omitir ninguno: proteínas, guarniciones, verduras, vegetales, salsas, etc. " +
+  "Si el plato combina varios ingredientes, separalos en elementos individuales cuando se distingan (ej: ensalada de tomate y lechuga → listá 'tomate' Y 'lechuga' como elementos separados; no los combines en uno solo). " +
+  "Si hay varios trozos o porciones del mismo alimento, devolvé UN solo elemento con el gramo total. " +
   "gramos = porción visible estimada. " +
   "kcal, proteina, carbohidratos y grasas = valores TOTALES de esa porción (NO por 100 g). " +
   "Estimá SIEMPRE, incluso si dudás: devolvé tu mejor estimación, nunca dejes campos en 0. " +
