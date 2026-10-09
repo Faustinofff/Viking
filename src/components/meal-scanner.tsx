@@ -260,10 +260,10 @@ export default function MealScanner({ email }: { email?: string | null }) {
           <div className="relative flex-1 overflow-hidden">
             <video ref={videoRef} playsInline muted className="absolute inset-0 w-full h-full object-cover" />
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="w-[78vmin] h-[78vmin] rounded-full ring-2 ring-cyan-400/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
+              <div className="w-[78vmin] h-[78vmin] rounded-full ring-2 ring-[#00e5ff]/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
             </div>
             <div className="pointer-events-none absolute left-[11%] right-[11%] scanline">
-              <div className="h-0.5 bg-cyan-400 shadow-[0_0_12px_3px_rgba(34,211,238,0.9)]" />
+              <div className="h-0.5 bg-[#00e5ff] shadow-[0_0_12px_3px_rgba(0,229,255,0.9)]" />
             </div>
           </div>
 
@@ -426,27 +426,31 @@ export default function MealScanner({ email }: { email?: string | null }) {
                               </div>
                             )}
 
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="range"
-                                min={0}
-                                max={500}
-                                step={5}
-                                value={it.gramos}
-                                onChange={(e) => setGramos(i, Number(e.target.value))}
-                                className="flex-1 accent-[#00e5ff]"
-                              />
+                            <div className="flex items-baseline justify-center gap-1">
                               <input
                                 type="number"
                                 min={0}
                                 value={it.gramos}
                                 onChange={(e) => setGramos(i, Number(e.target.value))}
-                                className="input w-20 text-sm text-right"
+                                className="w-16 bg-transparent text-center text-2xl font-bold text-[#00e5ff] drop-shadow-[0_0_8px_rgba(0,229,255,0.5)] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
-                              <span className="text-xs text-white/40">g</span>
+                              <span className="text-sm text-white/40">g</span>
                             </div>
 
-                            <p className="text-[11px] text-white/40">
+                            <input
+                              type="range"
+                              min={0}
+                              max={500}
+                              step={5}
+                              value={it.gramos}
+                              onChange={(e) => setGramos(i, Number(e.target.value))}
+                              className="futuristic-range w-full"
+                              style={{
+                                backgroundImage: `linear-gradient(90deg, #00e5ff 0%, #00e5ff ${Math.min(100, (it.gramos / 500) * 100)}%, rgba(0,229,255,0.12) ${Math.min(100, (it.gramos / 500) * 100)}%, rgba(0,229,255,0.12) 100%)`,
+                              }}
+                            />
+
+                            <p className="text-[11px] text-white/40 text-center">
                               {macros.kcal} kcal · C {macros.carbohidratos}g · P {macros.proteina}g · G {macros.grasas}g
                             </p>
                           </div>
@@ -467,6 +471,42 @@ export default function MealScanner({ email }: { email?: string | null }) {
       <style>{`
         @keyframes scanmove { 0%, 100% { top: 12%; } 50% { top: 88%; } }
         .scanline { animation: scanmove 2.4s ease-in-out infinite; }
+        .futuristic-range {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 100%;
+          height: 6px;
+          border-radius: 9999px;
+          background-color: rgba(0, 229, 255, 0.12);
+          box-shadow: 0 0 10px rgba(0, 229, 255, 0.55);
+          outline: none;
+          cursor: pointer;
+        }
+        .futuristic-range::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 9999px;
+          background: radial-gradient(circle at 50% 40%, #eaffff 0%, #00e5ff 55%, #0077a3 100%);
+          border: 2px solid rgba(230, 255, 255, 0.9);
+          box-shadow: 0 0 14px 3px rgba(0, 229, 255, 0.9);
+          cursor: pointer;
+        }
+        .futuristic-range::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 9999px;
+          background: radial-gradient(circle at 50% 40%, #eaffff 0%, #00e5ff 55%, #0077a3 100%);
+          border: 2px solid rgba(230, 255, 255, 0.9);
+          box-shadow: 0 0 14px 3px rgba(0, 229, 255, 0.9);
+          cursor: pointer;
+        }
+        .futuristic-range::-moz-range-track {
+          height: 6px;
+          border-radius: 9999px;
+          background: transparent;
+        }
       `}</style>
     </>
   );
