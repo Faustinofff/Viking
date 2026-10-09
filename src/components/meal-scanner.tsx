@@ -446,7 +446,7 @@ export default function MealScanner({ email }: { email?: string | null }) {
                               onChange={(e) => setGramos(i, Number(e.target.value))}
                               className="futuristic-range w-full"
                               style={{
-                                backgroundImage: `linear-gradient(90deg, #00e5ff 0%, #00e5ff ${Math.min(100, (it.gramos / 500) * 100)}%, rgba(0,229,255,0.12) ${Math.min(100, (it.gramos / 500) * 100)}%, rgba(0,229,255,0.12) 100%)`,
+                                backgroundImage: `linear-gradient(90deg, #00ff66 0%, #00ff66 ${Math.min(100, (it.gramos / 500) * 100)}%, rgba(0,255,102,0.15) ${Math.min(100, (it.gramos / 500) * 100)}%, rgba(0,255,102,0.15) 100%)`,
                               }}
                             />
 
@@ -477,8 +477,7 @@ export default function MealScanner({ email }: { email?: string | null }) {
           width: 100%;
           height: 6px;
           border-radius: 9999px;
-          background-color: rgba(0, 229, 255, 0.12);
-          box-shadow: 0 0 10px rgba(0, 229, 255, 0.55);
+          background-color: rgba(0, 255, 102, 0.15);
           outline: none;
           cursor: pointer;
         }
@@ -488,18 +487,16 @@ export default function MealScanner({ email }: { email?: string | null }) {
           width: 20px;
           height: 20px;
           border-radius: 9999px;
-          background: radial-gradient(circle at 50% 40%, #eaffff 0%, #00e5ff 55%, #0077a3 100%);
-          border: 2px solid rgba(230, 255, 255, 0.9);
-          box-shadow: 0 0 14px 3px rgba(0, 229, 255, 0.9);
+          background: #00ff66;
+          border: none;
           cursor: pointer;
         }
         .futuristic-range::-moz-range-thumb {
           width: 20px;
           height: 20px;
           border-radius: 9999px;
-          background: radial-gradient(circle at 50% 40%, #eaffff 0%, #00e5ff 55%, #0077a3 100%);
-          border: 2px solid rgba(230, 255, 255, 0.9);
-          box-shadow: 0 0 14px 3px rgba(0, 229, 255, 0.9);
+          background: #00ff66;
+          border: none;
           cursor: pointer;
         }
         .futuristic-range::-moz-range-track {
