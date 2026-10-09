@@ -53,7 +53,7 @@ function downscaleImage(file: File): Promise<string> {
 
 function MacroBloque({ label, valor, unidad, color }: { label: string; valor: number; unidad: string; color: string }) {
   return (
-    <div className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.05]">
+    <div className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.05] text-center">
       <p className="text-[11px] uppercase tracking-wider text-white/40 mb-1">{label}</p>
       <p className={`text-2xl font-bold ${color}`}>
         {valor}
@@ -383,8 +383,8 @@ export default function MealScanner({ email }: { email?: string | null }) {
                         <div className="grid grid-cols-2 gap-2">
                           <MacroBloque label="Calorías" valor={totales.kcal} unidad="kcal" color="text-white" />
                           <MacroBloque label="Carbohidratos" valor={totales.carbohidratos} unidad="g" color="text-amber-400" />
-                          <MacroBloque label="Proteína" valor={totales.proteina} unidad="g" color="text-cyan-400" />
-                          <MacroBloque label="Grasa" valor={totales.grasas} unidad="g" color="text-pink-400" />
+                          <MacroBloque label="Proteína" valor={totales.proteina} unidad="g" color="text-[#00e5ff] drop-shadow-[0_0_10px_rgba(0,229,255,0.55)]" />
+                          <MacroBloque label="Grasa" valor={totales.grasas} unidad="g" color="text-orange-400" />
                         </div>
                       </div>
                     )}
@@ -434,7 +434,7 @@ export default function MealScanner({ email }: { email?: string | null }) {
                                 step={5}
                                 value={it.gramos}
                                 onChange={(e) => setGramos(i, Number(e.target.value))}
-                                className="flex-1 accent-cyan-400"
+                                className="flex-1 accent-[#00e5ff]"
                               />
                               <input
                                 type="number"
