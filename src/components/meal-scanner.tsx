@@ -432,9 +432,9 @@ export default function MealScanner({ email }: { email?: string | null }) {
                                 min={0}
                                 value={it.gramos}
                                 onChange={(e) => setGramos(i, Number(e.target.value))}
-                                className="w-16 bg-transparent text-center text-2xl font-bold text-[#00e5ff] drop-shadow-[0_0_8px_rgba(0,229,255,0.5)] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                className="w-16 bg-transparent text-center text-2xl font-bold text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
-                              <span className="text-sm text-white/40">g</span>
+                              <span className="text-sm text-white/70">g</span>
                             </div>
 
                             <input
