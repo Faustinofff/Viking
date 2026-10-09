@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { buscarAlimento, calcularMacros, sumarMacros, type Macros } from "@/lib/food-catalog";
+import { buscarAlimento, calcularMacros, sumarMacros, type FoodItem, type Macros } from "@/lib/food-catalog";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -16,9 +16,12 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
 const SYSTEM_PROMPT =
   'Sos un nutricionista experto que analiza fotos de comidas. Devolvé SOLO un JSON con esta forma exacta: ' +
-  '{"alimentos":[{"nombre":"string","gramos":number,"confianza":number}]}. ' +
+  '{"alimentos":[{"nombre":"string","gramos":number,"confianza":number,"kcal":number,"proteina":number,"carbohidratos":number,"grasas":number}]}. ' +
   'Reglas: usá nombres simples y en singular (ej: "arroz", "pollo", "ensalada", "pan"). ' +
-  "Estimá los gramos de la porción visible. confianza entre 0 y 1. " +
+  "gramos = porción visible estimada. " +
+  "kcal, proteina, carbohidratos y grasas = valores TOTALES de esa porción (NO por 100 g). " +
+  "Estimá SIEMPRE, incluso si dudás: devolvé tu mejor estimación, nunca dejes campos en 0. " +
+  "confianza entre 0 y 1. " +
   'Si el usuario da indicaciones, usalas para ajustar cantidades o aclarar alimentos. ' +
   'Si no hay comida reconocible, devolvé {"alimentos":[]}.';
 
@@ -26,6 +29,10 @@ interface ItemIA {
   nombre: string;
   gramos: number;
   confianza: number;
+  kcal?: number;
+  proteina?: number;
+  carbohidratos?: number;
+  grasas?: number;
 }
 
 export async function POST(req: NextRequest) {
@@ -115,7 +122,7 @@ export async function POST(req: NextRequest) {
       const crudos = Array.isArray(parsed.alimentos) ? parsed.alimentos : [];
       const alimentos = crudos
         .filter((a) => a && typeof a.nombre === "string" && a.nombre.trim())
-        .map((a) => {
+        .map((a, i) => {
           const gramos = Math.max(0, Math.round(Number(a.gramos) || 0));
           let confianza = Number(a.confianza);
           if (!Number.isFinite(confianza)) confianza = 0.5;
@@ -123,20 +130,42 @@ export async function POST(req: NextRequest) {
           confianza = Math.max(0, Math.min(1, confianza));
 
           const food = buscarAlimento(a.nombre);
-          const macros: Macros | null = food ? calcularMacros(food, gramos) : null;
+          let fuente: "catalogo" | "ia" = "catalogo";
+          let ref: FoodItem;
+          if (food) {
+            ref = food;
+          } else {
+            // No está en el catálogo: usamos los macros estimados por la IA.
+            fuente = "ia";
+            const factor = gramos > 0 ? 100 / gramos : 0;
+            const num = (v?: number) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+            ref = {
+              id: `ia_${i}`,
+              nombre: a.nombre.trim(),
+              aliases: [],
+              kcal: Math.round(num(a.kcal) * factor),
+              proteina: Math.round(num(a.proteina) * factor * 10) / 10,
+              carbohidratos: Math.round(num(a.carbohidratos) * factor * 10) / 10,
+              grasas: Math.round(num(a.grasas) * factor * 10) / 10,
+            };
+          }
+
+          const macros: Macros = calcularMacros(ref, gramos);
 
           return {
             nombre: a.nombre.trim(),
             nombreCatalogo: food?.nombre ?? null,
             alimentoId: food?.id ?? null,
             matched: !!food,
+            fuente,
             gramos,
             confianza: Math.round(confianza * 100) / 100,
+            food: ref,
             macros,
           };
         });
 
-      const totales = sumarMacros(alimentos.filter((a) => a.macros).map((a) => a.macros as Macros));
+      const totales = sumarMacros(alimentos.map((a) => a.macros));
 
       return NextResponse.json({ alimentos, totales });
     } finally {

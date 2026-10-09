@@ -15,9 +15,10 @@ interface ItemUI {
   nombreCatalogo: string | null;
   alimentoId: string | null;
   matched: boolean;
+  fuente: "catalogo" | "ia";
   gramos: number;
   confianza: number;
-  food: FoodItem | null;
+  food: FoodItem;
 }
 
 function downscaleImage(file: File): Promise<string> {
@@ -116,8 +117,14 @@ export default function MealScanner({ email }: { email?: string | null }) {
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error ?? "No se pudo analizar la imagen");
       const lista: ItemUI[] = (json.alimentos ?? []).map((a: any) => ({
-        ...a,
-        food: a.alimentoId ? FOOD_CATALOG.find((f) => f.id === a.alimentoId) ?? null : null,
+        nombre: a.nombre,
+        nombreCatalogo: a.nombreCatalogo ?? null,
+        alimentoId: a.alimentoId ?? null,
+        matched: !!a.matched,
+        fuente: a.fuente === "catalogo" ? "catalogo" : "ia",
+        gramos: Number(a.gramos) || 0,
+        confianza: Number(a.confianza) || 0,
+        food: a.food as FoodItem,
       }));
       setItems(lista);
     } catch (e: any) {
@@ -132,15 +139,14 @@ export default function MealScanner({ email }: { email?: string | null }) {
   };
 
   const asignarFood = (idx: number, foodId: string) => {
-    const food = FOOD_CATALOG.find((f) => f.id === foodId) ?? null;
-    setItems((prev) => prev?.map((it, i) => (i === idx ? { ...it, food, alimentoId: food?.id ?? null, matched: !!food, nombreCatalogo: food?.nombre ?? null } : it)) ?? prev);
+    const food = FOOD_CATALOG.find((f) => f.id === foodId);
+    if (!food) return;
+    setItems((prev) => prev?.map((it, i) => (i === idx ? { ...it, food, alimentoId: food.id, matched: true, fuente: "catalogo" as const, nombreCatalogo: food.nombre } : it)) ?? prev);
   };
 
   const totales = useMemo(() => {
-    if (!items) return null;
-    const macros = items.filter((it) => it.food).map((it) => calcularMacros(it.food as FoodItem, it.gramos));
-    if (macros.length === 0) return null;
-    return sumarMacros(macros);
+    if (!items || items.length === 0) return null;
+    return sumarMacros(items.map((it) => calcularMacros(it.food, it.gramos)));
   }, [items]);
 
   const cerrar = () => {
@@ -263,11 +269,14 @@ export default function MealScanner({ email }: { email?: string | null }) {
                     )}
 
                     {items.map((it, i) => {
-                      const macros = it.food ? calcularMacros(it.food, it.gramos) : null;
+                      const macros = calcularMacros(it.food, it.gramos);
                       return (
                         <div key={i} className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.05] space-y-2">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-medium text-white truncate">{it.food?.nombre ?? it.nombre}</p>
+                            <p className="text-sm font-medium text-white truncate">
+                              {it.food.nombre}
+                              {it.fuente === "ia" && <span className="ml-1.5 text-[10px] text-white/30">(estimado IA)</span>}
+                            </p>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${
                               it.confianza >= 0.6 ? "text-emerald-400 bg-emerald-400/10" : "text-amber-400 bg-amber-400/10"
                             }`}>
@@ -275,9 +284,9 @@ export default function MealScanner({ email }: { email?: string | null }) {
                             </span>
                           </div>
 
-                          {!it.food && (
+                          {it.fuente === "ia" && (
                             <div className="space-y-1">
-                              <p className="text-[11px] text-amber-400">No está en el catálogo. Asigná uno:</p>
+                              <p className="text-[11px] text-white/40">Estimado por IA. Si está en el catálogo, precisalo:</p>
                               <select
                                 className="input w-full text-sm"
                                 value=""
@@ -311,11 +320,9 @@ export default function MealScanner({ email }: { email?: string | null }) {
                             <span className="text-xs text-white/40">g</span>
                           </div>
 
-                          {macros && (
-                            <p className="text-[11px] text-white/40">
-                              {macros.kcal} kcal · P {macros.proteina}g · C {macros.carbohidratos}g · G {macros.grasas}g
-                            </p>
-                          )}
+                          <p className="text-[11px] text-white/40">
+                            {macros.kcal} kcal · P {macros.proteina}g · C {macros.carbohidratos}g · G {macros.grasas}g
+                          </p>
                         </div>
                       );
                     })}
