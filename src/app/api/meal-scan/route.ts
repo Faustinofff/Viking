@@ -17,10 +17,12 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 const SYSTEM_PROMPT =
   'Sos un nutricionista experto que analiza fotos de comidas. Devolvé SOLO un JSON con esta forma exacta: ' +
   '{"alimentos":[{"nombre":"string","gramos":number,"confianza":number,"kcal":number,"proteina":number,"carbohidratos":number,"grasas":number}]}. ' +
-  'Reglas: usá nombres simples y en singular (ej: "arroz", "pollo", "ensalada", "pan"). ' +
-  "Detectá TODOS los alimentos que se ven en el plato, sin omitir ninguno: proteínas, guarniciones, verduras, vegetales, salsas, etc. " +
-  "Si el plato combina varios ingredientes, separalos en elementos individuales cuando se distingan (ej: ensalada de tomate y lechuga → listá 'tomate' Y 'lechuga' como elementos separados; no los combines en uno solo). " +
-  "Si hay varios trozos o porciones del mismo alimento, devolvé UN solo elemento con el gramo total. " +
+  'Reglas: usá nombres claros y en singular, como se sirve el plato. ' +
+  "Detectá TODOS los alimentos que se ven en el plato, sin omitir ninguno: la proteína, la guarnición, las verduras, las salsas, etc. " +
+  "Identificá cada elemento COMO ESTÁ SERVIDO, con su nombre de plato: 'milanesa de pollo', 'puré de papa', 'arroz', 'ensalada mixta'. " +
+  "IMPORTANTE: NO descompongas un plato preparado en sus ingredientes de receta. Si ves una 'milanesa de pollo', el elemento es 'milanesa de pollo' (NO 'pollo' + 'pan rallado' + 'huevo'). Si ves 'puré', el elemento es 'puré de papa' (NO 'papa'). " +
+  "Separá en elementos distintos solo cuando son componentes MARCadamente separados en el plato (ej: una milanesa y su puré al lado → listá 'milanesa de pollo' y 'puré de papa'; una ensalada cuyos vegetales se distinguen → 'tomate' y 'lechuga'). " +
+  "Si hay varios trozos del mismo alimento, devolvé UN solo elemento con el gramo total. " +
   "gramos = porción visible estimada. " +
   "kcal, proteina, carbohidratos y grasas = valores TOTALES de esa porción (NO por 100 g). " +
   "Estimá SIEMPRE, incluso si dudás: devolvé tu mejor estimación, nunca dejes campos en 0. " +
