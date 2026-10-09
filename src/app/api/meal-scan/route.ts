@@ -2,9 +2,39 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buscarAlimento, calcularMacros, normalizar, sumarMacros, type FoodItem, type Macros } from "@/lib/food-catalog";
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const VISION_MODEL = "qwen/qwen3.8-27b";
+// Proveedor de visión configurable. Por defecto usa Groq (gratis, menos preciso).
+// Para probar GPT-4o gratis con GitHub Models (sin tarjeta), configurá:
+//   VISION_BASE_URL=https://models.github.ai/inference/v1   (o https://models.inference.ai.azure.com/v1)
+//   VISION_API_KEY=<token de GitHub con permiso "Models read">
+//   VISION_MODEL=gpt-4o   (o gpt-4o-mini / gpt-4.1-mini para ahorrar tokens)
+// Cualquier endpoint compatible con OpenAI Chat Completions sirve (OpenAI, OpenRouter, Azure, etc.).
+const VISION_BASE_URL = (process.env.VISION_BASE_URL ?? "https://api.groq.com/openai/v1").replace(/\/$/, "");
+const VISION_API_KEY = process.env.VISION_API_KEY ?? process.env.GROQ_API_KEY;
+const VISION_MODEL = process.env.VISION_MODEL ?? "qwen/qwen3.8-27b";
+
+interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: any;
+}
+
+async function llmChat(messages: ChatMessage[], maxTokens: number, signal?: AbortSignal): Promise<string | null> {
+  if (!VISION_API_KEY) return null;
+  const res = await fetch(`${VISION_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${VISION_API_KEY}` },
+    signal,
+    body: JSON.stringify({
+      model: VISION_MODEL,
+      messages,
+      temperature: 0.2,
+      max_tokens: maxTokens,
+      response_format: { type: "json_object" },
+    }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content ?? null;
+}
 
 // Gate temporal: solo la cuenta de prueba puede usar el escáner.
 const TEST_EMAIL = "pruebachequeo430@gmail.com";
@@ -56,34 +86,25 @@ interface EstimacionPor100 {
 // Red de seguridad: estima macros POR 100 g de un alimento por su nombre, sin catálogo.
 // Se usa cuando un alimento fuera del catálogo llega sin macros del análisis visual.
 async function estimarMacrosTexto(nombres: string[]): Promise<EstimacionPor100[] | null> {
-  if (!GROQ_API_KEY || nombres.length === 0) return null;
+  if (!VISION_API_KEY || nombres.length === 0) return null;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   try {
-    const res = await fetch(GROQ_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_API_KEY}` },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: "openai/gpt-oss-20b",
-        messages: [
-          {
-            role: "system",
-            content:
-              'Sos un nutricionista experto. Devolvé SOLO un JSON con esta forma exacta: {"alimentos":[{"nombre":"string","kcal":number,"proteina":number,"carbohidratos":number,"grasas":number}]}. ' +
-              'Los valores son POR 100 g de alimento, el campo "nombre" debe repetirse exacto a como viene en la consulta. ' +
-              "Estimá valores realistas para una porción típica de ese alimento, aunque sea un plato preparado.",
-          },
-          { role: "user", content: `Estimá los macros por 100 g de: ${nombres.join(", ")}` },
-        ],
-        temperature: 0.2,
-        max_tokens: 400,
-        response_format: { type: "json_object" },
-      }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const content: string = data?.choices?.[0]?.message?.content ?? "";
+    const content = await llmChat(
+      [
+        {
+          role: "system",
+          content:
+            'Sos un nutricionista experto. Devolvé SOLO un JSON con esta forma exacta: {"alimentos":[{"nombre":"string","kcal":number,"proteina":number,"carbohidratos":number,"grasas":number}]}. ' +
+            'Los valores son POR 100 g de alimento, el campo "nombre" debe repetirse exacto a como viene en la consulta. ' +
+            "Estimá valores realistas para una porción típica de ese alimento, aunque sea un plato preparado.",
+        },
+        { role: "user", content: `Estimá los macros por 100 g de: ${nombres.join(", ")}` },
+      ],
+      400,
+      controller.signal
+    );
+    if (!content) return null;
     let parsed: any = {};
     try {
       parsed = JSON.parse(content);
@@ -115,8 +136,8 @@ async function estimarMacrosTexto(nombres: string[]): Promise<EstimacionPor100[]
 
 export async function POST(req: NextRequest) {
   try {
-    if (!GROQ_API_KEY) {
-      return NextResponse.json({ error: "GROQ_API_KEY no configurada" }, { status: 500 });
+    if (!VISION_API_KEY) {
+      return NextResponse.json({ error: "API de visión no configurada" }, { status: 500 });
     }
 
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
@@ -153,39 +174,28 @@ export async function POST(req: NextRequest) {
     const timeout = setTimeout(() => controller.abort(), 30000);
 
     try {
-      const res = await fetch(GROQ_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${GROQ_API_KEY}`,
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model: VISION_MODEL,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            {
-              role: "user",
-              content: [
-                { type: "text", text: userText },
-                { type: "image_url", image_url: { url: image } },
-              ],
-            },
-          ],
-          temperature: 0.2,
-          max_tokens: 800,
-          response_format: { type: "json_object" },
-        }),
-      });
-
-      if (!res.ok) {
-        const errBody = await res.text();
-        console.error("[meal-scan] Groq error", res.status, errBody.slice(0, 500));
-        return NextResponse.json({ error: "No se pudo analizar la imagen" }, { status: res.status });
+      if (!VISION_API_KEY) {
+        return NextResponse.json({ error: "API de visión no configurada" }, { status: 500 });
       }
+      const content = await llmChat(
+        [
+          { role: "system", content: SYSTEM_PROMPT },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: userText },
+              { type: "image_url", image_url: { url: image } },
+            ],
+          },
+        ],
+        800,
+        controller.signal
+      );
 
-      const data = await res.json();
-      const content: string = data?.choices?.[0]?.message?.content ?? "{}";
+      if (content === null) {
+        console.error("[meal-scan] Error del proveedor de visión");
+        return NextResponse.json({ error: "No se pudo analizar la imagen" }, { status: 502 });
+      }
 
       let parsed: { alimentos?: ItemIA[] } = {};
       try {
