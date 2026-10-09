@@ -7,7 +7,6 @@ import {
   calcularMacros,
   sumarMacros,
   type FoodItem,
-  type Macros,
 } from "@/lib/food-catalog";
 
 interface ItemUI {
@@ -52,24 +51,14 @@ function downscaleImage(file: File): Promise<string> {
   });
 }
 
-function MacroResumen({ macros }: { macros: Macros }) {
-  const total = macros.proteina * 4 + macros.carbohidratos * 4 + macros.grasas * 9;
-  const p = total > 0 ? (macros.proteina * 4) / total : 0;
-  const c = total > 0 ? (macros.carbohidratos * 4) / total : 0;
-  const g = total > 0 ? (macros.grasas * 9) / total : 0;
+function MacroBloque({ label, valor, unidad, color }: { label: string; valor: number; unidad: string; color: string }) {
   return (
-    <div className="space-y-2">
-      <div className="flex h-2 rounded-full overflow-hidden bg-white/10">
-        <div className="bg-cyan-400" style={{ width: `${p * 100}%` }} />
-        <div className="bg-amber-400" style={{ width: `${c * 100}%` }} />
-        <div className="bg-pink-400" style={{ width: `${g * 100}%` }} />
-      </div>
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-cyan-400 font-medium">P {macros.proteina}g</span>
-        <span className="text-amber-400 font-medium">C {macros.carbohidratos}g</span>
-        <span className="text-pink-400 font-medium">G {macros.grasas}g</span>
-        <span className="text-white font-semibold">{macros.kcal} kcal</span>
-      </div>
+    <div className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.05]">
+      <p className="text-[11px] uppercase tracking-wider text-white/40 mb-1">{label}</p>
+      <p className={`text-2xl font-bold ${color}`}>
+        {valor}
+        <span className="text-sm font-normal text-white/40 ml-1">{unidad}</span>
+      </p>
     </div>
   );
 }
@@ -260,72 +249,83 @@ export default function MealScanner({ email }: { email?: string | null }) {
                 )}
 
                 {items && items.length > 0 && (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {totales && (
-                      <div className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.05]">
-                        <p className="text-xs uppercase tracking-wider text-white/40 mb-2">Total estimado</p>
-                        <MacroResumen macros={totales} />
+                      <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-wider text-white/40">Total del plato</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <MacroBloque label="Calorías" valor={totales.kcal} unidad="kcal" color="text-white" />
+                          <MacroBloque label="Carbohidratos" valor={totales.carbohidratos} unidad="g" color="text-amber-400" />
+                          <MacroBloque label="Proteína" valor={totales.proteina} unidad="g" color="text-cyan-400" />
+                          <MacroBloque label="Grasa" valor={totales.grasas} unidad="g" color="text-pink-400" />
+                        </div>
                       </div>
                     )}
 
-                    {items.map((it, i) => {
-                      const macros = calcularMacros(it.food, it.gramos);
-                      return (
-                        <div key={i} className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.05] space-y-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-medium text-white truncate">
-                              {it.food.nombre}
-                              {it.fuente === "ia" && <span className="ml-1.5 text-[10px] text-white/30">(estimado IA)</span>}
-                            </p>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${
-                              it.confianza >= 0.6 ? "text-emerald-400 bg-emerald-400/10" : "text-amber-400 bg-amber-400/10"
-                            }`}>
-                              {Math.round(it.confianza * 100)}%
-                            </span>
-                          </div>
+                    <p className="text-xs text-white/50">
+                      Si sabés las cantidades exactas, podés modificar los gramos de cada alimento abajo.
+                    </p>
 
-                          {it.fuente === "ia" && (
-                            <div className="space-y-1">
-                              <p className="text-[11px] text-white/40">Estimado por IA. Si está en el catálogo, precisalo:</p>
-                              <select
-                                className="input w-full text-sm"
-                                value=""
-                                onChange={(e) => asignarFood(i, e.target.value)}
-                              >
-                                <option value="">Elegir alimento...</option>
-                                {FOOD_CATALOG.map((f) => (
-                                  <option key={f.id} value={f.id}>{f.nombre}</option>
-                                ))}
-                              </select>
+                    <div className="space-y-3">
+                      {items.map((it, i) => {
+                        const macros = calcularMacros(it.food, it.gramos);
+                        return (
+                          <div key={i} className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.05] space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium text-white truncate">
+                                {it.food.nombre}
+                                {it.fuente === "ia" && <span className="ml-1.5 text-[10px] text-white/30">(estimado IA)</span>}
+                              </p>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${
+                                it.confianza >= 0.6 ? "text-emerald-400 bg-emerald-400/10" : "text-amber-400 bg-amber-400/10"
+                              }`}>
+                                {Math.round(it.confianza * 100)}%
+                              </span>
                             </div>
-                          )}
 
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="range"
-                              min={0}
-                              max={500}
-                              step={5}
-                              value={it.gramos}
-                              onChange={(e) => setGramos(i, Number(e.target.value))}
-                              className="flex-1 accent-cyan-400"
-                            />
-                            <input
-                              type="number"
-                              min={0}
-                              value={it.gramos}
-                              onChange={(e) => setGramos(i, Number(e.target.value))}
-                              className="input w-20 text-sm text-right"
-                            />
-                            <span className="text-xs text-white/40">g</span>
+                            {it.fuente === "ia" && (
+                              <div className="space-y-1">
+                                <p className="text-[11px] text-white/40">Estimado por IA. Si está en el catálogo, precisalo:</p>
+                                <select
+                                  className="input w-full text-sm"
+                                  value=""
+                                  onChange={(e) => asignarFood(i, e.target.value)}
+                                >
+                                  <option value="">Elegir alimento...</option>
+                                  {FOOD_CATALOG.map((f) => (
+                                    <option key={f.id} value={f.id}>{f.nombre}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="range"
+                                min={0}
+                                max={500}
+                                step={5}
+                                value={it.gramos}
+                                onChange={(e) => setGramos(i, Number(e.target.value))}
+                                className="flex-1 accent-cyan-400"
+                              />
+                              <input
+                                type="number"
+                                min={0}
+                                value={it.gramos}
+                                onChange={(e) => setGramos(i, Number(e.target.value))}
+                                className="input w-20 text-sm text-right"
+                              />
+                              <span className="text-xs text-white/40">g</span>
+                            </div>
+
+                            <p className="text-[11px] text-white/40">
+                              {macros.kcal} kcal · C {macros.carbohidratos}g · P {macros.proteina}g · G {macros.grasas}g
+                            </p>
                           </div>
-
-                          <p className="text-[11px] text-white/40">
-                            {macros.kcal} kcal · P {macros.proteina}g · C {macros.carbohidratos}g · G {macros.grasas}g
-                          </p>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
 
                     <p className="text-[10px] text-white/20 text-center">
                       Estimación con IA. Ajustá los gramos si hace falta.
