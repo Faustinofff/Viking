@@ -22,6 +22,9 @@ const SYSTEM_PROMPT =
   "kcal, proteina, carbohidratos y grasas = valores TOTALES de esa porción (NO por 100 g). " +
   "Estimá SIEMPRE, incluso si dudás: devolvé tu mejor estimación, nunca dejes campos en 0. " +
   "confianza entre 0 y 1. " +
+  "Referencias de escala: si en la imagen hay un círculo blanco, representa un plato estándar de ~26 cm de diámetro; usalo para calcular el tamaño real. " +
+  "Usá porciones TÍPICAS de una persona y NO exageres: una pechuga de pollo ~150-200 g, una guarnición ~150-200 g, un plato principal completo ~350-600 g. " +
+  "Ante la duda, elegí la porción normal, no la grande. " +
   'Si el usuario da indicaciones, usalas para ajustar cantidades o aclarar alimentos. ' +
   'Si no hay comida reconocible, devolvé {"alimentos":[]}.';
 

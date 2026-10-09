@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Loader2, Sparkles, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
@@ -71,12 +71,85 @@ export default function MealScanner({ email }: { email?: string | null }) {
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState("");
   const [items, setItems] = useState<ItemUI[] | null>(null);
+  const [camaraOn, setCamaraOn] = useState(false);
+  const [camaraError, setCamaraError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   if ((email ?? "").toLowerCase() !== "pruebachequeo430@gmail.com") return null;
 
+  const cerrarCamara = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setCamaraOn(false);
+  };
+
+  const abrirCamara = async () => {
+    setCamaraError("");
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("no soportado");
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 1280 } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => {});
+      }
+      setCamaraOn(true);
+    } catch {
+      setCamaraError("No pudimos abrir la cámara. Podés subir una foto desde la galería.");
+    }
+  };
+
+  const capturar = () => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return;
+    const max = 1024;
+    let w = video.videoWidth;
+    let h = video.videoHeight;
+    if (w > h && w > max) {
+      h = Math.round((h * max) / w);
+      w = max;
+    } else if (h > max) {
+      w = Math.round((w * max) / h);
+      h = max;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, w, h);
+    // Círculo de referencia de escala (plato ~26 cm) dibujado en la imagen.
+    const cx = w / 2;
+    const cy = h / 2;
+    const r = (Math.min(w, h) * 0.78) / 2;
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = Math.max(2, Math.round(w / 300));
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    setImagen(canvas.toDataURL("image/jpeg", 0.85));
+    setItems(null);
+    cerrarCamara();
+  };
+
+  useEffect(() => {
+    if (abierto && !imagen) {
+      abrirCamara();
+    } else {
+      cerrarCamara();
+    }
+    return () => cerrarCamara();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abierto]);
+
   const onFile = async (file?: File | null) => {
     if (!file) return;
+    cerrarCamara();
     setError("");
     setItems(null);
     setProcesando(true);
@@ -184,25 +257,57 @@ export default function MealScanner({ email }: { email?: string | null }) {
               ref={inputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               className="hidden"
               onChange={(e) => onFile(e.target.files?.[0])}
             />
 
             {!imagen ? (
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                disabled={procesando}
-                className="w-full border-2 border-dashed border-white/15 rounded-2xl py-12 flex flex-col items-center gap-3 hover:border-accent/50 transition-colors"
-              >
-                {procesando ? (
-                  <Loader2 className="w-8 h-8 text-accent animate-spin" />
+              <div className="space-y-3">
+                {camaraOn ? (
+                  <>
+                    <div className="relative overflow-hidden rounded-2xl bg-black">
+                      <video ref={videoRef} playsInline muted className="w-full max-h-[60vh] object-cover" />
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                        <div className="w-[78%] aspect-square rounded-full ring-2 ring-cyan-400/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
+                      </div>
+                      <div className="pointer-events-none absolute left-[11%] right-[11%] scanline">
+                        <div className="h-0.5 bg-cyan-400 shadow-[0_0_12px_3px_rgba(34,211,238,0.9)]" />
+                      </div>
+                    </div>
+                    <p className="text-xs text-white/50 text-center">Encuadrá el plato dentro del círculo</p>
+                    <div className="flex gap-2">
+                      <button onClick={capturar} className="btn-primary flex-1 flex items-center justify-center gap-2">
+                        <Camera className="w-4 h-4" /> Capturar
+                      </button>
+                      <button onClick={() => inputRef.current?.click()} className="btn-secondary">Subir</button>
+                    </div>
+                  </>
+                ) : procesando ? (
+                  <div className="w-full border-2 border-dashed border-white/15 rounded-2xl py-12 flex flex-col items-center gap-3">
+                    <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                    <span className="text-sm text-white/50">Procesando imagen...</span>
+                  </div>
                 ) : (
-                  <Camera className="w-8 h-8 text-white/40" />
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={abrirCamara}
+                      className="w-full border-2 border-dashed border-white/15 rounded-2xl py-10 flex flex-col items-center gap-3 hover:border-accent/50 transition-colors"
+                    >
+                      <Camera className="w-8 h-8 text-white/40" />
+                      <span className="text-sm text-white/50">Abrir cámara</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => inputRef.current?.click()}
+                      className="btn-secondary w-full text-sm"
+                    >
+                      Subir foto desde la galería
+                    </button>
+                    {camaraError && <p className="text-xs text-amber-400 text-center">{camaraError}</p>}
+                  </div>
                 )}
-                <span className="text-sm text-white/50">Sacar o subir una foto de la comida</span>
-              </button>
+              </div>
             ) : (
               <div className="space-y-4">
                 <div className="relative">
@@ -337,6 +442,10 @@ export default function MealScanner({ email }: { email?: string | null }) {
           </div>
         </div>
       )}
+      <style>{`
+        @keyframes scanmove { 0%, 100% { top: 12%; } 50% { top: 88%; } }
+        .scanline { animation: scanmove 2.4s ease-in-out infinite; }
+      `}</style>
     </>
   );
 }
