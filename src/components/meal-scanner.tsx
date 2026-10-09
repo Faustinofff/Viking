@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Camera, Loader2, Sparkles, X } from "lucide-react";
+import { Camera, Image as ImageIcon, Loader2, Sparkles, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
   FOOD_CATALOG,
@@ -94,10 +94,6 @@ export default function MealScanner({ email }: { email?: string | null }) {
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => {});
-      }
       setCamaraOn(true);
     } catch {
       setCamaraError("No pudimos abrir la cámara. Podés subir una foto desde la galería.");
@@ -146,6 +142,14 @@ export default function MealScanner({ email }: { email?: string | null }) {
     return () => cerrarCamara();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [abierto]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (camaraOn && video && streamRef.current && video.srcObject !== streamRef.current) {
+      video.srcObject = streamRef.current;
+      video.play().catch(() => {});
+    }
+  }, [camaraOn]);
 
   const onFile = async (file?: File | null) => {
     if (!file) return;
@@ -238,7 +242,44 @@ export default function MealScanner({ email }: { email?: string | null }) {
         <Sparkles className="w-4 h-4 text-white/30" />
       </button>
 
-      {abierto && (
+      {abierto && camaraOn && !imagen && (
+        <div className="fixed inset-0 z-[70] bg-black flex flex-col">
+          <div className="flex items-center justify-between p-4">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="flex items-center gap-1.5 text-white/70 hover:text-white text-sm"
+            >
+              <ImageIcon className="w-4 h-4" /> Galería
+            </button>
+            <button onClick={cerrar} className="text-white/70 hover:text-white p-1">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="relative flex-1 overflow-hidden">
+            <video ref={videoRef} playsInline muted className="absolute inset-0 w-full h-full object-cover" />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="w-[78vmin] h-[78vmin] rounded-full ring-2 ring-cyan-400/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
+            </div>
+            <div className="pointer-events-none absolute left-[11%] right-[11%] scanline">
+              <div className="h-0.5 bg-cyan-400 shadow-[0_0_12px_3px_rgba(34,211,238,0.9)]" />
+            </div>
+          </div>
+
+          <div className="p-6 pb-8 flex flex-col items-center gap-4">
+            <p className="text-xs text-white/60">Encuadrá el plato dentro del círculo</p>
+            <button
+              type="button"
+              onClick={capturar}
+              aria-label="Capturar"
+              className="w-16 h-16 rounded-full bg-white ring-4 ring-white/25 active:scale-95 transition-transform"
+            />
+          </div>
+        </div>
+      )}
+
+      {abierto && !(camaraOn && !imagen) && (
         <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-[60] p-0 sm:p-6" onClick={cerrar}>
           <div
             className="card w-full max-w-md max-h-[92vh] overflow-y-auto rounded-b-none sm:rounded-2xl"
@@ -263,32 +304,13 @@ export default function MealScanner({ email }: { email?: string | null }) {
 
             {!imagen ? (
               <div className="space-y-3">
-                {camaraOn ? (
-                  <>
-                    <div className="relative overflow-hidden rounded-2xl bg-black">
-                      <video ref={videoRef} playsInline muted className="w-full max-h-[60vh] object-cover" />
-                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <div className="w-[78%] aspect-square rounded-full ring-2 ring-cyan-400/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
-                      </div>
-                      <div className="pointer-events-none absolute left-[11%] right-[11%] scanline">
-                        <div className="h-0.5 bg-cyan-400 shadow-[0_0_12px_3px_rgba(34,211,238,0.9)]" />
-                      </div>
-                    </div>
-                    <p className="text-xs text-white/50 text-center">Encuadrá el plato dentro del círculo</p>
-                    <div className="flex gap-2">
-                      <button onClick={capturar} className="btn-primary flex-1 flex items-center justify-center gap-2">
-                        <Camera className="w-4 h-4" /> Capturar
-                      </button>
-                      <button onClick={() => inputRef.current?.click()} className="btn-secondary">Subir</button>
-                    </div>
-                  </>
-                ) : procesando ? (
+                {procesando ? (
                   <div className="w-full border-2 border-dashed border-white/15 rounded-2xl py-12 flex flex-col items-center gap-3">
                     <Loader2 className="w-8 h-8 text-accent animate-spin" />
                     <span className="text-sm text-white/50">Procesando imagen...</span>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <>
                     <button
                       type="button"
                       onClick={abrirCamara}
@@ -305,7 +327,7 @@ export default function MealScanner({ email }: { email?: string | null }) {
                       Subir foto desde la galería
                     </button>
                     {camaraError && <p className="text-xs text-amber-400 text-center">{camaraError}</p>}
-                  </div>
+                  </>
                 )}
               </div>
             ) : (
