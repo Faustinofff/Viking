@@ -3,11 +3,15 @@ import { createClient } from "@supabase/supabase-js";
 import { buscarAlimento, calcularMacros, normalizar, sumarMacros, type FoodItem, type Macros } from "@/lib/food-catalog";
 
 // Proveedor de visión configurable. Por defecto usa Groq (gratis, menos preciso).
-// Para probar GPT-4o gratis con GitHub Models (sin tarjeta), configurá:
-//   VISION_BASE_URL=https://models.github.ai/inference/v1   (o https://models.inference.ai.azure.com/v1)
-//   VISION_API_KEY=<token de GitHub con permiso "Models read">
-//   VISION_MODEL=gpt-4o   (o gpt-4o-mini / gpt-4.1-mini para ahorrar tokens)
-// Cualquier endpoint compatible con OpenAI Chat Completions sirve (OpenAI, OpenRouter, Azure, etc.).
+// Vía gratis hoy: Google Gemini (tier free, sin tarjeta). Key en https://aistudio.google.com/app/apikey
+//   VISION_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+//   VISION_API_KEY=AIza...
+//   VISION_MODEL=gemini-2.5-flash
+// Vía paga precisa: OpenAI directo.
+//   VISION_BASE_URL=https://api.openai.com/v1
+//   VISION_API_KEY=sk-...
+//   VISION_MODEL=gpt-4o-mini   (o gpt-4o)
+// Cualquier endpoint compatible con OpenAI Chat Completions sirve.
 const VISION_BASE_URL = (process.env.VISION_BASE_URL ?? "https://api.groq.com/openai/v1").replace(/\/$/, "");
 const VISION_API_KEY = process.env.VISION_API_KEY ?? process.env.GROQ_API_KEY;
 const VISION_MODEL = process.env.VISION_MODEL ?? "qwen/qwen3.8-27b";
@@ -19,21 +23,27 @@ interface ChatMessage {
 
 async function llmChat(messages: ChatMessage[], maxTokens: number, signal?: AbortSignal): Promise<string | null> {
   if (!VISION_API_KEY) return null;
-  const res = await fetch(`${VISION_BASE_URL}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${VISION_API_KEY}` },
-    signal,
-    body: JSON.stringify({
-      model: VISION_MODEL,
-      messages,
-      temperature: 0.2,
-      max_tokens: maxTokens,
-      response_format: { type: "json_object" },
-    }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data?.choices?.[0]?.message?.content ?? null;
+  const llamar = async (json: boolean) => {
+    const res = await fetch(`${VISION_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${VISION_API_KEY}` },
+      signal,
+      body: JSON.stringify({
+        model: VISION_MODEL,
+        messages,
+        temperature: 0.2,
+        max_tokens: maxTokens,
+        ...(json ? { response_format: { type: "json_object" } } : {}),
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.choices?.[0]?.message?.content ?? null;
+  };
+  const primero = await llamar(true);
+  if (primero !== null) return primero;
+  // Algunos proveedores (ej. Gemini) no aceptan response_format: reintentamos sin éste.
+  return llamar(false);
 }
 
 // Gate temporal: solo la cuenta de prueba puede usar el escáner.
