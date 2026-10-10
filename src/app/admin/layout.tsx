@@ -204,7 +204,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </nav>
 
       <style>{`@media (max-width:767px){.admin-main{padding-top:calc(3.5rem + env(safe-area-inset-top, 0px))!important;padding-bottom:calc(6rem + env(safe-area-inset-bottom, 0px))!important}}`}</style>
-      <main className="flex-1 overflow-y-auto md:pt-0 pt-14 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] admin-main">
+      <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden md:pt-0 pt-14 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] admin-main">
         {children}
       </main>
 
