@@ -78,7 +78,7 @@ export const FOOD_CATALOG: FoodItem[] = [
 
   // ── Verduras ──
   { id: "tomate", nombre: "Tomate", aliases: ["tomate", "tomates"], kcal: 18, proteina: 0.9, carbohidratos: 3.9, grasas: 0.2 },
-  { id: "lechuga", nombre: "Lechuga", aliases: ["lechuga", "ensalada"], kcal: 15, proteina: 1.4, carbohidratos: 2.9, grasas: 0.2 },
+  { id: "lechuga", nombre: "Lechuga", aliases: ["lechuga"], kcal: 15, proteina: 1.4, carbohidratos: 2.9, grasas: 0.2 },
   { id: "zanahoria", nombre: "Zanahoria", aliases: ["zanahoria", "zanahorias"], kcal: 41, proteina: 0.9, carbohidratos: 10, grasas: 0.2 },
   { id: "brocoli", nombre: "Brócoli", aliases: ["brócoli", "brocoli"], kcal: 34, proteina: 2.8, carbohidratos: 7, grasas: 0.4 },
   { id: "cebolla", nombre: "Cebolla", aliases: ["cebolla", "cebollas"], kcal: 40, proteina: 1.1, carbohidratos: 9, grasas: 0.1 },

@@ -400,7 +400,7 @@ export default function MealScanner({ email }: { email?: string | null }) {
                           <div key={i} className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.05] space-y-2">
                             <div className="flex items-center justify-between gap-2">
                               <p className="text-sm font-medium text-white truncate">
-                                {it.food.nombre}
+                                {it.nombre}
                                 {it.fuente === "ia" && <span className="ml-1.5 text-[10px] text-white/30">(estimado IA)</span>}
                               </p>
                               <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${

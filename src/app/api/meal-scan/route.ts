@@ -64,6 +64,7 @@ const SYSTEM_PROMPT =
   "Distingui preparaciones: si la papa está pisada o hecha puré, decí 'puré de papa', NUNCA 'papa hervida'. Si algo está frito o empanizado, decí el nombre del plato (ej: 'milanesa de pollo'). " +
   "Separalos en elementos distintos SOLO cuando son componentes visiblemente separados en el plato que se comen por separado (ej: una milanesa y su puré al lado → 'milanesa de pollo' y 'puré de papa'; carne con guarnición). " +
   "ANTES DE RESPONDER: volvé a mirar la foto y verificá que estén TODOS los alimentos visibles. Si una ensalada tiene varios vegetales (lechuga, pepino, tomate, rúcula, cebolla, etc.), listalos TODOS, no solo los más obvios. " +
+  "Nombrá SIEMPRE cada alimento de forma concreta y específica (ej: 'tomate', 'lechuga', 'zanahoria', 'pechuga de pollo'), NUNCA uses términos genéricos o de plato como 'ensalada', 'guarnición', 'acompañamiento' o 'verduras'. Si ves un tomate, decí 'tomate'; si ves lechuga, decí 'lechuga'. " +
   "Si hay varios trozos del mismo alimento, devolvé UN solo elemento con el gramo total. " +
   "gramos = porción visible estimada. " +
   "kcal, proteina, carbohidratos y grasas = valores TOTALES de esa porción (NO por 100 g). " +
@@ -198,7 +199,7 @@ export async function POST(req: NextRequest) {
             ],
           },
         ],
-        800,
+        1200,
         controller.signal
       );
 
