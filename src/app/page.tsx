@@ -245,12 +245,12 @@ const coachShots = [
 ];
 
 const studentShots = [
-  { src: "/images/landing/student-home.webp", title: "Inicio del alumno", desc: "Rutina de hoy, nutrición, peso, agua y progreso semanal en una sola pantalla." },
-  { src: "/images/landing/student-workouts.webp", title: "Entrenos diarios", desc: "Cada día con su entrenamiento listo. Solo abrí y empezá." },
-  { src: "/images/landing/student-session.webp", title: "Sesión de entrenamiento", desc: "Ejercicio guiado con video, timer de descanso automático, tutorial y notas del coach.", large: true },
-  { src: "/images/landing/student-nutrition.webp", title: "Nutrición diaria", desc: "El plan de comidas del día siempre disponible. Sabé qué comer en cada momento." },
-  { src: "/images/landing/student-progress.webp", title: "Progreso automático", desc: "Peso, agua y entrenos completados. Cada actualización se refleja al instante en el coach." },
-  { src: "/images/landing/student-ai.webp", title: "Asistente IA", desc: "Consultá dudas de entrenamiento, ejercicios o nutrición. Respuestas al instante." },
+  { src: "/images/landing/inicioAlumno.webp", title: "Inicio del alumno", desc: "Rutina de hoy, nutrición, peso, agua, racha y progreso semanal en una sola pantalla." },
+  { src: "/images/landing/entrenosAlumno1.webp", title: "Entrenos diarios", desc: "Cada día con su entrenamiento listo. Solo abrí y empezá." },
+  { src: "/images/landing/entrenosAlumno2.webp", title: "Sesión de entrenamiento", desc: "Ejercicio guiado con indicaciones semanales y tutorial. Al terminar cada serie, el temporizador de descanso arranca solo.", large: true },
+  { src: "/images/landing/nutricion.webp", title: "Nutrición diaria", desc: "El plan de comidas del día siempre disponible. Sabé qué comer en cada momento." },
+  { src: "/images/landing/progresoAlumno.webp", title: "Progreso automático", desc: "Peso, agua y entrenos completados. Cada actualización se refleja al instante en el coach." },
+  { src: "/images/landing/AlumnoIA.webp", title: "Asistente IA", desc: "Consultá dudas de entrenamiento, ejercicios o nutrición. Respuestas al instante." },
 ];
 
 const traditional = ["Excel / PDF", "WhatsApp", "Rutinas perdidas", "Seguimiento manual", "Sin app para alumnos", "Escribí uno por uno"];
