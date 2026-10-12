@@ -22,7 +22,7 @@ export const FOOD_CATALOG: FoodItem[] = [
   { id: "pollo_pechuga", nombre: "Pechuga de pollo", aliases: ["pollo", "pechuga", "pechuga de pollo", "pollo a la plancha", "pollo grillado"], kcal: 165, proteina: 31, carbohidratos: 0, grasas: 3.6 },
   { id: "pollo_muslo", nombre: "Muslo de pollo", aliases: ["muslo", "muslo de pollo", "pata de pollo"], kcal: 209, proteina: 26, carbohidratos: 0, grasas: 11 },
   { id: "pollo_piel", nombre: "Pollo con piel (asado)", aliases: ["pollo con piel", "pollo asado con piel", "pollo al horno con piel", "pollo a la parrilla con piel", "pollo crispy", "pollo crocante"], kcal: 225, proteina: 25, carbohidratos: 0, grasas: 14 },
-  { id: "carne_vaca", nombre: "Carne de vaca", aliases: ["carne", "bife", "bife de chorizo", "asado", "vacío", "lomo", "carne vacuna", "matambre"], kcal: 250, proteina: 26, carbohidratos: 0, grasas: 16 },
+  { id: "carne_vaca", nombre: "Carne de vaca", aliases: ["carne", "bife", "bife de chorizo", "asado de tira", "tira de asado", "asado vacuno", "vacío", "lomo", "carne vacuna", "matambre"], kcal: 250, proteina: 26, carbohidratos: 0, grasas: 16 },
   { id: "carne_picada", nombre: "Carne picada magra", aliases: ["carne picada", "picada", "carne molida"], kcal: 200, proteina: 27, carbohidratos: 0, grasas: 10 },
   { id: "milanesa_carne", nombre: "Milanesa de carne", aliases: ["milanesa", "milanga", "milanesa de carne"], kcal: 280, proteina: 20, carbohidratos: 15, grasas: 16 },
   { id: "milanesa_pollo", nombre: "Milanesa de pollo", aliases: ["milanesa de pollo", "milanesa de pechuga", "pechuga empanizada", "milanesa de pollo al horno"], kcal: 230, proteina: 23, carbohidratos: 14, grasas: 9 },
@@ -33,7 +33,7 @@ export const FOOD_CATALOG: FoodItem[] = [
   { id: "atun_agua", nombre: "Atún al agua", aliases: ["atún al agua", "atun al agua", "atún al natural", "atun natural"], kcal: 116, proteina: 26, carbohidratos: 0, grasas: 1 },
   { id: "salmon", nombre: "Salmón", aliases: ["salmón", "salmon"], kcal: 208, proteina: 20, carbohidratos: 0, grasas: 13 },
   { id: "merluza", nombre: "Merluza", aliases: ["merluza", "pescado", "pescado blanco"], kcal: 90, proteina: 18, carbohidratos: 0, grasas: 1.3 },
-  { id: "cerdo_lomo", nombre: "Lomo de cerdo", aliases: ["cerdo", "lomo de cerdo", "bondiola", "pechito de cerdo"], kcal: 143, proteina: 26, carbohidratos: 0, grasas: 3.5 },
+  { id: "cerdo_lomo", nombre: "Lomo de cerdo", aliases: ["cerdo", "lomo de cerdo", "bondiola", "pechito de cerdo", "carne de cerdo", "carne de puerco"], kcal: 143, proteina: 26, carbohidratos: 0, grasas: 3.5 },
   { id: "jamon", nombre: "Jamón cocido", aliases: ["jamón", "jamon", "jamón cocido"], kcal: 145, proteina: 18, carbohidratos: 2, grasas: 7 },
 
   // ── Lácteos ──
@@ -51,7 +51,7 @@ export const FOOD_CATALOG: FoodItem[] = [
   { id: "arroz_blanco", nombre: "Arroz blanco cocido", aliases: ["arroz", "arroz blanco", "arroz cocido"], kcal: 130, proteina: 2.7, carbohidratos: 28, grasas: 0.3 },
   { id: "arroz_integral", nombre: "Arroz integral cocido", aliases: ["arroz integral"], kcal: 123, proteina: 2.6, carbohidratos: 26, grasas: 1 },
   { id: "fideos", nombre: "Fideos cocidos", aliases: ["fideos", "pasta", "pastas", "tallarines", "spaghetti", "fetuccini"], kcal: 158, proteina: 6, carbohidratos: 31, grasas: 1 },
-  { id: "pan_blanco", nombre: "Pan blanco", aliases: ["pan", "pan blanco", "pan francés", "baguette", "marraqueta"], kcal: 265, proteina: 9, carbohidratos: 49, grasas: 3.2 },
+  { id: "pan_blanco", nombre: "Pan blanco", aliases: ["pan", "pan blanco", "pan francés", "baguette", "marraqueta", "pan asado", "pan tostado", "pan frito", "pan lactal", "pan de molde", "pan casero", "pan de campo", "pan de miga"], kcal: 265, proteina: 9, carbohidratos: 49, grasas: 3.2 },
   { id: "pan_integral", nombre: "Pan integral", aliases: ["pan integral", "pan negro"], kcal: 247, proteina: 13, carbohidratos: 41, grasas: 3.4 },
   { id: "avena", nombre: "Avena", aliases: ["avena", "hojuelas de avena", "copos de avena"], kcal: 389, proteina: 17, carbohidratos: 66, grasas: 7 },
   { id: "papa", nombre: "Papa hervida", aliases: ["papa", "papas", "papa hervida", "patata"], kcal: 87, proteina: 2, carbohidratos: 20, grasas: 0.1 },
@@ -142,6 +142,7 @@ export function buscarAlimento(nombre: string): FoodItem | null {
   const q = normalizar(nombre);
   if (!q) return null;
   const qk = clave(q);
+  const paddedQ = ` ${q} `;
   let mejor: FoodItem | null = null;
   let mejorScore = 0;
   for (const food of FOOD_CATALOG) {
@@ -152,7 +153,8 @@ export function buscarAlimento(nombre: string): FoodItem | null {
       if (clave(t) === qk) {
         score = 1000 + t.length;
       } else if (t.length >= 3 && q.includes(t)) {
-        score = t.length;
+        // Coincidencia de palabra/frase completa pesa más que una parcial.
+        score = (paddedQ.includes(` ${t} `) ? 200 : 0) + t.length;
       }
       if (score > mejorScore) {
         mejor = food;
