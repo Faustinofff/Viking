@@ -21,6 +21,7 @@ export const FOOD_CATALOG: FoodItem[] = [
   // ── Carnes y huevos ──
   { id: "pollo_pechuga", nombre: "Pechuga de pollo", aliases: ["pollo", "pechuga", "pechuga de pollo", "pollo a la plancha", "pollo grillado"], kcal: 165, proteina: 31, carbohidratos: 0, grasas: 3.6 },
   { id: "pollo_muslo", nombre: "Muslo de pollo", aliases: ["muslo", "muslo de pollo", "pata de pollo"], kcal: 209, proteina: 26, carbohidratos: 0, grasas: 11 },
+  { id: "pollo_piel", nombre: "Pollo con piel (asado)", aliases: ["pollo con piel", "pollo asado con piel", "pollo al horno con piel", "pollo a la parrilla con piel", "pollo crispy", "pollo crocante"], kcal: 225, proteina: 25, carbohidratos: 0, grasas: 14 },
   { id: "carne_vaca", nombre: "Carne de vaca", aliases: ["carne", "bife", "bife de chorizo", "asado", "vacío", "lomo", "carne vacuna", "matambre"], kcal: 250, proteina: 26, carbohidratos: 0, grasas: 16 },
   { id: "carne_picada", nombre: "Carne picada magra", aliases: ["carne picada", "picada", "carne molida"], kcal: 200, proteina: 27, carbohidratos: 0, grasas: 10 },
   { id: "milanesa_carne", nombre: "Milanesa de carne", aliases: ["milanesa", "milanga", "milanesa de carne"], kcal: 280, proteina: 20, carbohidratos: 15, grasas: 16 },
