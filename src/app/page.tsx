@@ -24,39 +24,80 @@ function FadeIn({ children, delay = 0, className = "" }: { children: ReactNode; 
   );
 }
 
-function LaptopFrame({ src, alt, onClick }: { src: string; alt: string; onClick?: () => void }) {
+function Chrome() {
   return (
-    <div className="relative mx-auto w-full max-w-3xl cursor-pointer" onClick={onClick}>
-      <div className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-white/[0.1] bg-bg-secondary shadow-2xl shadow-black/60 transition-transform duration-300 hover:scale-[1.01]">
-        <div className="h-7 sm:h-9 bg-zinc-900/80 flex items-center gap-1.5 px-4 border-b border-white/[0.06]">
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500/60" />
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-500/60" />
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-500/60" />
-        </div>
-        <div className="aspect-video">
+    <div className="h-7 sm:h-9 bg-zinc-900/80 flex items-center gap-1.5 px-4 border-b border-white/[0.06]">
+      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500/60" />
+      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-500/60" />
+      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-500/60" />
+    </div>
+  );
+}
+
+function ExpandHint({ label = "Ampliar" }: { label?: string }) {
+  return (
+    <span className="pointer-events-none absolute bottom-3 right-3 z-10 flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur px-2.5 py-1 text-[11px] font-medium text-white/80 opacity-0 group-hover:opacity-100 transition-opacity">
+      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
+      </svg>
+      {label}
+    </span>
+  );
+}
+
+function LaptopFrame({ src, alt, ratio = 1.78, onClick }: { src: string; alt: string; ratio?: number; onClick?: () => void }) {
+  return (
+    <div className="relative mx-auto w-full max-w-4xl cursor-pointer group" onClick={onClick}>
+      <div className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-white/[0.1] bg-bg-secondary shadow-2xl shadow-black/60 transition-transform duration-300 group-hover:scale-[1.005]">
+        <Chrome />
+        <div className="w-full bg-black" style={{ aspectRatio: String(ratio), maxHeight: "75vh" }}>
           <img src={src} alt={alt} className="w-full h-full object-contain block" loading="lazy" />
         </div>
       </div>
+      <ExpandHint />
     </div>
   );
 }
 
 function PhoneFrame({ src, alt, large = false, onClick }: { src: string; alt: string; large?: boolean; onClick?: () => void }) {
   return (
-    <div className={`relative mx-auto cursor-pointer ${large ? "max-w-[320px] sm:max-w-[380px]" : "max-w-[260px] sm:max-w-[300px]"}`} onClick={onClick}>
-      <div className="rounded-[2rem] sm:rounded-[2.5rem] border-2 border-white/[0.1] bg-black shadow-2xl shadow-black/50 transition-transform duration-300 hover:scale-[1.01]">
+    <div className={`relative mx-auto cursor-pointer group ${large ? "max-w-[330px] sm:max-w-[400px]" : "max-w-[300px] sm:max-w-[360px]"}`} onClick={onClick}>
+      <div className="rounded-[2rem] sm:rounded-[2.5rem] border-2 border-white/[0.1] bg-black shadow-2xl shadow-black/50 transition-transform duration-300 group-hover:scale-[1.01]">
         <div className="p-2 sm:p-3">
           <div className="aspect-[9/16]">
             <img src={src} alt={alt} className="w-full h-full object-contain block rounded-lg" loading="lazy" />
           </div>
         </div>
       </div>
+      <ExpandHint />
     </div>
   );
 }
 
-function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+function VideoFrame({ src, ratio = 1.68, onClick }: { src: string; ratio?: number; onClick?: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (v) { v.muted = true; v.play().catch(() => {}); }
+  }, []);
+
+  return (
+    <div className="relative mx-auto w-full max-w-4xl cursor-pointer group" onClick={onClick}>
+      <div className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-white/[0.1] bg-black shadow-2xl shadow-black/60 transition-transform duration-300 group-hover:scale-[1.005]">
+        <Chrome />
+        <div className="relative w-full bg-black" style={{ aspectRatio: String(ratio), maxHeight: "75vh" }}>
+          <video ref={videoRef} src={src} className="w-full h-full object-contain" autoPlay muted loop playsInline preload="metadata" />
+        </div>
+      </div>
+      <ExpandHint label="Ver en grande" />
+    </div>
+  );
+}
+
+function Lightbox({ media, onClose }: { media: { src: string; alt: string; kind: "image" | "video" }; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(false);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -68,24 +109,39 @@ function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClos
   return (
     <div
       ref={ref}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-fade-in"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in"
       onClick={(e) => { if (e.target === ref.current) onClose(); }}
     >
-      <div className="relative max-w-[95vw] max-h-[95vh] flex items-center justify-center">
-        <button
-          onClick={onClose}
-          className="absolute -top-12 right-0 text-white/40 hover:text-white text-3xl p-2 transition-colors z-10"
-          aria-label="Cerrar"
-        >
-          ✕
-        </button>
-        <img
-          src={src}
-          alt={alt}
-          className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl shadow-2xl"
-          style={{ animation: "fade-in 0.25s ease-out" }}
-        />
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 text-white/50 hover:text-white text-3xl p-2 transition-colors z-20"
+        aria-label="Cerrar"
+      >
+        ✕
+      </button>
+      <div className="max-w-[96vw] max-h-[92vh] overflow-auto flex items-center justify-center">
+        {media.kind === "video" ? (
+          <video
+            src={media.src}
+            controls
+            autoPlay
+            playsInline
+            className="max-w-full max-h-[88vh] w-auto h-auto rounded-xl shadow-2xl bg-black"
+          />
+        ) : (
+          <img
+            src={media.src}
+            alt={media.alt}
+            onClick={() => setZoom((z) => !z)}
+            className={`${zoom ? "max-w-none max-h-none cursor-zoom-out" : "max-w-full max-h-[85vh] cursor-zoom-in"} w-auto h-auto object-contain rounded-xl shadow-2xl`}
+          />
+        )}
       </div>
+      {media.kind === "image" && (
+        <span className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/40 text-xs pointer-events-none">
+          {zoom ? "Tocá para reducir" : "Tocá la imagen para hacer zoom"}
+        </span>
+      )}
     </div>
   );
 }
@@ -98,7 +154,7 @@ function Chevron({ dir }: { dir: "left" | "right" }) {
   );
 }
 
-type Shot = { src: string; title: string; desc: string; large?: boolean };
+type Shot = { src: string; title: string; desc: string; large?: boolean; ratio?: number };
 
 function Carousel({ items, frame, onImage }: { items: Shot[]; frame: "laptop" | "phone"; onImage: (src: string, alt: string) => void }) {
   const n = items.length;
@@ -119,43 +175,23 @@ function Carousel({ items, frame, onImage }: { items: Shot[]; frame: "laptop" | 
 
   return (
     <div className="relative" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      <div className="flex items-center justify-center gap-1.5 sm:gap-6">
-        <button
-          type="button"
-          onClick={() => move(-1)}
-          aria-label="Anterior"
-          className="shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-white/60 hover:text-white flex items-center justify-center transition-colors"
-        >
-          <Chevron dir="left" />
-        </button>
-
-        <div
-          className="flex-1 min-w-0 flex items-center justify-center"
-          onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
-          onTouchEnd={(e) => {
-            if (touchX.current === null) return;
-            const dx = e.changedTouches[0].clientX - touchX.current;
-            if (Math.abs(dx) > 50) move(dx < 0 ? 1 : -1);
-            touchX.current = null;
-          }}
-        >
-          <div key={index} className="w-full animate-fade-in">
-            {frame === "laptop" ? (
-              <LaptopFrame src={active.src} alt={active.title} onClick={() => onImage(active.src, active.title)} />
-            ) : (
-              <PhoneFrame src={active.src} alt={active.title} large={active.large} onClick={() => onImage(active.src, active.title)} />
-            )}
-          </div>
+      <div
+        className="w-full flex items-center justify-center"
+        onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => {
+          if (touchX.current === null) return;
+          const dx = e.changedTouches[0].clientX - touchX.current;
+          if (Math.abs(dx) > 50) move(dx < 0 ? 1 : -1);
+          touchX.current = null;
+        }}
+      >
+        <div key={index} className="w-full flex justify-center animate-fade-in">
+          {frame === "laptop" ? (
+            <LaptopFrame src={active.src} alt={active.title} ratio={active.ratio} onClick={() => onImage(active.src, active.title)} />
+          ) : (
+            <PhoneFrame src={active.src} alt={active.title} large={active.large} onClick={() => onImage(active.src, active.title)} />
+          )}
         </div>
-
-        <button
-          type="button"
-          onClick={() => move(1)}
-          aria-label="Siguiente"
-          className="shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-white/60 hover:text-white flex items-center justify-center transition-colors"
-        >
-          <Chevron dir="right" />
-        </button>
       </div>
 
       <div className="text-center mt-8 sm:mt-10 max-w-2xl mx-auto min-h-[6.5rem] sm:min-h-[6rem]" aria-live="polite">
@@ -163,29 +199,49 @@ function Carousel({ items, frame, onImage }: { items: Shot[]; frame: "laptop" | 
         <p className="text-base sm:text-lg text-white/50 leading-relaxed">{active.desc}</p>
       </div>
 
-      <div className="flex items-center justify-center gap-2.5 mt-6">
-        {items.map((it, k) => (
-          <button
-            key={it.title}
-            type="button"
-            onClick={() => goTo(k)}
-            aria-label={`Ir a ${it.title}`}
-            aria-current={k === index}
-            className={`h-2 rounded-full transition-all duration-300 ${k === index ? "w-6 bg-accent" : "w-2 bg-white/20 hover:bg-white/40"}`}
-          />
-        ))}
+      <div className="flex items-center justify-center gap-4 sm:gap-6 mt-6">
+        <button
+          type="button"
+          onClick={() => move(-1)}
+          aria-label="Anterior"
+          className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-white/60 hover:text-white flex items-center justify-center transition-colors"
+        >
+          <Chevron dir="left" />
+        </button>
+        <div className="flex items-center gap-2.5">
+          {items.map((it, k) => (
+            <button
+              key={it.title}
+              type="button"
+              onClick={() => goTo(k)}
+              aria-label={`Ir a ${it.title}`}
+              aria-current={k === index}
+              className={`h-2 rounded-full transition-all duration-300 ${k === index ? "w-6 bg-accent" : "w-2 bg-white/20 hover:bg-white/40"}`}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => move(1)}
+          aria-label="Siguiente"
+          className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-white/60 hover:text-white flex items-center justify-center transition-colors"
+        >
+          <Chevron dir="right" />
+        </button>
       </div>
+
+      <p className="text-center text-white/30 text-xs mt-5">Tocá una imagen para ampliarla</p>
     </div>
   );
 }
 
 const coachShots = [
-  { src: "/images/landing/coach-dashboard.webp", title: "Panel de control", desc: "Todo tu negocio en un vistazo: actividad, alumnos, redes y progreso en tiempo real." },
-  { src: "/images/landing/coach-students.webp", title: "Gestión de alumnos", desc: "Administrá pagos, estados y perfiles. Cada alumno con su plan personalizado." },
-  { src: "/images/landing/coach-routine-builder.webp", title: "Creador de rutinas", desc: "Armá entrenamientos con ejercicios, series, repeticiones y descansos en segundos." },
-  { src: "/images/landing/coach-nutrition-builder.webp", title: "Plan nutricional", desc: "Diseñá planes de comidas por día ajustados al objetivo de cada alumno." },
-  { src: "/images/landing/coach-networks.webp", title: "Redes de entrenamiento", desc: "Organizá alumnos presenciales y online en grupos. Todo desde un mismo lugar." },
-  { src: "/images/landing/coach-ai.webp", title: "Asistente IA", desc: "Ideas de ejercicios, planificación y respuestas al instante. Tu copiloto personal." },
+  { src: "/images/landing/coach-dashboard.webp", title: "Panel de control", desc: "Todo tu negocio en un vistazo: actividad, alumnos, redes y progreso en tiempo real.", ratio: 2.17 },
+  { src: "/images/landing/coach-students.webp", title: "Gestión de alumnos", desc: "Administrá pagos, estados y perfiles. Cada alumno con su plan personalizado.", ratio: 2.55 },
+  { src: "/images/landing/coach-routine-builder.webp", title: "Creador de rutinas", desc: "Armá entrenamientos con ejercicios, series, repeticiones y descansos en segundos.", ratio: 1.59 },
+  { src: "/images/landing/coach-nutrition-builder.webp", title: "Plan nutricional", desc: "Diseñá planes de comidas por día ajustados al objetivo de cada alumno.", ratio: 1.50 },
+  { src: "/images/landing/coach-networks.webp", title: "Redes de entrenamiento", desc: "Organizá alumnos presenciales y online en grupos. Todo desde un mismo lugar.", ratio: 2.48 },
+  { src: "/images/landing/coach-ai.webp", title: "Asistente IA", desc: "Ideas de ejercicios, planificación y respuestas al instante. Tu copiloto personal.", ratio: 1.08 },
 ];
 
 const studentShots = [
@@ -209,7 +265,7 @@ const benefits = [
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string; kind: "image" | "video" } | null>(null);
   const pricingRef = useRef<HTMLElement>(null);
 
   return (
@@ -290,17 +346,34 @@ export default function LandingPage() {
       {/* ─── SECTION 2: COACH SHOWCASE ─── */}
       <section className="py-24 sm:py-32 px-6">
         <div className="max-w-6xl mx-auto">
-          <FadeIn className="text-center mb-16 sm:mb-24">
+          <FadeIn className="text-center mb-12 sm:mb-16">
             <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-              Todo tu negocio en un solo lugar.
+              Recorrido del sistema
             </h2>
             <p className="text-base sm:text-lg text-white/50 mt-4 max-w-2xl mx-auto">
-              Gestioná alumnos, rutinas, alimentación, seguimiento y planificación desde una única plataforma.
+              Mirá Viking desde el lado del coach: alumnos, rutinas, nutrición y seguimiento en una sola plataforma. Tocá el video para verlo en grande.
             </p>
           </FadeIn>
 
           <FadeIn delay={100}>
-            <Carousel items={coachShots} frame="laptop" onImage={(src, alt) => setLightbox({ src, alt })} />
+            <VideoFrame
+              src="/videos/coach-demo.mp4"
+              ratio={1.68}
+              onClick={() => setLightbox({ src: "/videos/coach-demo.mp4", alt: "Recorrido del sistema", kind: "video" })}
+            />
+          </FadeIn>
+
+          <FadeIn className="text-center mt-24 sm:mt-32 mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+              Cada sección
+            </h2>
+            <p className="text-base sm:text-lg text-white/50 mt-4 max-w-2xl mx-auto">
+              Conocé cada función en detalle. Tocá una captura para verla en grande.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={100}>
+            <Carousel items={coachShots} frame="laptop" onImage={(src, alt) => setLightbox({ src, alt, kind: "image" })} />
           </FadeIn>
         </div>
       </section>
@@ -318,7 +391,7 @@ export default function LandingPage() {
           </FadeIn>
 
           <FadeIn delay={100}>
-            <Carousel items={studentShots} frame="phone" onImage={(src, alt) => setLightbox({ src, alt })} />
+            <Carousel items={studentShots} frame="phone" onImage={(src, alt) => setLightbox({ src, alt, kind: "image" })} />
           </FadeIn>
         </div>
       </section>
@@ -550,7 +623,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── LIGHTBOX ─── */}
-      {lightbox && <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
+      {lightbox && <Lightbox media={lightbox} onClose={() => setLightbox(null)} />}
 
       {/* ─── FOOTER ─── */}
       <footer className="border-t border-white/[0.06] py-8 md:py-10 px-4 md:px-8">
