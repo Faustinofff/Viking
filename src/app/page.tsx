@@ -51,7 +51,7 @@ function LaptopFrame({ src, alt, ratio = 1.78, onClick }: { src: string; alt: st
       <div className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-white/[0.1] bg-bg-secondary shadow-2xl shadow-black/60 transition-transform duration-300 group-hover:scale-[1.005]">
         <Chrome />
         <div className="w-full bg-black" style={{ aspectRatio: String(ratio), maxHeight: "75vh" }}>
-          <img src={src} alt={alt} className="w-full h-full object-contain block" loading="lazy" />
+          <img src={src} alt={alt} className="w-full h-full object-contain block" />
         </div>
       </div>
       <ExpandHint />
@@ -61,11 +61,11 @@ function LaptopFrame({ src, alt, ratio = 1.78, onClick }: { src: string; alt: st
 
 function PhoneFrame({ src, alt, large = false, onClick }: { src: string; alt: string; large?: boolean; onClick?: () => void }) {
   return (
-    <div className={`relative mx-auto cursor-pointer group ${large ? "max-w-[330px] sm:max-w-[400px]" : "max-w-[300px] sm:max-w-[360px]"}`} onClick={onClick}>
-      <div className="rounded-[2rem] sm:rounded-[2.5rem] border-2 border-white/[0.1] bg-black shadow-2xl shadow-black/50 transition-transform duration-300 group-hover:scale-[1.01]">
+    <div className="relative mx-auto w-full max-w-[340px] sm:max-w-[400px] cursor-pointer group" onClick={onClick}>
+      <div className={`rounded-[2rem] sm:rounded-[2.5rem] border-2 bg-black shadow-2xl shadow-black/50 transition-transform duration-300 group-hover:scale-[1.01] ${large ? "border-accent/25 shadow-glow" : "border-white/[0.1]"}`}>
         <div className="p-2 sm:p-3">
           <div className="aspect-[9/16]">
-            <img src={src} alt={alt} className="w-full h-full object-contain block rounded-lg" loading="lazy" />
+            <img src={src} alt={alt} className="w-full h-full object-contain block rounded-lg" />
           </div>
         </div>
       </div>
@@ -171,6 +171,10 @@ function Carousel({ items, frame, onImage }: { items: Shot[]; frame: "laptop" | 
     return () => clearTimeout(t);
   }, [index, paused, n]);
 
+  useEffect(() => {
+    items.forEach((it) => { const img = new Image(); img.src = it.src; });
+  }, [items]);
+
   const active = items[index];
 
   return (
@@ -185,7 +189,7 @@ function Carousel({ items, frame, onImage }: { items: Shot[]; frame: "laptop" | 
           touchX.current = null;
         }}
       >
-        <div key={index} className="w-full flex justify-center animate-fade-in">
+        <div key={index} className="w-full flex justify-center animate-slide-in">
           {frame === "laptop" ? (
             <LaptopFrame src={active.src} alt={active.title} ratio={active.ratio} onClick={() => onImage(active.src, active.title)} />
           ) : (
