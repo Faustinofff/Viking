@@ -66,13 +66,15 @@ const SYSTEM_PROMPT =
   "ANTES DE RESPONDER: volvé a mirar la foto y verificá que estén TODOS los alimentos visibles. Si una ensalada tiene varios vegetales (lechuga, pepino, tomate, rúcula, cebolla, etc.), listalos TODOS, no solo los más obvios. " +
   "Nombrá SIEMPRE cada alimento de forma concreta y específica (ej: 'tomate', 'lechuga', 'zanahoria', 'pechuga de pollo'), NUNCA uses términos genéricos o de plato como 'ensalada', 'guarnición', 'acompañamiento' o 'verduras'. Si ves un tomate, decí 'tomate'; si ves lechuga, decí 'lechuga'. " +
   "Si hay varios trozos del mismo alimento, devolvé UN solo elemento con el gramo total. " +
-  "gramos = porción visible estimada. " +
+  "gramos = peso NETO del alimento TAL COMO SE SIRVE EN EL PLATO (peso cocido/servido final; NO agregues peso de crudo, NO infles el valor). " +
+  "Para estimar los gramos NO uses porciones genéricas por defecto (evitá asumir siempre 150 g de carne o 200 g de carbohidratos). Calculá según referencias visuales: " +
+  "1) ANCLA DE ESCALA: si ves el círculo blanco, representa un plato de ~26 cm de diámetro; usalo de regla. Si hay cubiertos, el tenedor o cuchillo mide ~18-20 cm. Usá alimentos de tamaño conocido como ancla: un tomate cherry pesa 15-20 g (cada mitad ~8-10 g), un huevo entero cocido ~50 g, media palta mediana ~75-80 g, una rodaja de pan ~25-30 g. Estimá qué proporción del plato ocupa cada alimento. " +
+  "2) GEOMETRÍA Y CORTES: en carnes y alimentos fileteados, contá las piezas o fetas visibles y evaluá el grosor (finas vs. gruesas). Ej: 5-6 fetas diagonales finas de pechuga ≈ media pechuga chica (~110-125 g), NO una pechuga entera. En granos/cereales (arroz, quinoa) y ensaladas, evaluá la altura o profundidad de la capa (si es una base plana o una montaña). " +
+  "3) Si no hay NINGUNA referencia visible, recién ahí usá una porción típica de una persona y no exageres: una pechuga ~150-200 g, una guarnición ~150-200 g, un plato principal completo ~350-600 g. Ante la duda, elegí la porción normal, no la grande. " +
   "kcal, proteina, carbohidratos y grasas = valores TOTALES de esa porción (NO por 100 g). " +
   "Estimá SIEMPRE, incluso si dudás: devolvé tu mejor estimación, nunca dejes campos en 0. " +
   "confianza entre 0 y 1. " +
   "Referencias de escala: si en la imagen hay un círculo blanco, representa un plato estándar de ~26 cm de diámetro; usalo para calcular el tamaño real. " +
-  "Usá porciones TÍPICAS de una persona y NO exageres: una pechuga de pollo ~150-200 g, una guarnición ~150-200 g, un plato principal completo ~350-600 g. " +
-  "Ante la duda, elegí la porción normal, no la grande. " +
   'Si el usuario da indicaciones, usalas para aclarar o ajustar alimentos y cantidades (ej: si dice "es una empanada de carne", el elemento es empanada de carne). ' +
   'Si no hay comida reconocible, devolvé {"alimentos":[]}.';
 
