@@ -1,6 +1,8 @@
 "use client";
-import { useState, useEffect, useRef, ReactNode } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
+
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 function FadeIn({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -160,7 +162,9 @@ function Carousel({ items, frame, onImage }: { items: Shot[]; frame: "laptop" | 
   const n = items.length;
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [height, setHeight] = useState<number>();
   const touchX = useRef<number | null>(null);
+  const slideRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const goTo = (k: number) => setIndex(((k % n) + n) % n);
   const move = (delta: number) => setIndex((p) => (p + delta + n) % n);
@@ -175,12 +179,26 @@ function Carousel({ items, frame, onImage }: { items: Shot[]; frame: "laptop" | 
     items.forEach((it) => { const img = new Image(); img.src = it.src; });
   }, [items]);
 
+  useIsoLayoutEffect(() => {
+    const el = slideRefs.current[index];
+    if (el) setHeight(el.offsetHeight);
+  }, [index]);
+
+  useEffect(() => {
+    const onResize = () => {
+      const el = slideRefs.current[index];
+      if (el) setHeight(el.offsetHeight);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [index]);
+
   const active = items[index];
 
   return (
     <div className="relative" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <div
-        className="w-full flex items-center justify-center"
+        className="w-full"
         onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
         onTouchEnd={(e) => {
           if (touchX.current === null) return;
@@ -189,18 +207,33 @@ function Carousel({ items, frame, onImage }: { items: Shot[]; frame: "laptop" | 
           touchX.current = null;
         }}
       >
-        <div key={index} className="w-full flex justify-center animate-slide-in">
-          {frame === "laptop" ? (
-            <LaptopFrame src={active.src} alt={active.title} ratio={active.ratio} onClick={() => onImage(active.src, active.title)} />
-          ) : (
-            <PhoneFrame src={active.src} alt={active.title} large={active.large} onClick={() => onImage(active.src, active.title)} />
-          )}
+        <div
+          className="relative w-full overflow-hidden"
+          style={{ height: height !== undefined ? `${height}px` : undefined, transition: "height 560ms cubic-bezier(0.4, 0, 0.2, 1)" }}
+        >
+          {items.map((it, k) => (
+            <div
+              key={it.src}
+              ref={(el) => { slideRefs.current[k] = el; }}
+              aria-hidden={k !== index}
+              className={`absolute inset-x-0 top-0 flex justify-center will-change-[opacity] ${k === index ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+              style={{ transition: "opacity 560ms cubic-bezier(0.4, 0, 0.2, 1)" }}
+            >
+              {frame === "laptop" ? (
+                <LaptopFrame src={it.src} alt={it.title} ratio={it.ratio} onClick={() => { if (k === index) onImage(it.src, it.title); }} />
+              ) : (
+                <PhoneFrame src={it.src} alt={it.title} large={it.large} onClick={() => { if (k === index) onImage(it.src, it.title); }} />
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
       <div className="text-center mt-8 sm:mt-10 max-w-2xl mx-auto min-h-[6.5rem] sm:min-h-[6rem]" aria-live="polite">
-        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">{active.title}</h3>
-        <p className="text-base sm:text-lg text-white/50 leading-relaxed">{active.desc}</p>
+        <div key={index} className="animate-caption-in">
+          <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">{active.title}</h3>
+          <p className="text-base sm:text-lg text-white/50 leading-relaxed">{active.desc}</p>
+        </div>
       </div>
 
       <div className="flex items-center justify-center gap-4 sm:gap-6 mt-6">
