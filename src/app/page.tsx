@@ -90,6 +90,95 @@ function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClos
   );
 }
 
+function Chevron({ dir }: { dir: "left" | "right" }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      {dir === "left" ? <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /> : <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />}
+    </svg>
+  );
+}
+
+type Shot = { src: string; title: string; desc: string; large?: boolean };
+
+function Carousel({ items, frame, onImage }: { items: Shot[]; frame: "laptop" | "phone"; onImage: (src: string, alt: string) => void }) {
+  const n = items.length;
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const touchX = useRef<number | null>(null);
+
+  const goTo = (k: number) => setIndex(((k % n) + n) % n);
+  const move = (delta: number) => setIndex((p) => (p + delta + n) % n);
+
+  useEffect(() => {
+    if (paused || n <= 1) return;
+    const t = setTimeout(() => setIndex((p) => (p + 1) % n), 6000);
+    return () => clearTimeout(t);
+  }, [index, paused, n]);
+
+  const active = items[index];
+
+  return (
+    <div className="relative" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      <div className="flex items-center justify-center gap-1.5 sm:gap-6">
+        <button
+          type="button"
+          onClick={() => move(-1)}
+          aria-label="Anterior"
+          className="shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-white/60 hover:text-white flex items-center justify-center transition-colors"
+        >
+          <Chevron dir="left" />
+        </button>
+
+        <div
+          className="flex-1 min-w-0 flex items-center justify-center"
+          onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
+          onTouchEnd={(e) => {
+            if (touchX.current === null) return;
+            const dx = e.changedTouches[0].clientX - touchX.current;
+            if (Math.abs(dx) > 50) move(dx < 0 ? 1 : -1);
+            touchX.current = null;
+          }}
+        >
+          <div key={index} className="w-full animate-fade-in">
+            {frame === "laptop" ? (
+              <LaptopFrame src={active.src} alt={active.title} onClick={() => onImage(active.src, active.title)} />
+            ) : (
+              <PhoneFrame src={active.src} alt={active.title} large={active.large} onClick={() => onImage(active.src, active.title)} />
+            )}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => move(1)}
+          aria-label="Siguiente"
+          className="shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-white/60 hover:text-white flex items-center justify-center transition-colors"
+        >
+          <Chevron dir="right" />
+        </button>
+      </div>
+
+      <div className="text-center mt-8 sm:mt-10 max-w-2xl mx-auto min-h-[6.5rem] sm:min-h-[6rem]" aria-live="polite">
+        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">{active.title}</h3>
+        <p className="text-base sm:text-lg text-white/50 leading-relaxed">{active.desc}</p>
+      </div>
+
+      <div className="flex items-center justify-center gap-2.5 mt-6">
+        {items.map((it, k) => (
+          <button
+            key={it.title}
+            type="button"
+            onClick={() => goTo(k)}
+            aria-label={`Ir a ${it.title}`}
+            aria-current={k === index}
+            className={`h-2 rounded-full transition-all duration-300 ${k === index ? "w-6 bg-accent" : "w-2 bg-white/20 hover:bg-white/40"}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const coachShots = [
   { src: "/images/landing/coach-dashboard.webp", title: "Panel de control", desc: "Todo tu negocio en un vistazo: actividad, alumnos, redes y progreso en tiempo real." },
   { src: "/images/landing/coach-students.webp", title: "Gestión de alumnos", desc: "Administrá pagos, estados y perfiles. Cada alumno con su plan personalizado." },
@@ -210,19 +299,9 @@ export default function LandingPage() {
             </p>
           </FadeIn>
 
-          <div className="space-y-20 sm:space-y-28">
-            {coachShots.map((shot, i) => (
-              <div key={shot.title} className={`flex flex-col ${i % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"} items-center gap-8 lg:gap-16`}>
-                <FadeIn delay={100} className="w-full lg:w-[55%]">
-                  <LaptopFrame src={shot.src} alt={shot.title} onClick={() => setLightbox({ src: shot.src, alt: shot.title })} />
-                </FadeIn>
-                <FadeIn delay={200} className="w-full lg:w-[45%] text-center lg:text-left">
-                  <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">{shot.title}</h3>
-                  <p className="text-base sm:text-lg text-white/50 leading-relaxed">{shot.desc}</p>
-                </FadeIn>
-              </div>
-            ))}
-          </div>
+          <FadeIn delay={100}>
+            <Carousel items={coachShots} frame="laptop" onImage={(src, alt) => setLightbox({ src, alt })} />
+          </FadeIn>
         </div>
       </section>
 
@@ -238,19 +317,9 @@ export default function LandingPage() {
             </p>
           </FadeIn>
 
-          <div className="space-y-20 sm:space-y-28">
-            {studentShots.map((shot, i) => (
-              <div key={shot.title} className={`flex flex-col ${i % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"} items-center gap-8 lg:gap-16 ${shot.large ? "lg:gap-20" : ""}`}>
-                <FadeIn delay={100} className={`w-full ${shot.large ? "lg:w-[60%]" : "lg:w-[50%]"} flex justify-center`}>
-                  <PhoneFrame src={shot.src} alt={shot.title} large={shot.large} onClick={() => setLightbox({ src: shot.src, alt: shot.title })} />
-                </FadeIn>
-                <FadeIn delay={200} className={`w-full ${shot.large ? "lg:w-[40%]" : "lg:w-[50%]"} text-center lg:text-left`}>
-                  <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">{shot.title}</h3>
-                  <p className="text-base sm:text-lg text-white/50 leading-relaxed">{shot.desc}</p>
-                </FadeIn>
-              </div>
-            ))}
-          </div>
+          <FadeIn delay={100}>
+            <Carousel items={studentShots} frame="phone" onImage={(src, alt) => setLightbox({ src, alt })} />
+          </FadeIn>
         </div>
       </section>
 
