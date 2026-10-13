@@ -106,6 +106,9 @@ export async function crearPreapproval(args: {
   plan: { id: string; nombre: string; precioCobro: number };
   /** Cambio de plan: fecha ISO en el futuro en la que arranca el nuevo plan. No debita nada hoy. */
   startDate?: string | null;
+  /** URL de retorno tras pagar. Por defecto, la página de suscripción del coach.
+   *  El plan de alumnos vuelve a la sección "Escanear mi comida". */
+  backUrl?: string | null;
 }): Promise<{ ok: true; init_point: string; id: string } | { ok: false; error: string; status: number }> {
   const token = mpAccessToken();
   if (!token) return { ok: false, error: "MP_ACCESS_TOKEN no configurado", status: 500 };
@@ -123,7 +126,7 @@ export async function crearPreapproval(args: {
     reason: `Viking ${args.plan.nombre} — ${args.plan.precioCobro.toLocaleString("es-AR")} ARS/mes`,
     external_reference: refSuscripcion(args.userId, args.plan.id),
     payer_email: args.email,
-    back_url: `${base}/experimental/subscription?estado=ok`,
+    back_url: args.backUrl ?? `${base}/experimental/subscription?estado=ok`,
     notification_url: `${base}/api/experimental/webhook`,
     status: "pending",
     auto_recurring: autoRecurring,

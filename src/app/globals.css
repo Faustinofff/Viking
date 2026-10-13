@@ -89,3 +89,16 @@
 .animate-caption-in {
   animation: caption-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
+@keyframes escaner-glow {
+  0%, 100% {
+    border-color: rgba(34, 211, 238, 0.5);
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
+  }
+  50% {
+    border-color: rgba(34, 211, 238, 1);
+    box-shadow: 0 0 22px rgba(34, 211, 238, 0.7);
+  }
+}
+.animate-escaner-glow {
+  animation: escaner-glow 2.2s ease-in-out infinite;
+}

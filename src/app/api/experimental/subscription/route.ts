@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   EXPERIMENTAL_CURRENCY,
   PLANES_SUSCRIPCION,
+  PLAN_ALUMNO_IA,
   planIdDesdeRef,
   planSuscripcionPorId,
   refSuscripcion,
@@ -174,6 +175,12 @@ export async function POST(req: NextRequest) {
     origin: origenDe(req),
     plan: { id: plan.id, nombre: plan.nombre, precioCobro: plan.precioCobro },
     startDate: cambioDePlan ? startDate : null,
+    // El plan de alumnos vuelve a la sección "Escanear mi comida"; los de coach,
+    // a la página de suscripción de siempre.
+    backUrl:
+      plan.id === PLAN_ALUMNO_IA.id
+        ? `${origenDe(req)}/alumno/nutricion/escanear?estado=ok`
+        : null,
   });
 
   if (!creado.ok) {

@@ -45,8 +45,24 @@ export const PLANES_SUSCRIPCION: PlanSuscripcion[] = [
   },
 ];
 
+/**
+ * Plan de suscripción para ALUMNOS (sección "Escanear mi comida").
+ * Vive FUERA de PLANES_SUSCRIPCION a propósito: así no aparece en las grillas de
+ * coaches, pero planSuscripcionPorId() lo resuelve para que la API de suscripción
+ * y el webhook funcionen igual que con los planes de coach.
+ */
+export const PLAN_ALUMNO_IA: PlanSuscripcion = {
+  id: "alumno_ia",
+  nombre: "Alumno IA",
+  precioMuestra: 7500,
+  precioCobro: 7500,
+  personalizacion: false,
+  paginaWeb: false,
+};
+
 export function planSuscripcionPorId(id?: string | null): PlanSuscripcion | undefined {
-  return PLANES_SUSCRIPCION.find((p) => p.id === (id ?? "").trim());
+  const key = (id ?? "").trim();
+  return PLANES_SUSCRIPCION.find((p) => p.id === key) ?? (PLAN_ALUMNO_IA.id === key ? PLAN_ALUMNO_IA : undefined);
 }
 
 /** Formatea el precio de muestra: 16999 → "16.999". */
