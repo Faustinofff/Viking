@@ -1,7 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Camera, ChevronRight } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { getStudentNutritionPlans } from "@/lib/data";
+import { ESCANER_TEST_EMAIL } from "@/lib/meal-log";
+import { mostrarNovedadEscaner } from "@/lib/escaner-novedad";
 
 const DIAS_SEMANA = [
   { value: "lunes", label: "Lunes" },
@@ -33,8 +37,16 @@ export default function StudentNutricionPage() {
   const getPlanesAlumno = useAppStore((s) => s.getPlanesAlumno);
   const [refreshing, setRefreshing] = useState(false);
   const [checkedMeals, setCheckedMeals] = useState<Set<string>>(loadChecks);
+  const [mostrarNuevo, setMostrarNuevo] = useState(false);
 
   const alumno = alumnos.find((a) => a.email === usuario?.email);
+
+  // Badge "NUEVO": se calcula en el cliente (localStorage) para evitar
+  // desajustes de hidratación.
+  useEffect(() => {
+    if (!alumno?.id) return;
+    setMostrarNuevo(mostrarNovedadEscaner(alumno.id));
+  }, [alumno?.id]);
 
   // Re-fetch nutrition plans from Supabase on mount
   useEffect(() => {
@@ -82,31 +94,48 @@ export default function StudentNutricionPage() {
     );
   }
 
-  if (!plan && !refreshing) {
-    return (
-      <div className="p-5 max-w-lg mx-auto text-center pt-20">
-        <p className="text-white/40 mb-2">Aún no tienes un plan nutricional</p>
-        <p className="text-white/20 text-sm">Tu coach te asignará uno pronto.</p>
-      </div>
-    );
-  }
-
-  if (refreshing && !plan) {
-    return (
-      <div className="p-5 max-w-lg mx-auto text-center pt-20">
-        <p className="text-white/30">Cargando plan nutricional...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="p-5 max-w-lg mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold text-white">Mi Nutrición</h1>
-        <p className="text-white/40 text-sm mt-0.5">{plan!.nombre}</p>
+        <p className="text-white/40 text-sm mt-0.5">{plan?.nombre ?? "Tu plan de alimentación"}</p>
       </div>
 
-      {DIAS_SEMANA.map((d) => {
+      <Link
+        href="/alumno/nutricion/escanear"
+        className="card-hover animate-escaner-glow w-full flex items-center gap-3 text-left"
+      >
+        <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center shrink-0">
+          <Camera className="w-5 h-5 text-accent" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-white">Escanear mi comida</p>
+            {mostrarNuevo && (
+              <span className="text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-accent text-bg-primary shadow-[0_0_10px_rgba(0,229,255,0.55)]">
+                Nuevo
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-white/40">Identifica calorías y macros de tu plato</p>
+        </div>
+        <ChevronRight className="w-4 h-4 text-white/30" />
+      </Link>
+
+      {!plan && refreshing && (
+        <div className="card text-center py-10">
+          <p className="text-white/30">Cargando plan nutricional...</p>
+        </div>
+      )}
+
+      {!plan && !refreshing && (
+        <div className="card text-center py-10">
+          <p className="text-white/40 mb-2">Aún no tienes un plan nutricional</p>
+          <p className="text-white/20 text-sm">Tu coach te asignará uno pronto.</p>
+        </div>
+      )}
+
+      {plan && DIAS_SEMANA.map((d) => {
         const dia = plan!.dias.find((pd) => pd.diaSemana === d.value);
         const esHoy = d.value === diaHoy;
         return (

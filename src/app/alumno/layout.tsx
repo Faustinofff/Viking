@@ -1,8 +1,10 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
+import { registrarAperturaEscaner, mostrarNovedadEscaner } from "@/lib/escaner-novedad";
+import { ESCANER_TEST_EMAIL } from "@/lib/meal-log";
 import ChatDialog from "@/components/chat";
 import StudentBranding from "@/components/student-branding";
 
@@ -16,12 +18,27 @@ const NAV = [
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const usuario = useAppStore((s) => s.usuarioActual);
+  const alumnos = useAppStore((s) => s.alumnos);
+  const alumno = alumnos.find((a) => a.email === usuario?.email);
+  const esCuentaPrueba = (usuario?.email ?? "").toLowerCase() === ESCANER_TEST_EMAIL;
+  const [novedadEscaner, setNovedadEscaner] = useState(false);
 
   useEffect(() => {
     if (usuario?.rol === "alumno") {
       useAppStore.getState().syncStudentData();
     }
   }, [usuario?.id]);
+
+  useEffect(() => {
+    if (alumno?.id) registrarAperturaEscaner(alumno.id);
+  }, [alumno?.id]);
+
+  // Relee el estado de "novedad" al cambiar de sección: así el punto de la
+  // barra desaparece apenas el alumno abre "Escanear mi comida".
+  useEffect(() => {
+    if (alumno?.id) setNovedadEscaner(mostrarNovedadEscaner(alumno.id));
+    else setNovedadEscaner(false);
+  }, [alumno?.id, pathname]);
 
   if (!usuario || usuario.rol !== "alumno") {
     return (
@@ -79,6 +96,11 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                 >
                   <span className={`relative flex items-center justify-center w-12 h-8 rounded-full transition-all duration-300 ${active ? "bg-accent/15 scale-110" : ""}`}>
                     <span className={`transition-all duration-300 ${active ? "text-accent" : "text-white/35"}`}>{item.icon}</span>
+                    {item.href === "/alumno/nutricion" && novedadEscaner && (
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center shadow-[0_0_8px_rgba(239,68,68,0.7)] animate-pulse">
+                        1
+                      </span>
+                    )}
                   </span>
                   <span className={`text-[10px] font-semibold whitespace-nowrap transition-colors duration-300 ${active ? "text-accent" : "text-white/30"}`}>{item.label}</span>
                 </Link>

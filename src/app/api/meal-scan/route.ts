@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buscarAlimento, calcularMacros, normalizar, sumarMacros, type FoodItem, type Macros } from "@/lib/food-catalog";
+import { FRANJAS, MAX_USOS_POR_FRANJA, fechaHoyAR } from "@/lib/meal-log";
 
 // Proveedor de visión configurable. Por defecto usa Groq (gratis, menos preciso).
 // Vía gratis hoy: Google Gemini (tier free, sin tarjeta). Key en https://aistudio.google.com/app/apikey
@@ -46,13 +47,97 @@ async function llmChat(messages: ChatMessage[], maxTokens: number, signal?: Abor
   return llamar(false);
 }
 
-// Gate temporal: solo la cuenta de prueba puede usar el escáner.
-const TEST_EMAIL = "pruebachequeo430@gmail.com";
+
 
 const MAX_IMAGE_CHARS = 4_000_000; // ~3 MB binarios (límite de body en Vercel ~4.5 MB)
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+
+const FRANJAS_VALIDAS = new Set(FRANJAS.map((f) => f.id as string));
+
+function getServiceClient() {
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
+
+function extractBlob(profile: any): { blob: Record<string, any>; originalUrl: string } {
+  let blob: Record<string, any> = {};
+  let originalUrl = "";
+  if (profile?.avatar_url) {
+    try {
+      const parsed = JSON.parse(profile.avatar_url);
+      if (typeof parsed === "object" && !Array.isArray(parsed)) {
+        blob = parsed;
+        originalUrl = blob._url ?? "";
+      }
+    } catch {
+      originalUrl = profile.avatar_url;
+    }
+  }
+  return { blob, originalUrl };
+}
+
+// Lee y consume un uso de IA para la franja del día.
+async function consumirUso(
+  userId: string,
+  franja: string
+): Promise<{ bloqueado: boolean; consumido: boolean; restantes: number | null }> {
+  if (!supabaseServiceKey) return { bloqueado: false, consumido: false, restantes: null };
+  const client = getServiceClient();
+  const { data: profile } = await client
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", userId)
+    .maybeSingle();
+  const { blob, originalUrl } = extractBlob(profile);
+  const fecha = fechaHoyAR();
+  const uses = blob.mealScanUses ?? {};
+  const dia = uses[fecha] ?? {};
+  const actual = Number(dia[franja]) || 0;
+  if (actual >= MAX_USOS_POR_FRANJA) return { bloqueado: true, consumido: false, restantes: 0 };
+  dia[franja] = actual + 1;
+  uses[fecha] = dia;
+  blob.mealScanUses = uses;
+  if (originalUrl) blob._url = originalUrl;
+  await client.from("profiles").update({ avatar_url: JSON.stringify(blob) }).eq("id", userId);
+  return { bloqueado: false, consumido: true, restantes: MAX_USOS_POR_FRANJA - dia[franja] };
+}
+
+// Devuelve un uso consumido cuando el análisis falla (no se le cobra al alumno).
+async function devolverUso(userId: string, franja: string): Promise<void> {
+  if (!supabaseServiceKey) return;
+  try {
+    const client = getServiceClient();
+    const { data: profile } = await client
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", userId)
+      .maybeSingle();
+    const { blob, originalUrl } = extractBlob(profile);
+    const fecha = fechaHoyAR();
+    const uses = blob.mealScanUses ?? {};
+    const dia = uses[fecha] ?? {};
+    dia[franja] = Math.max(0, (Number(dia[franja]) || 0) - 1);
+    uses[fecha] = dia;
+    blob.mealScanUses = uses;
+    if (originalUrl) blob._url = originalUrl;
+    await client.from("profiles").update({ avatar_url: JSON.stringify(blob) }).eq("id", userId);
+  } catch {}
+}
+
+async function usosRestantes(userId: string, franja: string | null): Promise<number | null> {
+  if (!supabaseServiceKey || !franja) return null;
+  const client = getServiceClient();
+  const { data: profile } = await client
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", userId)
+    .maybeSingle();
+  const { blob } = extractBlob(profile);
+  const actual = Number(blob.mealScanUses?.[fechaHoyAR()]?.[franja]) || 0;
+  return Math.max(0, MAX_USOS_POR_FRANJA - actual);
+}
 
 const SYSTEM_PROMPT =
   'Sos un nutricionista experto que analiza fotos de comidas. Devolvé SOLO un JSON con esta forma exacta: ' +
@@ -153,6 +238,8 @@ async function estimarMacrosTexto(nombres: string[]): Promise<EstimacionPor100[]
 }
 
 export async function POST(req: NextRequest) {
+  let franjaConsumida: string | null = null;
+  let scanUserId = "";
   try {
     if (!VISION_API_KEY) {
       return NextResponse.json({ error: "API de visión no configurada" }, { status: 500 });
@@ -169,19 +256,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
-    if ((user.email ?? "").toLowerCase() !== TEST_EMAIL) {
-      return NextResponse.json({ error: "Función no habilitada para esta cuenta" }, { status: 403 });
-    }
+    
+
+    scanUserId = user.id;
 
     const body = await req.json().catch(() => null);
     const image: string | undefined = body?.image;
     const indicaciones: string = (body?.indicaciones ?? "").toString().slice(0, 500);
+    const franjaRaw = (body?.franja ?? "").toString().toLowerCase();
+    const franja: string | null = FRANJAS_VALIDAS.has(franjaRaw) ? franjaRaw : null;
 
     if (!image || typeof image !== "string" || !image.startsWith("data:image/")) {
       return NextResponse.json({ error: "Imagen inválida" }, { status: 400 });
     }
     if (image.length > MAX_IMAGE_CHARS) {
       return NextResponse.json({ error: "La imagen es demasiado grande" }, { status: 413 });
+    }
+
+    // Límite de análisis con IA por franja (solo si viene franja y hay service key).
+    let usosRestantesFinal: number | null = null;
+    if (franja) {
+      const uso = await consumirUso(user.id, franja);
+      if (uso.bloqueado) {
+        return NextResponse.json(
+          { error: "Ya usaste los 3 análisis con IA de esta comida. Podés registrar la comida o editarla a mano.", usosRestantes: 0 },
+          { status: 429 }
+        );
+      }
+      if (uso.consumido) {
+        franjaConsumida = franja;
+        usosRestantesFinal = uso.restantes;
+      }
     }
 
     const userText = indicaciones.trim()
@@ -212,6 +317,7 @@ export async function POST(req: NextRequest) {
 
       if (content === null) {
         console.error("[meal-scan] Error del proveedor de visión");
+        if (franjaConsumida) { await devolverUso(user.id, franjaConsumida); franjaConsumida = null; usosRestantesFinal = await usosRestantes(user.id, franja); }
         return NextResponse.json({ error: "No se pudo analizar la imagen" }, { status: 502 });
       }
 
@@ -301,11 +407,16 @@ export async function POST(req: NextRequest) {
 
       const totales = sumarMacros(alimentos.map((a) => a.macros));
 
-      return NextResponse.json({ alimentos, totales });
+      if (usosRestantesFinal === null && franja) {
+        usosRestantesFinal = await usosRestantes(user.id, franja);
+      }
+
+      return NextResponse.json({ alimentos, totales, usosRestantes: usosRestantesFinal });
     } finally {
       clearTimeout(timeout);
     }
   } catch (err: any) {
+    if (franjaConsumida && scanUserId) await devolverUso(scanUserId, franjaConsumida);
     if (err?.name === "AbortError") {
       return NextResponse.json({ error: "El análisis tardó demasiado" }, { status: 504 });
     }
