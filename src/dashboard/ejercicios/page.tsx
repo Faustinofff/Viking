@@ -4,8 +4,8 @@ import { useAppStore, type Ejercicio } from "@/lib/store";
 import { useConfirmToast } from "@/components/toast";
 
 const MUSCLE_GROUPS = [
-  "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps",
-  "Cuádriceps", "Isquiotibiales", "Gemelos", "Abdomen", "Glúteos", "Full Body"
+  "Pecho", "Espalda", "Hombros", "Biceps", "Triceps",
+  "Cuadriceps", "Isquiotibiales", "Gemelos", "Abdomen", "Glúteos", "Full Body"
 ];
 
 export default function EjerciciosPage() {
