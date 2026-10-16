@@ -48,12 +48,14 @@ import {
   loadStudentApodos,
   saveEjercicioTutorial,
   loadEjercicioTutoriales,
+  saveEjercicioTutoriales,
   PLANES_PREMIUM,
   esCoachGratuito,
   type PremiumPlan,
   type PremiumData,
   type StudentActivity,
 } from "./data";
+import { EMAIL_MATIAS, LIBRERIA_MATIAS } from "./matias-library";
 import { trackActivity } from "./telemetry";
 import { getCoachBranding, saveStudentCoachId, clearStudentCoachId, getBrandingEnabled, cacheBrandingEnabled, loadCachedBrandingEnabled, type CoachBranding } from "./branding";
 import { getPaginaWebEnabled, cachePaginaWebEnabled, loadCachedPaginaWebEnabled } from "./pagina-web";
@@ -1188,6 +1190,42 @@ export const useAppStore = create<AppState>((set, get) => {
             if (nuevos.length > 0) {
               set((state) => ({ ejercicios: [...state.ejercicios, ...nuevos] as any }));
             }
+          }
+        }
+
+        // Seed MB Method library for the Matías coach account only
+        if (cprof?.email === EMAIL_MATIAS) {
+          const normM = (x: any) => String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").replace(/[^\w\s-]/g, "").trim();
+          const todos = (await getCoachExercises(coachId)).map((e: any) => ({ ...e, grupoMuscular: canonGrupo(e.grupoMuscular) }));
+          const byName = new Map<string, any>();
+          for (const e of todos) byName.set(normM(e.nombre), e);
+          for (const g of EJERCICIOS_GLOBALES) if (!byName.has(normM(g.nombre))) byName.set(normM(g.nombre), g);
+          const videosMatias: Record<string, string> = { ...(await loadEjercicioTutoriales(coachId)) };
+          let added = 0;
+          let videosAdded = 0;
+          LIBRERIA_MATIAS.forEach((it, i) => {
+            const k = normM(it.nombre);
+            let target = byName.get(k);
+            if (!target) {
+              target = { id: `ej_mat_${Date.now()}_${i}`, nombre: it.nombre, grupoMuscular: canonGrupo(it.grupoMuscular), equipo: "Bodyweight" };
+              todos.push(target);
+              byName.set(k, target);
+              added++;
+            }
+            if (it.video && !videosMatias[target.id]) {
+              videosMatias[target.id] = it.video;
+              videosAdded++;
+            }
+          });
+          if (added > 0) {
+            await saveCoachExercises(coachId, todos as any);
+            const idsMatias = new Set(get().ejercicios.map((e) => e.id));
+            const nuevosMatias = todos.filter((e: any) => !idsMatias.has(e.id));
+            if (nuevosMatias.length > 0) set((state) => ({ ejercicios: [...state.ejercicios, ...nuevosMatias] as any }));
+          }
+          if (added > 0 || videosAdded > 0) {
+            await saveEjercicioTutoriales(coachId, videosMatias);
+            set({ ejercicioTutoriales: videosMatias });
           }
         }
       } catch (e) { console.error("auto-apply library", e); }

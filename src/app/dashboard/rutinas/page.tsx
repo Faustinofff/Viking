@@ -17,8 +17,12 @@ const DIAS_SEMANA: { value: WeekDay; label: string }[] = [
 ];
 
 const MUSCLE_GROUPS = [
-  "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps",
-  "Cuádriceps", "Isquiotibiales", "Gemelos", "Abdomen", "Glúteos", "Full Body"
+  "Pecho", "Espalda", "Hombros", "Biceps", "Tríceps",
+  "Cuádriceps", "Isquiotibiales", "Glúteos", "Aductores", "Gemelos", "Antebrazos",
+  "Abdomen", "Deltoides anterior", "Deltoides lateral", "Deltoides posterior",
+  "Funcional", "Crossfit", "Calistenia",
+  "Movilidad de cadera", "Movilidad de tobillos", "Movilidad torácica", "Movilidad escapular", "Movilidad de muñecas",
+  "Full Body"
 ];
 
 export default function RutinasPage() {

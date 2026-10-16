@@ -4,8 +4,12 @@ import { useAppStore, type Ejercicio } from "@/lib/store";
 import { useConfirmToast } from "@/components/toast";
 
 const MUSCLE_GROUPS = [
-  "Pecho", "Espalda", "Hombros", "Biceps", "Triceps",
-  "Cuadriceps", "Isquiotibiales", "Gemelos", "Abdomen", "Glúteos", "Full Body"
+  "Pecho", "Espalda", "Hombros", "Biceps", "Tríceps",
+  "Cuádriceps", "Isquiotibiales", "Glúteos", "Aductores", "Gemelos", "Antebrazos",
+  "Abdomen", "Deltoides anterior", "Deltoides lateral", "Deltoides posterior",
+  "Funcional", "Crossfit", "Calistenia",
+  "Movilidad de cadera", "Movilidad de tobillos", "Movilidad torácica", "Movilidad escapular", "Movilidad de muñecas",
+  "Full Body"
 ];
 
 export default function EjerciciosPage() {

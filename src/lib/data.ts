@@ -961,6 +961,12 @@ export async function loadEjercicioTutoriales(coachId: string): Promise<Record<s
   return data.ejercicioTutoriales ?? {};
 }
 
+export async function saveEjercicioTutoriales(coachId: string, tutoriales: Record<string, string>) {
+  const { data, originalUrl } = await readProfileBlob(coachId);
+  data.ejercicioTutoriales = { ...(data.ejercicioTutoriales ?? {}), ...tutoriales };
+  await saveProfileBlob(coachId, data, originalUrl);
+}
+
 // ─── Payment Tracking ──────────────────────────────────────
 
 function getMonthKey(): string {
