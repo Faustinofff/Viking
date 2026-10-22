@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useAppStore, type WeekDay, type DiaRutina, type Rutina, type PlanNutricional, type DiaComida, type Comida } from "@/lib/store";
 import { useConfirmToast } from "@/components/toast";
-import { loadPaymentStatus, savePaymentStatus, resetMonthPayments } from "@/lib/data";
+import { loadPaymentStatus, savePaymentStatus, resetMonthPayments, calcularEstadoRutina, formatearFechaCorta } from "@/lib/data";
 
 const DIAS_SEMANA: { value: WeekDay; label: string }[] = [
   { value: "lunes", label: "Lunes" },
@@ -39,6 +39,53 @@ function comidasIguales(a: Comida[], b: Comida[]): boolean {
       JSON.stringify(ca.alimentos) === JSON.stringify(cb.alimentos) &&
       (ca.instrucciones ?? "") === (cb.instrucciones ?? "");
   });
+}
+
+type EstadoResumen = { estado: "activa" | "por_vencer" | "vencida"; diasRestantes: number; fechaCambio: Date };
+
+function resumenEstadoRutinas(rutinas: Rutina[]): EstadoResumen | null {
+  const rank: Record<string, number> = { activa: 0, por_vencer: 1, vencida: 2 };
+  let best: EstadoResumen | null = null;
+  for (const r of rutinas) {
+    const e = calcularEstadoRutina(r.fechaAsignacion, r.diasDuracion);
+    if (e.estado === "sin_periodo" || e.diasRestantes === null || !e.fechaCambio) continue;
+    const candidato: EstadoResumen = { estado: e.estado, diasRestantes: e.diasRestantes, fechaCambio: e.fechaCambio };
+    if (!best || rank[candidato.estado] > rank[best.estado]) best = candidato;
+  }
+  return best;
+}
+
+function EstadoBadge({ estado }: { estado: EstadoResumen["estado"] }) {
+  const label = estado === "vencida" ? "Vencida" : estado === "por_vencer" ? "Por vencer" : "Activa";
+  const cls = estado === "vencida"
+    ? "text-red-400 bg-red-500/10 border-red-500/20"
+    : estado === "por_vencer"
+      ? "text-yellow-400 bg-yellow-500/10 border-yellow-500/20"
+      : "text-green-400 bg-green-500/10 border-green-500/20";
+  return <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cls}`}>{label}</span>;
+}
+
+function ResumenEstadoRutinas({ rutinas }: { rutinas: Rutina[] }) {
+  const resumen = resumenEstadoRutinas(rutinas);
+  if (!resumen) return null;
+  return <EstadoBadge estado={resumen.estado} />;
+}
+
+function EstadoRutinaDetalle({ r }: { r: Rutina }) {
+  const { estado, diasRestantes, fechaCambio } = calcularEstadoRutina(r.fechaAsignacion, r.diasDuracion);
+  if (estado === "sin_periodo" || diasRestantes === null || !fechaCambio) return null;
+  const texto = estado === "vencida"
+    ? `Hay que cambiarla · venció el ${formatearFechaCorta(fechaCambio)}`
+    : estado === "por_vencer"
+      ? `Falta poco para el cambio · ${diasRestantes === 0 ? "vence hoy" : `${diasRestantes} ${diasRestantes === 1 ? "día restante" : "días restantes"}`}`
+      : `Activa · faltan ${diasRestantes} ${diasRestantes === 1 ? "día" : "días"} para el cambio`;
+  const color = estado === "vencida" ? "text-red-400" : estado === "por_vencer" ? "text-yellow-400" : "text-green-400";
+  return (
+    <div className="mt-1">
+      <p className={`text-[11px] font-medium ${color}`}>{texto}</p>
+      <p className="text-[10px] text-white/30">Asignada el {formatearFechaCorta(r.fechaAsignacion)} · Cambiar el {formatearFechaCorta(fechaCambio)}</p>
+    </div>
+  );
 }
 
 export default function AlumnosPage() {
@@ -121,7 +168,7 @@ export default function AlumnosPage() {
   const guardarRutinaEditada = async () => {
     if (!editRutina) return;
     const r = editRutina;
-    await asignarRutina({ coachId: r.coachId, nombre: r.nombre, alumnoId: r.alumnoId, mes: 1, anio: 2026, dias: editRutinaDias, activa: true });
+    await asignarRutina({ coachId: r.coachId, nombre: r.nombre, alumnoId: r.alumnoId, mes: 1, anio: 2026, dias: editRutinaDias, activa: true, diasDuracion: r.diasDuracion, fechaAsignacion: r.fechaAsignacion });
     await eliminarRutina(r.id);
     setEditRutina(null);
     setEditRutinaDias([]);
@@ -287,7 +334,10 @@ export default function AlumnosPage() {
                     </td>
                     <td className="px-6 py-4">
                       {rutinas.length > 0 ? (
-                        <span className="badge-green text-xs">{rutinas.length} activa(s)</span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="badge-green text-xs">{rutinas.length} activa(s)</span>
+                          <ResumenEstadoRutinas rutinas={rutinas} />
+                        </div>
                       ) : (
                         <span className="text-xs text-white/30">Sin rutina</span>
                       )}
@@ -353,6 +403,7 @@ export default function AlumnosPage() {
                 <div className="glass rounded-lg p-2.5 text-center">
                   <p className="text-[10px] text-white/40">Rutinas</p>
                   <p className="text-[11px] font-semibold text-white mt-0.5">{rutinas.length > 0 ? `${rutinas.length}` : "—"}</p>
+                  <div className="flex justify-center mt-1"><ResumenEstadoRutinas rutinas={rutinas} /></div>
                 </div>
                 <div className="glass rounded-lg p-2.5 text-center">
                   <p className="text-[10px] text-white/40">Nutrición</p>
@@ -416,8 +467,11 @@ export default function AlumnosPage() {
                       <div className="space-y-2">
                         {rutinas.map((r) => (
                           <div key={r.id} className="card-hover !p-3" onClick={() => setRutinaExpandida(rutinaExpandida === r.id ? null : r.id)}>
-                            <div className="flex items-start justify-between">
-                              <p className="text-sm font-medium text-white">{r.nombre}</p>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <p className="text-sm font-medium text-white truncate">{r.nombre}</p>
+                                <ResumenEstadoRutinas rutinas={[r]} />
+                              </div>
                               <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                                 <button onClick={() => abrirEditorRutina(r)} className="btn-ghost text-[10px] !px-1.5 !py-0.5">Editar</button>
                                 <button onClick={async () => { if (await confirm("¿Eliminar esta rutina?")) eliminarRutina(r.id); }} className="btn-danger text-[10px] !px-1.5 !py-0.5">✕</button>
@@ -425,6 +479,7 @@ export default function AlumnosPage() {
                             </div>
                             {rutinaExpandida === r.id && (
                               <div className="mt-2 space-y-1.5 border-t border-white/[0.06] pt-2">
+                                <EstadoRutinaDetalle r={r} />
                                 {r.dias.map((dia) => (
                                   <div key={dia.id}>
                                     <p className="text-[10px] font-semibold text-accent uppercase mb-1">{dia.nombre} · {dia.diaSemana}</p>

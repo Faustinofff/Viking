@@ -1024,4 +1024,60 @@ export async function saveStudentCurrentWeek(studentId: string, week: number): P
   await saveProfileBlob(studentId, data, originalUrl);
 }
 
+// ─── Routine Duration (per-route, coach-side) ──────────────────
+
+export interface RoutineMeta {
+  dias: number;
+  inicio: string;
+}
+
+export async function saveRoutineMeta(coachId: string, planId: string, meta: RoutineMeta): Promise<void> {
+  const { data, originalUrl } = await readProfileBlob(coachId);
+  data.routineMeta = { ...(data.routineMeta ?? {}), [planId]: meta };
+  await saveProfileBlob(coachId, data, originalUrl);
+}
+
+export async function loadRoutineMeta(coachId: string): Promise<Record<string, RoutineMeta>> {
+  const { data } = await readProfileBlob(coachId);
+  return data.routineMeta ?? {};
+}
+
+export const DIAS_AVISO_RUTINA = 7;
+
+export type EstadoRutina = "sin_periodo" | "activa" | "por_vencer" | "vencida";
+
+export interface ResultadoEstadoRutina {
+  estado: EstadoRutina;
+  diasRestantes: number | null;
+  fechaCambio: Date | null;
+}
+
+export function calcularEstadoRutina(
+  fechaAsignacion?: string | null,
+  diasDuracion?: number | null,
+  hoy: Date = new Date()
+): ResultadoEstadoRutina {
+  if (!fechaAsignacion || !diasDuracion || diasDuracion <= 0) {
+    return { estado: "sin_periodo", diasRestantes: null, fechaCambio: null };
+  }
+  const inicio = new Date(fechaAsignacion);
+  if (isNaN(inicio.getTime())) {
+    return { estado: "sin_periodo", diasRestantes: null, fechaCambio: null };
+  }
+  const fechaCambio = new Date(inicio.getTime());
+  fechaCambio.setDate(fechaCambio.getDate() + diasDuracion);
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diasRestantes = Math.round((startOfDay(fechaCambio) - startOfDay(hoy)) / 86400000);
+  const estado: EstadoRutina =
+    diasRestantes < 0 ? "vencida" : diasRestantes <= DIAS_AVISO_RUTINA ? "por_vencer" : "activa";
+  return { estado, diasRestantes, fechaCambio };
+}
+
+export function formatearFechaCorta(fecha?: string | Date | null): string {
+  if (!fecha) return "";
+  const d = fecha instanceof Date ? fecha : new Date(fecha);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
 

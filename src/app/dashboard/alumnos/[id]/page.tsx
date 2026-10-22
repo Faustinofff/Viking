@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { getCoachCompletionsBatch, getWaterToday } from "@/lib/data";
+import { getCoachCompletionsBatch, getWaterToday, calcularEstadoRutina, formatearFechaCorta } from "@/lib/data";
 
 export default function AlumnoDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -171,6 +171,22 @@ export default function AlumnoDetailPage() {
                     <p className="text-sm font-medium text-accent">{r.nombre}</p>
                     <Link href={`/dashboard/rutinas?alumnoId=${alumno.id}&editRutinaId=${r.id}`} className="btn-ghost text-xs">Editar</Link>
                   </div>
+                  {(() => {
+                    const e = calcularEstadoRutina(r.fechaAsignacion, r.diasDuracion);
+                    if (e.estado === "sin_periodo" || e.diasRestantes === null || !e.fechaCambio) return null;
+                    const texto = e.estado === "vencida"
+                      ? `Hay que cambiarla · venció el ${formatearFechaCorta(e.fechaCambio)}`
+                      : e.estado === "por_vencer"
+                        ? `Falta poco para el cambio · ${e.diasRestantes === 0 ? "vence hoy" : `${e.diasRestantes} ${e.diasRestantes === 1 ? "día restante" : "días restantes"}`}`
+                        : `Activa · faltan ${e.diasRestantes} ${e.diasRestantes === 1 ? "día" : "días"} para el cambio`;
+                    const color = e.estado === "vencida" ? "text-red-400" : e.estado === "por_vencer" ? "text-yellow-400" : "text-green-400";
+                    return (
+                      <div className="mb-2">
+                        <p className={`text-[11px] font-medium ${color}`}>{texto}</p>
+                        <p className="text-[10px] text-white/30">Asignada el {formatearFechaCorta(r.fechaAsignacion)} · Cambiar el {formatearFechaCorta(e.fechaCambio)}</p>
+                      </div>
+                    );
+                  })()}
                   {r.dias.map((dia) => (
                     <div key={dia.id} className={`glass rounded-xl p-3 border mb-2 ${weeklyCompletions[dia.id] ? "border-accent/20 bg-accent/[0.03]" : "border-white/[0.06]"}`}>
                       <div className="flex items-center justify-between mb-2">

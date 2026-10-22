@@ -49,6 +49,8 @@ import {
   saveEjercicioTutorial,
   loadEjercicioTutoriales,
   saveEjercicioTutoriales,
+  saveRoutineMeta,
+  loadRoutineMeta,
   PLANES_PREMIUM,
   esCoachGratuito,
   type PremiumPlan,
@@ -151,6 +153,8 @@ export interface Rutina {
   activa: boolean;
   creadoEn: string;
   indicacionesSemanales?: string[];
+  diasDuracion?: number;
+  fechaAsignacion?: string;
 }
 
 export interface Comida {
@@ -953,11 +957,16 @@ export const useAppStore = create<AppState>((set, get) => {
     const coachId = get().usuarioActual?.id ?? r.coachId;
     const ejercicios = get().ejercicios;
     const plan = await createWorkoutPlan(coachId, r.alumnoId, r.nombre, r.descripcion, r.mes, r.anio, r.dias, ejercicios, r.indicacionesSemanales);
+    const fechaAsignacion = r.fechaAsignacion ?? new Date().toISOString();
     const nueva: Rutina = {
       ...r,
       id: plan?.id ?? `rut_${Date.now()}`,
       creadoEn: new Date().toISOString(),
+      fechaAsignacion,
     };
+    if (r.diasDuracion && r.diasDuracion > 0) {
+      await saveRoutineMeta(coachId, nueva.id, { dias: r.diasDuracion, inicio: fechaAsignacion }).catch(() => {});
+    }
     const state = get();
     const alumno = state.alumnos.find((a) => a.id === r.alumnoId);
     const alumnoNombre = alumno ? (alumno.apodo || alumno.nombre) : "";
@@ -1026,6 +1035,7 @@ export const useAppStore = create<AppState>((set, get) => {
       }
 
       const plans = await getCoachWorkoutPlans(coachId);
+      const routineMeta = await loadRoutineMeta(coachId).catch(() => ({} as Record<string, { dias: number; inicio: string }>));
       const DAY_ORDER: Record<string, number> = { monday: 0, tuesday: 1, wednesday: 2, thursday: 3, friday: 4, saturday: 5, sunday: 6 };
       const parsedRutinas: Rutina[] = plans.map((p: any) => ({
         id: p.id,
@@ -1038,6 +1048,8 @@ export const useAppStore = create<AppState>((set, get) => {
         activa: true,
         creadoEn: p.created_at,
         indicacionesSemanales: parseIndicacionesSemanales(p.description),
+        diasDuracion: routineMeta[p.id]?.dias,
+        fechaAsignacion: routineMeta[p.id]?.inicio,
         dias: (p.workout_days ?? []).sort((a: any, b: any) => (DAY_ORDER[a.week_day] ?? 99) - (DAY_ORDER[b.week_day] ?? 99)).map((d: any) => {
           let ejercicios: any[] = [];
           try {
@@ -1077,8 +1089,14 @@ export const useAppStore = create<AppState>((set, get) => {
         const merged = [...state.rutinas];
         for (const r of parsedRutinas) {
           const idx = merged.findIndex((m) => m.id === r.id);
-          if (idx >= 0) merged[idx] = r;
-          else merged.push(r);
+          if (idx >= 0) {
+            const prev = merged[idx];
+            merged[idx] = {
+              ...r,
+              diasDuracion: r.diasDuracion ?? prev.diasDuracion,
+              fechaAsignacion: r.fechaAsignacion ?? prev.fechaAsignacion,
+            };
+          } else merged.push(r);
         }
         return { rutinas: merged };
       });
@@ -2065,7 +2083,7 @@ export const useAppStore = create<AppState>((set, get) => {
     const state = get();
     const rutina = state.unassignedRoutines.find((r) => r.id === routineId);
     if (!rutina) return;
-    await get().asignarRutina({ ...rutina, alumnoId });
+    await get().asignarRutina({ ...rutina, alumnoId, fechaAsignacion: undefined });
     await get().deleteUnassignedRoutine(routineId);
   },
 

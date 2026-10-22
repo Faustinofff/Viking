@@ -65,6 +65,22 @@ export default function RutinasPage() {
   const [assignSearch, setAssignSearch] = useState("");
   const [indicacionesSemanales, setIndicacionesSemanales] = useState<string[]>(["", "", "", ""]);
   const [showIndicaciones, setShowIndicaciones] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [diasParaTodos, setDiasParaTodos] = useState("");
+  const [diasPorAlumno, setDiasPorAlumno] = useState<Record<string, string>>({});
+
+  const parseDiasDuracion = (v?: string): number | undefined => {
+    const n = parseInt(v ?? "", 10);
+    return Number.isFinite(n) && n > 0 ? n : undefined;
+  };
+
+  const aplicarDiasATodos = () => {
+    const v = parseDiasDuracion(diasParaTodos);
+    if (!v) return;
+    const next: Record<string, string> = { ...diasPorAlumno };
+    for (const id of alumnoIds) next[id] = String(v);
+    setDiasPorAlumno(next);
+  };
 
   const abrirEditor = (rutina: Rutina) => {
     setNombre(rutina.nombre);
@@ -83,6 +99,9 @@ export default function RutinasPage() {
       }),
     })));
     setIndicacionesSemanales(rutina.indicacionesSemanales ?? ["", "", "", ""]);
+    setShowAdvanced(false);
+    setDiasParaTodos("");
+    setDiasPorAlumno({});
     setEditandoId(rutina.id);
     setShowBuilder(true);
   };
@@ -192,7 +211,7 @@ export default function RutinasPage() {
               ),
             }));
           } else {
-            await asignarRutina({ coachId, nombre: nombre.trim(), alumnoId: studentId, mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi });
+            await asignarRutina({ coachId, nombre: nombre.trim(), alumnoId: studentId, mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi, diasDuracion: parseDiasDuracion(diasPorAlumno[studentId]) ?? parseDiasDuracion(diasParaTodos) });
           }
         }
         if (oldStudentId && !alumnoIds.includes(oldStudentId)) {
@@ -202,7 +221,7 @@ export default function RutinasPage() {
         resetForm();
       } else {
         for (const id of alumnoIds) {
-          await asignarRutina({ coachId, nombre: nombre.trim(), alumnoId: id, mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi });
+          await asignarRutina({ coachId, nombre: nombre.trim(), alumnoId: id, mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi, diasDuracion: parseDiasDuracion(diasPorAlumno[id]) ?? parseDiasDuracion(diasParaTodos) });
         }
         setShowBuilder(false);
         resetForm();
@@ -306,6 +325,9 @@ export default function RutinasPage() {
     setAlumnoSearch("");
     setShowAssignPicker(null);
     setAssignSearch("");
+    setShowAdvanced(false);
+    setDiasParaTodos("");
+    setDiasPorAlumno({});
     useAppStore.getState().setPageDraft("rutinas", {});
   }, [alumnoIdParam]);
   const [alumnoSearch, setAlumnoSearch] = useState("");
@@ -528,6 +550,43 @@ export default function RutinasPage() {
                 </label>
               </div>
             </div>
+
+            {!noAssign && !editandoId && alumnoIds.length > 0 && (
+              <div className="mb-6">
+                <button type="button" onClick={() => setShowAdvanced((v) => !v)}
+                  className="btn-ghost text-sm w-full border border-dashed border-white/[0.1] py-2 rounded-lg">
+                  {showAdvanced ? "Ocultar configuración avanzada" : "⚙️ Configuración avanzada"}
+                </button>
+                {showAdvanced && (
+                  <div className="mt-3 glass rounded-xl border border-white/[0.06] p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+                      <div className="flex-1">
+                        <label className="label block mb-1.5">Días de rutina para todos</label>
+                        <input type="number" min={1} className="input" placeholder="Ej: 30"
+                          value={diasParaTodos} onChange={(e) => setDiasParaTodos(e.target.value)} />
+                      </div>
+                      <button type="button" onClick={aplicarDiasATodos} disabled={!parseDiasDuracion(diasParaTodos)}
+                        className="btn-secondary">Aplicar a todos</button>
+                    </div>
+                    <div className="space-y-2">
+                      {alumnoIds.map((id) => {
+                        const a = alumnos.find((al) => al.id === id);
+                        return (
+                          <div key={id} className="flex items-center gap-2">
+                            <span className="flex-1 text-sm text-white/70 truncate">{a?.apodo || a?.nombre || id}</span>
+                            <input type="number" min={1} className="input !w-28" placeholder="Sin período"
+                              value={diasPorAlumno[id] ?? ""}
+                              onChange={(e) => setDiasPorAlumno({ ...diasPorAlumno, [id]: e.target.value })} />
+                            <span className="text-[10px] text-white/30 w-8">días</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[11px] text-white/30">Opcional. Si lo dejás vacío, la rutina no vence. El aviso al coach aparece 7 días antes del cambio.</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="space-y-4 mb-6">
               <div className="flex items-center justify-between">
