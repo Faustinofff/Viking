@@ -60,6 +60,7 @@ export default function RutinasPage() {
   const [dias, setDias] = useState<DiaRutina[]>(draft.dias ?? []);
   const [showBuilder, setShowBuilder] = useState(draft.showBuilder ?? false);
   const [editandoId, setEditandoId] = useState<string | null>(draft.editandoId ?? null);
+  const [editandoUnassignedId, setEditandoUnassignedId] = useState<string | null>(null);
   const [expandidoId, setExpandidoId] = useState<string | null>(null);
   const [showAssignPicker, setShowAssignPicker] = useState<string | null>(null);
   const [assignSearch, setAssignSearch] = useState("");
@@ -187,12 +188,23 @@ export default function RutinasPage() {
     const coachId = useAppStore.getState().usuarioActual?.id ?? "";
     const wi = indicacionesSemanales.some((s) => s.trim()) ? indicacionesSemanales : undefined;
     const stPre = useAppStore.getState();
-    if (noAssign && !editandoId) stPre.verificarCupoRutinas(1);
-    else if (!noAssign && !editandoId) stPre.verificarCupoRutinas(alumnoIds.length);
+    if (noAssign && !editandoId && !editandoUnassignedId) stPre.verificarCupoRutinas(1);
+    else if (!noAssign && !editandoId && !editandoUnassignedId) stPre.verificarCupoRutinas(alumnoIds.length);
     setSaving(true);
     setSaveError("");
     try {
-      if (noAssign) {
+      if (editandoUnassignedId) {
+        deleteUnassignedRoutine(editandoUnassignedId);
+        if (noAssign) {
+          await saveUnassignedRoutine({ coachId, nombre: nombre.trim(), alumnoId: "", mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi });
+        } else {
+          for (const id of alumnoIds) {
+            await asignarRutina({ coachId, nombre: nombre.trim(), alumnoId: id, mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi, diasDuracion: parseDiasDuracion(diasPorAlumno[id]) ?? parseDiasDuracion(diasParaTodos) });
+          }
+        }
+        setShowBuilder(false);
+        resetForm();
+      } else if (noAssign) {
         if (editandoId) {
           deleteUnassignedRoutine(editandoId);
           await eliminarRutina(editandoId);
@@ -314,6 +326,7 @@ export default function RutinasPage() {
     setNoAssign(false);
     setDias([]);
     setEditandoId(null);
+    setEditandoUnassignedId(null);
     setIndicacionesSemanales(["", "", "", ""]);
     setSearchText("");
     setMuscleFilter("");
@@ -395,7 +408,7 @@ export default function RutinasPage() {
                   <h3 className="text-white font-semibold truncate min-w-0">{r.nombre}</h3>
                   <div className="flex items-center gap-1.5 justify-end" onClick={(e) => e.stopPropagation()}>
                     <button onClick={(e) => { e.stopPropagation(); exportRutinaExcel(r, alumnos); }} className="btn-ghost text-[10px] !px-1.5 !py-1"><img src="/excel.png" alt="Excel" className="w-3.5 h-3.5 inline-block align-middle" /></button>
-                    <button onClick={() => { resetForm(); setNombre(r.nombre); setDias(r.dias); setIndicacionesSemanales(r.indicacionesSemanales ?? ["", "", "", ""]); setEditandoId(r.id); setNoAssign(true); setShowBuilder(true); }} className="btn-ghost text-[10px] !px-1.5 !py-1">Editar</button>
+                    <button onClick={() => { resetForm(); setNombre(r.nombre); setDias(r.dias); setIndicacionesSemanales(r.indicacionesSemanales ?? ["", "", "", ""]); setEditandoUnassignedId(r.id); setNoAssign(true); setShowBuilder(true); }} className="btn-ghost text-[10px] !px-1.5 !py-1">Editar</button>
                     <button onClick={() => setShowAssignPicker(showAssignPicker === r.id ? null : r.id)} className="text-[10px] font-semibold bg-accent text-bg-primary px-2 py-1 rounded-lg hover:brightness-110 transition-all whitespace-nowrap">Asignar</button>
                     <button onClick={async () => { if (await confirm("¿Eliminar esta rutina guardada?")) deleteUnassignedRoutine(r.id); }} className="btn-danger text-[10px] !px-1.5 !py-1">✕</button>
                   </div>
@@ -538,7 +551,7 @@ export default function RutinasPage() {
         <div className="fixed inset-0 bg-black/70 flex items-start justify-center z-50 p-4 pt-6 overflow-y-auto" onClick={() => { setShowBuilder(false); resetForm(); }}>
           <div className="card w-full max-w-5xl max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">{editandoId ? "Editar Rutina" : "Nueva Rutina"}</h2>
+              <h2 className="text-xl font-bold text-white">{editandoId || editandoUnassignedId ? "Editar Rutina" : "Nueva Rutina"}</h2>
               <button onClick={() => { setShowBuilder(false); resetForm(); }} className="text-white/40 hover:text-white text-lg">✕</button>
             </div>
 
@@ -751,7 +764,7 @@ export default function RutinasPage() {
             <div className="flex gap-2 pt-4 border-t border-white/[0.06]">
               <button onClick={() => { setShowBuilder(false); resetForm(); }} className="btn-secondary flex-1">Cancelar</button>
               <button onClick={handleSave} disabled={!nombre || (!noAssign && alumnoIds.length === 0) || dias.length === 0 || saving} className="btn-primary flex-1">
-                {saving ? "Guardando..." : editandoId ? "Guardar Cambios" : noAssign ? "Guardar (sin asignar)" : "Asignar Rutina" + (alumnoIds.length > 1 ? ` (${alumnoIds.length} alumnos)` : "")}
+                {saving ? "Guardando..." : (editandoId || editandoUnassignedId) ? "Guardar Cambios" : noAssign ? "Guardar (sin asignar)" : "Asignar Rutina" + (alumnoIds.length > 1 ? ` (${alumnoIds.length} alumnos)` : "")}
               </button>
             </div>
           </div>
