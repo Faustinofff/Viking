@@ -63,6 +63,8 @@ export default function RutinasPage() {
   const [expandidoId, setExpandidoId] = useState<string | null>(null);
   const [showAssignPicker, setShowAssignPicker] = useState<string | null>(null);
   const [assignSearch, setAssignSearch] = useState("");
+  const [assignDiasDuracion, setAssignDiasDuracion] = useState("");
+  const [showAssignAdvanced, setShowAssignAdvanced] = useState(false);
   const [indicacionesSemanales, setIndicacionesSemanales] = useState<string[]>(["", "", "", ""]);
   const [showIndicaciones, setShowIndicaciones] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -435,13 +437,25 @@ export default function RutinasPage() {
               <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider">Asignar rutina</h3>
               <button onClick={() => setShowAssignPicker(null)} className="text-white/40 hover:text-white text-lg">✕</button>
             </div>
+            <button type="button" onClick={() => setShowAssignAdvanced((v) => !v)}
+              className="btn-ghost text-sm w-full border border-dashed border-white/[0.1] py-2 rounded-lg mb-3">
+              {showAssignAdvanced ? "Ocultar configuración avanzada" : "⚙️ Configuración avanzada"}
+            </button>
+            {showAssignAdvanced && (
+              <div className="mb-3 glass rounded-xl border border-white/[0.06] p-3">
+                <label className="label block mb-1.5">Días de rutina (fecha límite)</label>
+                <input type="number" min={1} className="input" placeholder="Ej: 30"
+                  value={assignDiasDuracion} onChange={(e) => setAssignDiasDuracion(e.target.value)} />
+                <p className="text-[11px] text-white/30 mt-2">Opcional. Si lo dejás vacío, la rutina no vence. El aviso al coach aparece 7 días antes del cambio.</p>
+              </div>
+            )}
             <input className="input mb-3" placeholder="Buscar alumno..." value={assignSearch} onChange={(e) => setAssignSearch(e.target.value)} autoFocus />
             <div className="max-h-60 overflow-y-auto space-y-1">
               {alumnos.filter((a) => a.nombre.toLowerCase().includes(assignSearch.toLowerCase())).length === 0 && (
                 <p className="text-sm text-white/30 text-center py-4">No hay alumnos</p>
               )}
               {alumnos.filter((a) => a.nombre.toLowerCase().includes(assignSearch.toLowerCase())).map((a) => (
-                <button key={a.id} onClick={async () => { await assignUnassignedRoutine(showAssignPicker, a.id); setShowAssignPicker(null); setAssignSearch(""); }}
+                <button key={a.id} onClick={async () => { await assignUnassignedRoutine(showAssignPicker, a.id, parseDiasDuracion(assignDiasDuracion)); setShowAssignPicker(null); setAssignSearch(""); setAssignDiasDuracion(""); setShowAssignAdvanced(false); }}
                   className="w-full text-left px-3 py-2.5 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg transition-colors">
                   {a.nombre}
                 </button>

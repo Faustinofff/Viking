@@ -630,7 +630,7 @@ interface AppState {
   // Unassigned Routines & Plans
   saveUnassignedRoutine: (r: Omit<Rutina, "id" | "creadoEn">) => Promise<void>;
   deleteUnassignedRoutine: (id: string) => void;
-  assignUnassignedRoutine: (routineId: string, alumnoId: string) => Promise<void>;
+  assignUnassignedRoutine: (routineId: string, alumnoId: string, diasDuracion?: number) => Promise<void>;
   saveUnassignedPlan: (p: Omit<PlanNutricional, "id" | "creadoEn">) => Promise<void>;
   deleteUnassignedPlan: (id: string) => void;
   assignUnassignedPlan: (planId: string, alumnoId: string) => Promise<void>;
@@ -2079,11 +2079,11 @@ export const useAppStore = create<AppState>((set, get) => {
     if (coachId) saveCoachUnassignedRoutines(coachId, nuevas).catch(() => {});
   },
 
-  assignUnassignedRoutine: async (routineId, alumnoId) => {
+  assignUnassignedRoutine: async (routineId, alumnoId, diasDuracion) => {
     const state = get();
     const rutina = state.unassignedRoutines.find((r) => r.id === routineId);
     if (!rutina) return;
-    await get().asignarRutina({ ...rutina, alumnoId, fechaAsignacion: undefined });
+    await get().asignarRutina({ ...rutina, alumnoId, fechaAsignacion: undefined, diasDuracion });
     await get().deleteUnassignedRoutine(routineId);
   },
 
