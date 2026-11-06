@@ -294,10 +294,10 @@ const traditional = ["Excel / PDF", "WhatsApp", "Rutinas perdidas", "Seguimiento
 const viking = ["Plataforma profesional", "App guiada para alumnos", "Todo organizado por alumno", "Progreso automático", "Experiencia premium", "Comunicación en un clic"];
 
 const benefits = [
-  { icon: "🚀", title: "Más imagen profesional", desc: "Dale a tus alumnos una plataforma premium que eleva tu servicio por encima de la competencia." },
-  { icon: "⭐", title: "Mejor experiencia para el alumno", desc: "Entrenamientos guiados, videos, temporizador y plan nutricional en una app que les encanta usar." },
-  { icon: "⚡", title: "Menos trabajo administrativo", desc: "Olvidate de Excel, PDFs y cadenas de WhatsApp. Todo sincronizado y automático." },
-  { icon: "🎯", title: "Más tiempo para entrenar", desc: "Automatizá lo repetitivo y dedicale más tiempo a lo que importa: entrenar a tus alumnos." },
+  { title: "Tu propio logo", desc: "Tu nombre e ícono de la app. Tus alumnos abren la app y ven tu marca, no la nuestra." },
+  { title: "Tu propia página web", desc: "Una web con tu información e imágenes, lista para compartir en tu Instagram y atraer más alumnos." },
+  { title: "Tu app en el celular de tus alumnos", desc: "La app queda instalada con tu ícono y tu nombre en el teléfono de cada alumno." },
+  { title: "App completa para entrenar", desc: "Rutinas guiadas, videos, temporizador y nutrición. Todo con tu identidad, dentro de tu app." },
 ];
 
 export default function LandingPage() {
@@ -626,15 +626,17 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <FadeIn className="text-center mb-16">
             <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-              Por qué elegir Viking
+              Tu marca, en todo
             </h2>
+            <p className="text-base sm:text-lg text-white/50 mt-4 max-w-2xl mx-auto">
+              Una app, una web y una experiencia con tu nombre. Tus alumnos ven tu marca en cada detalle.
+            </p>
           </FadeIn>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {benefits.map((b, i) => (
               <FadeIn key={b.title} delay={i * 100}>
                 <div className="card h-full hover:bg-white/[0.06] transition-all duration-300">
-                  <div className="text-2xl sm:text-3xl mb-4">{b.icon}</div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">{b.title}</h3>
                   <p className="text-sm sm:text-base text-white/50 leading-relaxed">{b.desc}</p>
                 </div>
