@@ -97,6 +97,7 @@ export default function CoachDashboard() {
   const actividades = rawActividades.filter((a) => a.tipo !== "agua");
   const rutinas = useAppStore((s) => s.rutinas);
   const sesionesEntreno = useAppStore((s) => s.sesionesEntreno);
+  const [showAllActividades, setShowAllActividades] = useState(false);
 
   useEffect(() => { useAppStore.getState().syncCoachData(); }, []);
 
@@ -217,26 +218,67 @@ export default function CoachDashboard() {
         <div className="card">
           <h2 className="text-lg font-semibold text-white mb-4">Actividad Reciente</h2>
           <div className="space-y-3">
-            {actividades.slice(0, 6).map((act) => (
-              <div key={act.id} className="flex items-start gap-3 py-2 border-b border-white/[0.04] last:border-0">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0 ${
-                  act.tipo === "peso" ? "bg-blue-500/10" :
-                  act.tipo === "entreno" ? "bg-accent/10" : "bg-yellow-500/10"
-                }`}>
-                  {act.tipo === "peso" ? "⚖️" : act.tipo === "entreno" ? "💪" : "🏆"}
+            {actividades.slice(0, showAllActividades ? 6 : 3).map((act) => {
+              const style = act.tipo === "peso"
+                ? { wrap: "bg-sky-500/10 ring-sky-400/20", icon: "text-sky-400" }
+                : act.tipo === "entreno"
+                ? { wrap: "bg-accent/10 ring-accent/20", icon: "text-accent" }
+                : { wrap: "bg-amber-500/10 ring-amber-400/20", icon: "text-amber-400" };
+              return (
+                <div key={act.id} className="flex items-start gap-3 py-2 border-b border-white/[0.04] last:border-0">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ${style.wrap}`}>
+                    {act.tipo === "peso" ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`w-4 h-4 ${style.icon}`}>
+                        <path d="M12 3v18" />
+                        <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
+                        <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+                        <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+                        <path d="M7 21h10" />
+                      </svg>
+                    ) : act.tipo === "entreno" ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`w-4 h-4 ${style.icon}`}>
+                        <rect x="2" y="10" width="4" height="4" rx="1" />
+                        <rect x="18" y="10" width="4" height="4" rx="1" />
+                        <rect x="6" y="11" width="12" height="2" rx="1" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`w-4 h-4 ${style.icon}`}>
+                        <path d="M8 21h8" />
+                        <path d="M12 17v4" />
+                        <path d="M7 4h10v5a5 5 0 0 1-10 0z" />
+                        <path d="M17 5h2a2 2 0 0 1 0 4h-2" />
+                        <path d="M7 5H5a2 2 0 0 0 0 4h2" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white/80">
+                      <span className="font-medium text-white">{(() => { const al = alumnos.find((al) => al.id === act.alumnoId); return al?.apodo || al?.nombre || act.alumnoNombre; })()}</span>{" "}
+                      {act.mensaje}
+                    </p>
+                    <p className="text-xs text-white/30 mt-0.5">
+                      {new Date(act.timestamp).toLocaleDateString("es-AR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white/80">
-                    <span className="font-medium text-white">{(() => { const al = alumnos.find((al) => al.id === act.alumnoId); return al?.apodo || al?.nombre || act.alumnoNombre; })()}</span>{" "}
-                    {act.mensaje}
-                  </p>
-                  <p className="text-xs text-white/30 mt-0.5">
-                    {new Date(act.timestamp).toLocaleDateString("es-AR", { hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+          {actividades.length > 3 && (
+            <button
+              onClick={() => setShowAllActividades((v) => !v)}
+              className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-white/40 hover:text-accent transition-colors"
+            >
+              {showAllActividades ? "Ver menos" : "Ver más"}
+              <svg
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round"
+                className={`w-3.5 h-3.5 transition-transform duration-300 ${showAllActividades ? "rotate-180" : ""}`}
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
