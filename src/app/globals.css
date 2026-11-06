@@ -102,3 +102,108 @@
 .animate-escaner-glow {
   animation: escaner-glow 2.2s ease-in-out infinite;
 }
+
+/* ─── PILOT LIGHT THEME ───
+   Se activa con data-theme="light" y solo para la cuenta piloto. */
+[data-theme="light"] { color-scheme: light; }
+[data-theme="light"] body { background-color: #f4f5f7; color: #0f1419; }
+
+/* Superficies */
+[data-theme="light"] .bg-bg-primary { background-color: #f4f5f7; }
+[data-theme="light"] .bg-bg-secondary { background-color: #ffffff; }
+[data-theme="light"] .bg-bg-tertiary { background-color: #eceef2; }
+[data-theme="light"] .bg-bg-secondary\/95 { background-color: rgba(255, 255, 255, 0.95); }
+[data-theme="light"] .bg-bg-secondary\/65 { background-color: rgba(255, 255, 255, 0.8); }
+[data-theme="light"] .bg-surface { background-color: #ffffff; }
+[data-theme="light"] .bg-surface-hover { background-color: rgba(15, 20, 25, 0.06); }
+
+/* Texto */
+[data-theme="light"] .text-white { color: #0f1419; }
+[data-theme="light"] .text-white\/90 { color: rgba(15, 20, 25, 0.9); }
+[data-theme="light"] .text-white\/80 { color: rgba(15, 20, 25, 0.8); }
+[data-theme="light"] .text-white\/70 { color: rgba(15, 20, 25, 0.7); }
+[data-theme="light"] .text-white\/60 { color: rgba(15, 20, 25, 0.62); }
+[data-theme="light"] .text-white\/50 { color: rgba(15, 20, 25, 0.55); }
+[data-theme="light"] .text-white\/45 { color: rgba(15, 20, 25, 0.5); }
+[data-theme="light"] .text-white\/40 { color: rgba(15, 20, 25, 0.45); }
+[data-theme="light"] .text-white\/35 { color: rgba(15, 20, 25, 0.4); }
+[data-theme="light"] .text-white\/30 { color: rgba(15, 20, 25, 0.36); }
+[data-theme="light"] .text-white\/25 { color: rgba(15, 20, 25, 0.32); }
+[data-theme="light"] .text-white\/20 { color: rgba(15, 20, 25, 0.26); }
+[data-theme="light"] .text-white\/10 { color: rgba(15, 20, 25, 0.15); }
+
+/* Acentos y colores semánticos con contraste sobre blanco */
+[data-theme="light"] .text-accent { color: #009b80; }
+[data-theme="light"] .text-blue-400 { color: #2563eb; }
+[data-theme="light"] .text-red-400 { color: #dc2626; }
+[data-theme="light"] .text-yellow-400 { color: #a16207; }
+
+/* Bordes */
+[data-theme="light"] .border-white\/5 { border-color: rgba(15, 20, 25, 0.06); }
+[data-theme="light"] .border-white\/10 { border-color: rgba(15, 20, 25, 0.1); }
+[data-theme="light"] .border-white\/15 { border-color: rgba(15, 20, 25, 0.14); }
+[data-theme="light"] .border-white\/20 { border-color: rgba(15, 20, 25, 0.18); }
+[data-theme="light"] .border-white\/\[0\.04\] { border-color: rgba(15, 20, 25, 0.05); }
+[data-theme="light"] .border-white\/\[0\.05\] { border-color: rgba(15, 20, 25, 0.06); }
+[data-theme="light"] .border-white\/\[0\.06\] { border-color: rgba(15, 20, 25, 0.08); }
+[data-theme="light"] .border-white\/\[0\.08\] { border-color: rgba(15, 20, 25, 0.1); }
+[data-theme="light"] .border-white\/\[0\.1\] { border-color: rgba(15, 20, 25, 0.12); }
+
+/* Rellenos sutiles */
+[data-theme="light"] .bg-white\/5 { background-color: rgba(15, 20, 25, 0.03); }
+[data-theme="light"] .bg-white\/10 { background-color: rgba(15, 20, 25, 0.05); }
+[data-theme="light"] .bg-white\/40 { background-color: rgba(15, 20, 25, 0.18); }
+[data-theme="light"] .bg-white\/\[0\.02\] { background-color: rgba(15, 20, 25, 0.015); }
+[data-theme="light"] .bg-white\/\[0\.03\] { background-color: rgba(15, 20, 25, 0.025); }
+[data-theme="light"] .bg-white\/\[0\.04\] { background-color: rgba(15, 20, 25, 0.035); }
+[data-theme="light"] .bg-white\/\[0\.05\] { background-color: rgba(15, 20, 25, 0.04); }
+[data-theme="light"] .bg-white\/\[0\.06\] { background-color: rgba(15, 20, 25, 0.05); }
+[data-theme="light"] .bg-white\/\[0\.08\] { background-color: rgba(15, 20, 25, 0.06); }
+[data-theme="light"] .bg-white\/\[0\.1\] { background-color: rgba(15, 20, 25, 0.08); }
+
+/* Hover */
+[data-theme="light"] .hover\:bg-white\/5:hover { background-color: rgba(15, 20, 25, 0.04); }
+[data-theme="light"] .hover\:bg-white\/10:hover { background-color: rgba(15, 20, 25, 0.06); }
+[data-theme="light"] .hover\:bg-white\/\[0\.04\]:hover { background-color: rgba(15, 20, 25, 0.04); }
+[data-theme="light"] .hover\:bg-white\/\[0\.06\]:hover { background-color: rgba(15, 20, 25, 0.05); }
+[data-theme="light"] .hover\:bg-white\/\[0\.08\]:hover { background-color: rgba(15, 20, 25, 0.07); }
+[data-theme="light"] .hover\:text-white:hover { color: #0f1419; }
+[data-theme="light"] .hover\:text-white\/80:hover { color: rgba(15, 20, 25, 0.8); }
+[data-theme="light"] .hover\:text-white\/70:hover { color: rgba(15, 20, 25, 0.7); }
+[data-theme="light"] .hover\:text-white\/60:hover { color: rgba(15, 20, 25, 0.62); }
+[data-theme="light"] .hover\:text-white\/50:hover { color: rgba(15, 20, 25, 0.55); }
+[data-theme="light"] .hover\:border-white\/\[0\.06\]:hover { border-color: rgba(15, 20, 25, 0.12); }
+
+/* Componentes */
+[data-theme="light"] .card {
+  background-color: #ffffff;
+  border-color: rgba(15, 20, 25, 0.08);
+  box-shadow: 0 1px 2px rgba(15, 20, 25, 0.04), 0 10px 30px rgba(15, 20, 25, 0.05);
+}
+[data-theme="light"] .card-hover:hover { background-color: #ffffff; }
+[data-theme="light"] .card-glow { border-color: rgba(0, 155, 128, 0.3); }
+[data-theme="light"] .btn-secondary {
+  background-color: rgba(15, 20, 25, 0.05);
+  color: #0f1419;
+  border-color: rgba(15, 20, 25, 0.1);
+}
+[data-theme="light"] .btn-secondary:hover { background-color: rgba(15, 20, 25, 0.08); }
+[data-theme="light"] .btn-ghost { color: rgba(15, 20, 25, 0.62); }
+[data-theme="light"] .btn-ghost:hover { color: #0f1419; background-color: rgba(15, 20, 25, 0.06); }
+[data-theme="light"] .input {
+  background-color: #ffffff;
+  border-color: rgba(15, 20, 25, 0.12);
+  color: #0f1419;
+}
+[data-theme="light"] .input::placeholder { color: rgba(15, 20, 25, 0.4); }
+[data-theme="light"] .input:focus { background-color: rgba(0, 212, 170, 0.04); }
+[data-theme="light"] .label { color: rgba(15, 20, 25, 0.55); }
+[data-theme="light"] select.input,
+[data-theme="light"] select.select { color-scheme: light; }
+[data-theme="light"] select.input option,
+[data-theme="light"] select.select option { background: #ffffff; color: #0f1419; }
+
+[data-theme="light"] .badge-green { color: #007a63; }
+[data-theme="light"] .badge-blue { color: #1d4ed8; }
+[data-theme="light"] .badge-yellow { color: #a16207; }
+[data-theme="light"] .badge-red { color: #b91c1c; }
