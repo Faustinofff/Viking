@@ -7,46 +7,9 @@ import { supabase } from "@/lib/supabase";
 import { PLANES_SUSCRIPCION, formatearPrecio } from "@/lib/experimental";
 import { PLANES_PREMIUM, premiumHabilitaPersonalizacion, premiumHabilitaPaginaWeb } from "@/lib/data";
 import { esPaginaWebVisible } from "@/lib/pagina-web";
-import { esPilotoTemaClaro } from "@/lib/theme";
+import { ThemeToggle, usePilotTheme } from "@/components/theme-toggle";
 import ChatDialog from "@/components/chat";
 import AppBrandMark from "@/components/app-brand";
-
-function ThemeToggle({ light, onToggle, className = "" }: { light: boolean; onToggle: () => void; className?: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-label={light ? "Cambiar a modo oscuro" : "Cambiar a modo claro"}
-      title={light ? "Modo oscuro" : "Modo claro"}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-300 ${
-        light ? "border-accent/40 bg-accent/25" : "border-white/[0.12] bg-white/[0.08]"
-      } ${className}`}
-    >
-      <span className={`absolute left-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[#0f1419] shadow transition-transform duration-300 ${
-        light ? "translate-x-5" : "translate-x-0"
-      }`}>
-        {light ? (
-          <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-          </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
-        )}
-      </span>
-    </button>
-  );
-}
-
-/** Aplica el tema también a la raíz (html) y a la barra del navegador móvil. */
-function applyThemeMode(light: boolean) {
-  const root = document.documentElement;
-  root.setAttribute("data-theme", light ? "light" : "dark");
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", light ? "#F4F6F8" : "#0A0A0B");
-}
 
 const BOTTOM_NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
@@ -98,17 +61,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [planCargando, setPlanCargando] = useState<string | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
   const [payerEmail, setPayerEmail] = useState("");
-  const esPilotoTema = esPilotoTemaClaro(usuario?.email);
-  const [lightMode, setLightMode] = useState(false);
-
-  const toggleTheme = () => {
-    setLightMode((prev) => {
-      const next = !prev;
-      try { localStorage.setItem("viking_theme", next ? "light" : "dark"); } catch {}
-      applyThemeMode(next);
-      return next;
-    });
-  };
+  const { enabled: esPilotoTema, light: lightMode, toggle: toggleTheme } = usePilotTheme(usuario?.email);
 
   const suscribirse = async (planId: string) => {
     if (planCargando) return;
@@ -178,30 +131,6 @@ useAppStore.getState().refreshBrandingEnabled();
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
-
-  // Light theme pilot: only for the allow-listed coach account.
-  useEffect(() => {
-    const root = document.documentElement;
-    if (!esPilotoTema) {
-      root.removeAttribute("data-theme");
-      const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute("content", "#0A0A0B");
-      return;
-    }
-    let stored: string | null = null;
-    try { stored = localStorage.getItem("viking_theme"); } catch {}
-    const on = stored === "light";
-    setLightMode(on);
-    applyThemeMode(on);
-  }, [esPilotoTema]);
-
-  useEffect(() => {
-    return () => {
-      document.documentElement.removeAttribute("data-theme");
-      const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute("content", "#0A0A0B");
-    };
-  }, []);
 
   if (!usuario || usuario.rol !== "coach") {
     return (

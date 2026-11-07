@@ -7,6 +7,7 @@ import { registrarAperturaEscaner, mostrarNovedadEscaner } from "@/lib/escaner-n
 import { ESCANER_TEST_EMAIL } from "@/lib/meal-log";
 import ChatDialog from "@/components/chat";
 import StudentBranding from "@/components/student-branding";
+import { ThemeToggle, usePilotTheme } from "@/components/theme-toggle";
 
 const NAV = [
   { href: "/alumno", label: "Inicio", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5V20a2 2 0 0 1-2 2h-5v-6h-4v6H5a2 2 0 0 1-2-2z"/></svg> },
@@ -22,6 +23,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const alumno = alumnos.find((a) => a.email === usuario?.email);
   const esCuentaPrueba = (usuario?.email ?? "").toLowerCase() === ESCANER_TEST_EMAIL;
   const [novedadEscaner, setNovedadEscaner] = useState(false);
+  const { enabled: esPilotoTema, light: lightMode, toggle: toggleTheme } = usePilotTheme(usuario?.email);
 
   useEffect(() => {
     if (usuario?.rol === "alumno") {
@@ -64,6 +66,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           <StudentBranding />
         </div>
         <div className="flex items-center gap-3">
+          {esPilotoTema && <ThemeToggle light={lightMode} onToggle={toggleTheme} />}
           <Link href="/alumno/agenda"
             className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-all text-xs sm:text-sm ${
               pathname === "/alumno/agenda" || pathname.startsWith("/alumno/agenda") ? "bg-accent/10 text-accent" : "text-white/40 hover:text-white/70"
