@@ -43,7 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     brand = await resolvePwaBrand(uid);
   } catch {}
   return (
-    <html lang="es" className="dark" style={{ background: "#0a0a0b" }}>
+    <html lang="es" className="dark">
       <head>
         <link id="pwa-manifest" rel="manifest" href="/api/pwa-manifest" />
         <link id="pwa-apple-icon" rel="apple-touch-icon" sizes="180x180" href={brand.icon} />

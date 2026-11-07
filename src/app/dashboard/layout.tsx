@@ -40,6 +40,14 @@ function ThemeToggle({ light, onToggle, className = "" }: { light: boolean; onTo
   );
 }
 
+/** Aplica el tema también a la raíz (html) y a la barra del navegador móvil. */
+function applyThemeMode(light: boolean) {
+  const root = document.documentElement;
+  root.setAttribute("data-theme", light ? "light" : "dark");
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", light ? "#F4F6F8" : "#0A0A0B");
+}
+
 const BOTTOM_NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
   { href: "/dashboard/alumnos", label: "Alumnos", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
@@ -97,7 +105,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setLightMode((prev) => {
       const next = !prev;
       try { localStorage.setItem("viking_theme", next ? "light" : "dark"); } catch {}
-      document.documentElement.setAttribute("data-theme", next ? "light" : "dark");
+      applyThemeMode(next);
       return next;
     });
   };
@@ -176,17 +184,23 @@ useAppStore.getState().refreshBrandingEnabled();
     const root = document.documentElement;
     if (!esPilotoTema) {
       root.removeAttribute("data-theme");
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", "#0A0A0B");
       return;
     }
     let stored: string | null = null;
     try { stored = localStorage.getItem("viking_theme"); } catch {}
     const on = stored === "light";
     setLightMode(on);
-    root.setAttribute("data-theme", on ? "light" : "dark");
+    applyThemeMode(on);
   }, [esPilotoTema]);
 
   useEffect(() => {
-    return () => { document.documentElement.removeAttribute("data-theme"); };
+    return () => {
+      document.documentElement.removeAttribute("data-theme");
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", "#0A0A0B");
+    };
   }, []);
 
   if (!usuario || usuario.rol !== "coach") {
@@ -329,7 +343,7 @@ useAppStore.getState().refreshBrandingEnabled();
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 pointer-events-none" style={{ paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) - 14px), 6px)" }}>
         <div className="pointer-events-auto mx-auto max-w-md px-4">
-          <div className="flex items-stretch overflow-hidden rounded-full bg-bg-secondary/65 backdrop-blur-2xl border border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.45)] px-3 py-2">
+          <div className="bottom-nav-pill flex items-stretch overflow-hidden rounded-full bg-bg-secondary/65 backdrop-blur-2xl border border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.45)] px-3 py-2">
             {BOTTOM_NAV.map((item) => {
               const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
               return (

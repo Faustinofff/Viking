@@ -46,7 +46,7 @@ export default function AppBrandMark({ size = 64, showName = true }: AppBrandMar
         </div>
       )}
       {showName && (
-        <span className="font-bold" style={{ color: branding?.brandColor ?? "#fff" }}>
+        <span className="font-bold app-brand-name" style={branding?.brandColor ? { color: branding.brandColor } : undefined}>
           {hasMark ?? "Viking"}
         </span>
       )}

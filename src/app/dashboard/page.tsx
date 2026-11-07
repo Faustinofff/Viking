@@ -177,16 +177,16 @@ export default function CoachDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="card text-center py-4">
-          <p className="text-2xl font-bold text-accent">{totalAlumnos}</p>
-          <p className="text-xs text-white/40">Alumnos</p>
+          <p className="text-2xl font-bold text-accent metric-value">{totalAlumnos}</p>
+          <p className="text-xs text-white/40 metric-label">Alumnos</p>
         </div>
         <div className="card text-center py-4">
-          <p className="text-2xl font-bold text-blue-400">{totalRedes}</p>
-          <p className="text-xs text-white/40">Redes</p>
+          <p className="text-2xl font-bold text-blue-400 metric-value">{totalRedes}</p>
+          <p className="text-xs text-white/40 metric-label">Redes</p>
         </div>
         <div className="card text-center py-4">
-          <p className="text-2xl font-bold text-accent">{adherencePct}%</p>
-          <p className="text-xs text-white/40">Adherencia Prom.</p>
+          <p className="text-2xl font-bold text-accent metric-value">{adherencePct}%</p>
+          <p className="text-xs text-white/40 metric-label">Adherencia Prom.</p>
         </div>
       </div>
 
@@ -205,7 +205,7 @@ export default function CoachDashboard() {
                   {red.tipo === "gimnasio" ? <MapPin className="w-5 h-5 text-accent" strokeWidth={2} /> : <Laptop className="w-5 h-5 text-accent" strokeWidth={2} />}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-white">{red.nombre}</p>
+                  <p className="text-sm font-medium text-white red-name">{red.nombre}</p>
                   <p className="text-xs text-white/40">{red.tipo === "gimnasio" ? "Presencial" : "Online"} · {red.alumnoIds.length} alumnos</p>
                 </div>
                 <span className="text-white/20">→</span>
