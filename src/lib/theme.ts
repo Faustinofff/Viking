@@ -1,6 +1,7 @@
 export const PILOTO_TEMA_CLARO_EMAILS = [
   "faustinofiordalisi@gmail.com",
   "faustinofiordalisi5@gmail.com",
+  "pruebachequeo430@gmail.com",
 ];
 
 export function esPilotoTemaClaro(email?: string | null) {
