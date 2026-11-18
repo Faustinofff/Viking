@@ -106,6 +106,12 @@
   animation: escaner-glow 2.2s ease-in-out infinite;
 }
 
+/* Texto que debe permanecer blanco sobre fondos de acento (ej. check de comidas). */
+.text-on-accent { color: #FFFFFF; }
+
+/* Nombre de marca configurado en blanco: blanco en oscuro, negro en claro. */
+.brand-color-white { color: #FFFFFF; }
+
 /* ─── PILOT LIGHT THEME ───
    Se activa con data-theme="light" y solo para la cuenta piloto. */
 [data-theme="light"] { color-scheme: light; background-color: #F4F6F8; }
@@ -138,6 +144,9 @@
 [data-theme="light"] .text-white\/20 { color: #94A3B8; }
 [data-theme="light"] .text-white\/10 { color: #CBD5E1; }
 
+/* Nombre de marca blanco → negro para que se lea sobre el fondo claro. */
+[data-theme="light"] .brand-color-white { color: #111827; }
+
 /* Acentos y colores semánticos con contraste sobre blanco */
 [data-theme="light"] .text-accent { color: #0D9488; }
 [data-theme="light"] .text-blue-400 { color: #2563EB; }
@@ -154,6 +163,8 @@
 [data-theme="light"] .border-white\/10 { border-color: #E5E7EB; }
 [data-theme="light"] .border-white\/15 { border-color: #D1D5DB; }
 [data-theme="light"] .border-white\/20 { border-color: #CBD5E1; }
+[data-theme="light"] .border-white\/25 { border-color: #CBD5E1; }
+[data-theme="light"] .border-white\/30 { border-color: #94A3B8; }
 [data-theme="light"] .border-white\/\[0\.04\] { border-color: #F1F5F9; }
 [data-theme="light"] .border-white\/\[0\.05\] { border-color: #EEF1F4; }
 [data-theme="light"] .border-white\/\[0\.06\] { border-color: #E5E7EB; }

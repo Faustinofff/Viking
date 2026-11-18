@@ -1,5 +1,6 @@
 "use client";
 import { useStudentBranding } from "@/lib/use-student-branding";
+import { esColorBlanco } from "@/lib/brand-color";
 
 type AppBrandMarkProps = {
   /** Tamaño del logo en px. */
@@ -17,6 +18,10 @@ export default function AppBrandMark({ size = 64, showName = true }: AppBrandMar
   const hasLogo = branding?.brandLogoUrl?.trim();
   const branded = branding && (hasMark || hasLogo);
   const circle = branding?.brandLogoShape === "circle";
+  const nameColor = branding?.brandColor ?? null;
+  const nameWhite = esColorBlanco(nameColor);
+  const initialColor = branding?.brandColor ?? "#00D4AA";
+  const initialWhite = esColorBlanco(initialColor);
 
   if (!branded) {
     return (
@@ -39,14 +44,14 @@ export default function AppBrandMark({ size = 64, showName = true }: AppBrandMar
         />
       ) : (
         <div
-          className="rounded-full bg-accent/15 flex items-center justify-center font-bold flex-shrink-0"
-          style={{ width: size, height: size, color: branding?.brandColor ?? "#00D4AA", fontSize: Math.max(14, Math.round(size / 2)) }}
+          className={`rounded-full bg-accent/15 flex items-center justify-center font-bold flex-shrink-0${initialWhite ? " brand-color-white" : ""}`}
+          style={{ width: size, height: size, color: initialWhite ? undefined : initialColor, fontSize: Math.max(14, Math.round(size / 2)) }}
         >
           {(hasMark ?? "Viking")[0]}
         </div>
       )}
       {showName && (
-        <span className="font-bold app-brand-name" style={branding?.brandColor ? { color: branding.brandColor } : undefined}>
+        <span className={`font-bold app-brand-name${nameWhite ? " brand-color-white" : ""}`} style={nameColor && !nameWhite ? { color: nameColor } : undefined}>
           {hasMark ?? "Viking"}
         </span>
       )}

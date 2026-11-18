@@ -155,7 +155,7 @@ export default function StudentNutricionPage() {
                       <button onClick={() => toggleMeal(`${dia.id}_${c.id}`)} type="button" className={`w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all ${
                         checkedMeals.has(`${dia.id}_${c.id}`) ? "bg-accent border-accent" : "border-white/30 hover:border-accent/60"
                       }`}>
-                        {checkedMeals.has(`${dia.id}_${c.id}`) && <span className="block text-[8px] text-white text-center leading-none">✓</span>}
+                        {checkedMeals.has(`${dia.id}_${c.id}`) && <span className="block text-[8px] text-on-accent text-center leading-none">✓</span>}
                       </button>
                       <span className={`text-xs font-semibold uppercase tracking-wider ${checkedMeals.has(`${dia.id}_${c.id}`) ? "text-white/30 line-through" : "text-accent"}`}>{c.tipo}</span>
                       {c.nombre && <span className="text-xs text-white/40">— {c.nombre}</span>}

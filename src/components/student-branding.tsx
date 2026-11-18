@@ -1,6 +1,7 @@
 "use client";
 import { useStudentBranding } from "@/lib/use-student-branding";
 import type { CoachBranding } from "@/lib/branding";
+import { esColorBlanco } from "@/lib/brand-color";
 
 const VIKING_MARK = (
   <>
@@ -13,6 +14,9 @@ function BrandedMark({ branding }: { branding: CoachBranding }) {
   const hasMark = branding.brandName?.trim();
   const hasLogo = branding.brandLogoUrl?.trim();
   const color = branding.brandColor ?? "#fff";
+  const colorWhite = esColorBlanco(color);
+  const initialColor = branding.brandColor ?? "#00D4AA";
+  const initialWhite = esColorBlanco(initialColor);
 
   return (
     <>
@@ -24,11 +28,11 @@ function BrandedMark({ branding }: { branding: CoachBranding }) {
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
         />
       ) : (
-        <div className="w-16 h-16 rounded-full bg-accent/15 flex items-center justify-center text-2xl font-bold" style={{ color: branding.brandColor ?? "#00D4AA" }}>
+        <div className={`w-16 h-16 rounded-full bg-accent/15 flex items-center justify-center text-2xl font-bold${initialWhite ? " brand-color-white" : ""}`} style={initialWhite ? undefined : { color: initialColor }}>
           {(hasMark ?? "Viking")[0]}
         </div>
       )}
-      <span className="font-bold" style={{ color }}>
+      <span className={`font-bold${colorWhite ? " brand-color-white" : ""}`} style={colorWhite ? undefined : { color }}>
         {hasMark ?? "Viking"}
       </span>
     </>

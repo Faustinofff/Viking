@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { getCoachBranding } from "@/lib/branding";
+import { esColorBlanco } from "@/lib/brand-color";
 import { premiumHabilitaPersonalizacion } from "@/lib/data";
 import LogoUpload, { BrandingIcons } from "@/components/logo-upload";
 
@@ -120,6 +121,8 @@ export default function CoachPersonalizacionPage() {
     }
   };
 
+  const previewColorWhite = esColorBlanco(brandColor);
+
   const headerPreview = (
     <div className="flex items-center gap-2.5">
       {brandLogoUrl ? (
@@ -134,7 +137,7 @@ export default function CoachPersonalizacionPage() {
           {(brandName.trim() || usuario.nombre)[0]}
         </div>
       )}
-      <span className="font-bold" style={{ color: brandColor }}>
+      <span className={`font-bold${previewColorWhite ? " brand-color-white" : ""}`} style={previewColorWhite ? undefined : { color: brandColor }}>
         {brandName.trim() || "Viking"}
       </span>
     </div>
