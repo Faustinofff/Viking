@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { esPilotoTemaClaro } from "@/lib/theme";
 
 /** Switch sol/luna del modo claro. */
 export function ThemeToggle({
@@ -50,26 +49,19 @@ export function applyThemeMode(light: boolean) {
 }
 
 /**
- * Piloto de modo claro: solo se activa para los emails allow-listed.
+ * Modo claro/oscuro disponible para todas las cuentas.
  * Persiste la preferencia en localStorage y la aplica sobre <html>.
  */
-export function usePilotTheme(email?: string | null) {
-  const enabled = esPilotoTemaClaro(email);
+export function useThemeMode() {
   const [light, setLight] = useState(false);
 
   useEffect(() => {
-    if (!enabled) {
-      const meta = document.querySelector('meta[name="theme-color"]');
-      document.documentElement.removeAttribute("data-theme");
-      if (meta) meta.setAttribute("content", "#0A0A0B");
-      return;
-    }
     let stored: string | null = null;
     try { stored = localStorage.getItem("viking_theme"); } catch {}
     const on = stored === "light";
     setLight(on);
     applyThemeMode(on);
-  }, [enabled]);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -88,5 +80,5 @@ export function usePilotTheme(email?: string | null) {
     });
   };
 
-  return { enabled, light, toggle };
+  return { light, toggle };
 }

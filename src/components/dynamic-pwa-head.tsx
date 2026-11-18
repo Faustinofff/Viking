@@ -5,6 +5,12 @@ import { useStudentBranding } from "@/lib/use-student-branding";
 const VIKING_NAME = "Viking";
 const VIKING_TITLE = "Viking — Plataforma de Entrenamiento";
 const DEFAULT_THEME = "#0a0a0a";
+const LIGHT_THEME = "#F4F6F8";
+
+/** Color de la barra del navegador: en modo claro siempre es claro. */
+function themeColor(darkColor: string) {
+  return document.documentElement.getAttribute("data-theme") === "light" ? LIGHT_THEME : darkColor;
+}
 
 function el<T extends HTMLElement>(id: string): T | null {
   return document.getElementById(id) as T | null;
@@ -19,7 +25,7 @@ function applyVikingDefaults() {
   if (appName) appName.content = VIKING_NAME;
   if (document.title !== VIKING_TITLE) document.title = VIKING_TITLE;
   const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.setAttribute("content", DEFAULT_THEME);
+  if (themeMeta) themeMeta.setAttribute("content", themeColor(DEFAULT_THEME));
 }
 
 /** Aplica el branding del coach a la identidad PWA (íconos y títulos).
@@ -52,7 +58,7 @@ export default function DynamicPwaHead() {
 
       const theme = branding!.brandColor ? branding!.brandColor : DEFAULT_THEME;
       const themeMeta = document.querySelector('meta[name="theme-color"]');
-      if (themeMeta) themeMeta.setAttribute("content", theme);
+      if (themeMeta) themeMeta.setAttribute("content", themeColor(theme));
     };
 
     apply();
@@ -68,6 +74,13 @@ export default function DynamicPwaHead() {
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onVisible);
     };
+  }, []);
+
+  // Reaplica el color de la barra cuando el usuario cambia entre claro/oscuro.
+  useEffect(() => {
+    const observer = new MutationObserver(() => setTick((t) => t + 1));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
   }, []);
 
   return null;

@@ -99,6 +99,19 @@ setTimeout(apply,0); setTimeout(apply,200);
             __html: `('serviceWorker' in navigator)&&navigator.serviceWorker.register('/sw.js')`,
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){
+try{
+  var p=location.pathname;
+  if(p.indexOf('/dashboard')!==0&&p.indexOf('/alumno')!==0)return;
+  if(localStorage.getItem('viking_theme')==='light'){
+    document.documentElement.setAttribute('data-theme','light');
+  }
+}catch(e){}
+})();`,
+          }}
+        />
       </head>
       <body>
         <Script

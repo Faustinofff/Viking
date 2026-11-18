@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { PLANES_SUSCRIPCION, formatearPrecio } from "@/lib/experimental";
 import { PLANES_PREMIUM, premiumHabilitaPersonalizacion, premiumHabilitaPaginaWeb } from "@/lib/data";
 import { esPaginaWebVisible } from "@/lib/pagina-web";
-import { ThemeToggle, usePilotTheme } from "@/components/theme-toggle";
+import { ThemeToggle, useThemeMode } from "@/components/theme-toggle";
 import ChatDialog from "@/components/chat";
 import AppBrandMark from "@/components/app-brand";
 
@@ -61,7 +61,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [planCargando, setPlanCargando] = useState<string | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
   const [payerEmail, setPayerEmail] = useState("");
-  const { enabled: esPilotoTema, light: lightMode, toggle: toggleTheme } = usePilotTheme(usuario?.email);
+  const { light: lightMode, toggle: toggleTheme } = useThemeMode();
 
   const suscribirse = async (planId: string) => {
     if (planCargando) return;
@@ -147,7 +147,7 @@ useAppStore.getState().refreshBrandingEnabled();
     <>
       <div className="flex items-center gap-3 h-16 px-4 border-b border-white/[0.06]">
         <AppBrandMark size={64} showName={!collapsed} />
-        {esPilotoTema && !collapsed && (
+        {!collapsed && (
           <ThemeToggle light={lightMode} onToggle={toggleTheme} className="ml-auto" />
         )}
       </div>
@@ -185,7 +185,7 @@ useAppStore.getState().refreshBrandingEnabled();
             {!collapsed && <span>{usuario.nombre}</span>}
           </Link>
         </div>
-        {esPilotoTema && collapsed && (
+        {collapsed && (
           <div className="flex justify-center py-1">
             <ThemeToggle light={lightMode} onToggle={toggleTheme} />
           </div>
@@ -214,7 +214,7 @@ useAppStore.getState().refreshBrandingEnabled();
           <AppBrandMark size={36} showName={false} />
         </div>
         <div className="flex items-center gap-3">
-          {esPilotoTema && <ThemeToggle light={lightMode} onToggle={toggleTheme} />}
+          <ThemeToggle light={lightMode} onToggle={toggleTheme} />
           <Link
             href="/dashboard/perfil"
             className={`flex flex-col items-center gap-0.5 rounded-lg p-1 transition-all hover:bg-white/[0.04] ${
