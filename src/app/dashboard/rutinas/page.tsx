@@ -40,6 +40,8 @@ export default function RutinasPage() {
   const assignUnassignedRoutine = useAppStore((s) => s.assignUnassignedRoutine);
   const unassignRoutine = useAppStore((s) => s.unassignRoutine);
   const deleteUnassignedRoutine = useAppStore((s) => s.deleteUnassignedRoutine);
+  const usuarioActual = useAppStore((s) => s.usuarioActual);
+  const premium = useAppStore((s) => s.premium);
 
   const eliminarRutina = useAppStore((s) => s.eliminarRutina);
   const { confirm, ToastUI } = useConfirmToast();
@@ -181,6 +183,86 @@ export default function RutinasPage() {
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const [aiInfo, setAiInfo] = useState("");
+  const [showAi, setShowAi] = useState(false);
+
+  const esCuentaPruebaCoach = usuarioActual?.rol === "coach" && usuarioActual?.email?.toLowerCase() === "faustinofiordalisi@gmail.com";
+
+  const generarConIA = async () => {
+    if (!aiPrompt.trim() || aiLoading) return;
+    setAiLoading(true);
+    setAiError("");
+    setAiInfo("");
+    try {
+      const res = await fetch("/api/routines/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: aiPrompt.trim(),
+          ejercicios: ejercicios.map((e) => ({ id: e.id, nombre: e.nombre, grupoMuscular: e.grupoMuscular })),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAiError(data.error || "No se pudo generar la rutina.");
+        if (Array.isArray(data.noEncontrados) && data.noEncontrados.length) {
+          setAiInfo(`No encontrados: ${data.noEncontrados.join(", ")}`);
+        }
+        return;
+      }
+
+      const cat = new Map(ejercicios.map((e) => [e.id, e]));
+      const now = Date.now();
+      const nuevosDias: DiaRutina[] = (data.dias || []).map((d: any, di: number) => ({
+        id: `d_${now}_${di}`,
+        nombre: d.nombre || `Día ${di + 1}`,
+        diaSemana: d.diaSemana,
+        ejercicios: (d.ejercicios || []).map((ej: any, ei: number) => {
+          const base = cat.get(ej.ejercicioId);
+          if (!base) return null;
+          const s = Number(ej.series) || 4;
+          const r = Number(ej.reps) || 10;
+          const ds = Number(ej.descansoSegundos) || 120;
+          return {
+            id: `ej_${now}_${di}_${ei}`,
+            ejercicioId: base.id,
+            ejercicioNombre: base.nombre,
+            grupoMuscular: base.grupoMuscular,
+            series: s,
+            reps: r,
+            descansoSegundos: ds,
+            notas: typeof ej.notas === "string" ? ej.notas : "",
+            videoUrl: ejercicioTutoriales[base.id] ?? "",
+            seriesPorSemana: [s, s, s, s],
+            repsPorSemana: [r, r, r, r],
+            descansoPorSemana: [ds, ds, ds, ds],
+            notasPorSemana: [typeof ej.notas === "string" ? ej.notas : "", "", "", ""],
+          };
+        }).filter(Boolean),
+      })).filter((d: DiaRutina) => d.ejercicios.length > 0);
+
+      if (nuevosDias.length === 0) {
+        setAiError("No se pudo armar la rutina con los ejercicios disponibles.");
+        return;
+      }
+
+      if (!nombre.trim() && typeof data.nombreSugerido === "string" && data.nombreSugerido.trim()) {
+        setNombre(data.nombreSugerido.trim());
+      }
+      setDias(nuevosDias);
+      const infos: string[] = [];
+      if (Array.isArray(data.noEncontrados) && data.noEncontrados.length) infos.push(`No encontrados en tu biblioteca: ${data.noEncontrados.join(", ")}`);
+      if (typeof data.aclaraciones === "string" && data.aclaraciones.trim()) infos.push(data.aclaraciones.trim());
+      setAiInfo(infos.join(" · "));
+      setShowAi(false);
+    } catch (e: any) {
+      setAiError(e?.message || "Error al generar la rutina.");
+    }
+    setAiLoading(false);
+  };
 
   const handleSave = async () => {
     if (!nombre.trim() || dias.length === 0) return;
@@ -343,6 +425,10 @@ export default function RutinasPage() {
     setShowAdvanced(false);
     setDiasParaTodos("");
     setDiasPorAlumno({});
+    setAiPrompt("");
+    setAiError("");
+    setAiInfo("");
+    setShowAi(false);
     useAppStore.getState().setPageDraft("rutinas", {});
   }, [alumnoIdParam]);
   const [alumnoSearch, setAlumnoSearch] = useState("");
@@ -612,6 +698,44 @@ export default function RutinasPage() {
                     <p className="text-[11px] text-white/30">Opcional. Si lo dejás vacío, la rutina no vence. El aviso al coach aparece 7 días antes del cambio.</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {esCuentaPruebaCoach && (
+              <div className="mb-6 glass rounded-xl border border-accent/20 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white/80">✨ Crear rutina con IA</h3>
+                    <p className="text-[11px] text-white/40 mt-0.5">Decí qué querés en lenguaje natural y se arma con tus ejercicios cargados.</p>
+                  </div>
+                  <button type="button" onClick={() => setShowAi((v) => !v)} className="btn-ghost text-xs shrink-0">
+                    {showAi ? "Ocultar" : "Abrir"}
+                  </button>
+                </div>
+                {showAi && (
+                  <div className="space-y-2">
+                    <textarea
+                      className="input !text-sm w-full resize-none"
+                      rows={3}
+                      placeholder={'Ej: "Rutina de espalda y bíceps" o "Creá una rutina con press banca, remo con barra, curl con barra y jalón al pecho"'}
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={generarConIA}
+                        disabled={aiLoading || !aiPrompt.trim()}
+                        className="btn-primary text-sm"
+                      >
+                        {aiLoading ? "Generando..." : "Generar rutina"}
+                      </button>
+                      <span className="text-[11px] text-white/30">Usa solo ejercicios de tu biblioteca. Podés editarla antes de guardar.</span>
+                    </div>
+                  </div>
+                )}
+                {aiError && <p className="text-sm text-red-400">{aiError}</p>}
+                {aiInfo && <p className="text-xs text-amber-300/80">{aiInfo}</p>}
               </div>
             )}
 
