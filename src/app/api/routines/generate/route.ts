@@ -94,31 +94,54 @@ FORMATO DE RESPUESTA (JSON):
 
     const user = `CATÁLOGO DE EJERCICIOS DISPONIBLES (id | nombre | grupo):\n${catalogText}\n\nPEDIDO DEL COACH:\n${prompt}`;
 
-    const groqRes = await fetch(GROQ_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-        temperature: 0.2,
-        max_tokens: 2000,
-        response_format: { type: "json_object" },
-      }),
-    });
+    const payloadBase = {
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      temperature: 0.2,
+      max_tokens: 2000,
+    };
 
-    if (!groqRes.ok) {
-      const errBody = await groqRes.text();
-      console.error("[Groq routine error]", groqRes.status, errBody);
-      return NextResponse.json({ error: "No se pudo generar la rutina con IA." }, { status: 502 });
+    const attempts: Array<Record<string, any>> = [
+      { ...payloadBase, model: "llama-3.3-70b-versatile", response_format: { type: "json_object" } },
+      { ...payloadBase, model: "llama-3.3-70b-versatile" },
+      { ...payloadBase, model: "llama-3.1-8b-instant", response_format: { type: "json_object" } },
+      { ...payloadBase, model: "llama-3.1-8b-instant" },
+      { ...payloadBase, model: "openai/gpt-oss-20b" },
+    ];
+
+    let data: any = null;
+    let lastErr = "";
+    let lastStatus = 502;
+
+    for (const bodyPayload of attempts) {
+      const groqRes = await fetch(GROQ_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify(bodyPayload),
+      });
+
+      if (!groqRes.ok) {
+        const errBody = await groqRes.text();
+        lastStatus = groqRes.status;
+        lastErr = errBody.slice(0, 300);
+        console.error("[Groq routine error]", groqRes.status, bodyPayload.model, errBody);
+        continue;
+      }
+
+      data = await groqRes.json();
+      break;
     }
 
-    const data = await groqRes.json();
+    if (!data) {
+      const detail = lastErr ? ` Detalle: ${lastErr}` : "";
+      return NextResponse.json({ error: `No se pudo generar la rutina con IA.${detail}` }, { status: lastStatus >= 400 && lastStatus < 600 ? lastStatus : 502 });
+    }
+
     const content = data?.choices?.[0]?.message?.content ?? "{}";
 
     let parsed: any;
