@@ -61,9 +61,81 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No hay ejercicios cargados en tu sistema." }, { status: 400 });
     }
 
+    const normPrompt = norm(prompt);
+    const promptTokens = Array.from(new Set(normPrompt.split(" ").filter((t) => t.length >= 3)));
+
+    const grupoKeywords: Array<[RegExp, string[]]> = [
+      [/\bespald|\bdorsal|\bremo|\bjalon|\bdominad/, ["espalda", "dorsal"]],
+      [/\bbicep|\bbícep/, ["biceps", "bíceps"]],
+      [/\btricep|\btrícep/, ["triceps", "tríceps"]],
+      [/\bpech|press banca|apertura|\bcruce/, ["pecho"]],
+      [/\bhombro|\bdeltoid|\bmilitar|elevaci/, ["hombro", "hombros", "deltoides"]],
+      [/\bpiern|\bcuadri|\bsentadill|\bprensa|\bzancad|\bestoc/, ["cuadriceps", "cuádriceps", "pierna"]],
+      [/\bisquio|\bfemoral|\bpeso muerto rum/, ["isquiotibiales", "isquio", "femoral"]],
+      [/\bglute|cadera|hip thrust/, ["gluteos", "glúteos"]],
+      [/\bgemelo|\bpantorrill|\btobillo/, ["gemelos", "pantorrilla"]],
+      [/\babdom|\bcore|\bplancha|\bcrunch/, ["abdomen", "core"]],
+      [/\bantebraz/, ["antebrazos", "antebrazo"]],
+      [/\bcardio|\baerob/, ["cardio"]],
+    ];
+    const wantedGroups = new Set<string>();
+    for (const [re, vals] of grupoKeywords) {
+      if (re.test(normPrompt)) vals.forEach((v) => wantedGroups.add(norm(v)));
+    }
+
+    const scored = ejercicios.map((e) => {
+      const nNombre = norm(e.nombre);
+      const nGrupo = norm(e.grupoMuscular);
+      let score = 0;
+      for (const t of promptTokens) {
+        if (nNombre.includes(t)) score += 5;
+        else if (nGrupo.includes(t)) score += 2;
+      }
+      for (const wg of wantedGroups) {
+        if (nGrupo.includes(wg) || wg.includes(nGrupo)) score += 6;
+      }
+      // direct fuzzy against full prompt for longer names
+      if (promptTokens.length > 0) score += Math.min(10, Math.floor(scoreMatch(prompt, e.nombre) / 10));
+      return { e, score };
+    });
+
+    let selected: EjercicioInput[];
+    if (ejercicios.length <= 180) {
+      selected = ejercicios;
+    } else {
+      const byScore = [...scored].sort((a, b) => b.score - a.score);
+      const picked: EjercicioInput[] = [];
+      const seen = new Set<string>();
+
+      // force-include best matches for explicitly mentioned chunks
+      const chunks = prompt
+        .split(/,|\n|\by\b|\be\b|\bcon\b|\/|\+/i)
+        .map((s) => s.trim())
+        .filter((s) => s.length >= 3 && !/^(rutina|crea|crear|arme|arma|armar|hacer|haz|quiero|una|de|para|dia|día|entrenamiento)$/i.test(norm(s)));
+      for (const chunk of chunks) {
+        const best = findBestMatch(chunk, ejercicios);
+        if (best && !seen.has(best.id)) { picked.push(best); seen.add(best.id); }
+      }
+
+      // must-include likely prompt/token/group matches
+      for (const item of byScore) {
+        if (picked.length >= 220) break;
+        if (item.score >= 6 && !seen.has(item.e.id)) {
+          picked.push(item.e); seen.add(item.e.id);
+        }
+      }
+      // fill with top scored
+      for (const item of byScore) {
+        if (picked.length >= 220) break;
+        if (seen.has(item.e.id)) continue;
+        picked.push(item.e); seen.add(item.e.id);
+      }
+      selected = picked;
+    }
+
     // Compact catalog to keep prompt size reasonable
-    const catalog = ejercicios.map((e) => ({ id: e.id, nombre: e.nombre, grupo: e.grupoMuscular }));
-    const catalogText = catalog.map((c) => `- ${c.id} | ${c.nombre} | ${c.grupo}`).join("\n");
+    const catalog = selected.map((e) => ({ id: e.id, nombre: e.nombre, grupo: e.grupoMuscular }));
+    const catalogText = catalog.map((c) => `${c.id}|${c.nombre}|${c.grupo}`).join("\n");
 
     const system = `Sos un asistente que arma rutinas de entrenamiento para un coach.
 Tu trabajo es interpretar el pedido del coach y devolver SOLO un JSON válido (sin markdown, sin texto extra).
