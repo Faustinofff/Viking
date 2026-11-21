@@ -189,40 +189,76 @@ export default function RutinasPage() {
   const [aiInfo, setAiInfo] = useState("");
   const [showAi, setShowAi] = useState(false);
   const [micListening, setMicListening] = useState(false);
-  const micRef = useRef<any>(null);
-  const micSupported = typeof window !== "undefined" && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+  const [transcribing, setTranscribing] = useState(false);
+  const mediaRecRef = useRef<any>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
-  const toggleMic = () => {
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      setAiError("Tu navegador no soporta dictado por voz. Usá Chrome o Edge.");
-      return;
-    }
-    if (micListening) {
-      try { micRef.current?.stop(); } catch {}
-      return;
-    }
-    const rec = new SR();
-    rec.lang = "es-AR";
-    rec.interimResults = false;
-    rec.continuous = false;
-    rec.maxAlternatives = 1;
-    rec.onresult = (ev: any) => {
-      try {
-        const transcript = Array.from(ev.results ?? []).map((r: any) => (r[0]?.transcript ?? "")).join(" ").trim();
-        if (transcript) setAiPrompt((p) => (p ? p + " " : "") + transcript);
-      } catch {}
-    };
-    rec.onerror = (ev: any) => {
-      if (ev?.error === "not-allowed" || ev?.error === "service-not-allowed") {
-        setAiError("No se pudo acceder al micrófono. Verificá los permisos.");
+  const stopStream = (stream: any) => {
+    try { stream?.getTracks?.().forEach((t: any) => t.stop()); } catch {}
+  };
+
+  const transcribe = async (blob: Blob) => {
+    setTranscribing(true);
+    setAiError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", blob, "audio.webm");
+      const res = await fetch("/api/transcribe", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAiError(data.error || "No se pudo transcribir el audio.");
+        return;
       }
+      const text = (data.text ?? "").trim();
+      if (text) setAiPrompt((p) => (p ? p + " " : "") + text);
+      else setAiError("No se detectó voz. Intentá de nuevo.");
+    } catch (e: any) {
+      setAiError(e?.message || "Error al transcribir.");
+    } finally {
+      setTranscribing(false);
+    }
+  };
+
+  const toggleMic = async () => {
+    if (micListening) {
+      try { mediaRecRef.current?.stop(); } catch {}
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setAiError("Tu navegador no soporta grabación de micrófono. Escribí el pedido.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = ["audio/webm", "audio/mp4", "audio/ogg"].find((t) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t));
+      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      chunksRef.current = [];
+      mr.ondataavailable = (ev: any) => { if (ev.data && ev.data.size > 0) chunksRef.current.push(ev.data); };
+      mr.onstop = () => {
+        stopStream(stream);
+        setMicListening(false);
+        const chunks = chunksRef.current;
+        if (!chunks.length) return;
+        const blob = new Blob(chunks, { type: mime || "audio/webm" });
+        transcribe(blob);
+      };
+      mr.onerror = () => {
+        stopStream(stream);
+        setMicListening(false);
+        setAiError("Error al grabar. Intentá de nuevo.");
+      };
+      mediaRecRef.current = mr;
+      mr.start();
+      setMicListening(true);
+    } catch (err: any) {
+      stopStream(null);
       setMicListening(false);
-    };
-    rec.onend = () => setMicListening(false);
-    micRef.current = rec;
-    setMicListening(true);
-    try { rec.start(); } catch {}
+      if (err?.name === "NotAllowedError" || err?.name === "SecurityError") {
+        setAiError("No se pudo acceder al micrófono. Verificá los permisos del navegador.");
+      } else {
+        setAiError("No se pudo iniciar la grabación. Escribí el pedido como alternativa.");
+      }
+    }
   };
 
   const esCuentaPruebaCoach = usuarioActual?.rol === "coach" && usuarioActual?.email?.toLowerCase() === "faustinofiordalisi@gmail.com";
@@ -758,23 +794,23 @@ export default function RutinasPage() {
                         value={aiPrompt}
                         onChange={(e) => { setAiPrompt(e.target.value); setAiError(""); }}
                       />
-                      {micSupported && (
-                        <button
-                          type="button"
-                          onClick={toggleMic}
-                          className={`absolute right-2 top-2 flex items-center justify-center w-8 h-8 rounded-lg transition-all ${micListening ? "bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse" : "bg-white/[0.06] text-white/50 hover:text-white/80 border border-white/[0.08]"}`}
-                          title={micListening ? "Escuchando... tocá para detener" : "Dictar por voz"}
-                        >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                            <line x1="12" y1="19" x2="12" y2="22" />
-                            <line x1="8" y1="22" x2="16" y2="22" />
-                          </svg>
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={toggleMic}
+                        disabled={transcribing}
+                        className={`absolute right-2 top-2 flex items-center justify-center w-8 h-8 rounded-lg transition-all ${micListening ? "bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse" : "bg-white/[0.06] text-white/50 hover:text-white/80 border border-white/[0.08]"} ${transcribing ? "opacity-50" : ""}`}
+                        title={micListening ? "Grabando... tocá para terminar" : "Dictar por voz"}
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                          <line x1="12" y1="19" x2="12" y2="22" />
+                          <line x1="8" y1="22" x2="16" y2="22" />
+                        </svg>
+                      </button>
                     </div>
-                    {micListening && <p className="text-[11px] text-accent">🎙️ Escuchando... hablá ahora.</p>}
+                    {micListening && <p className="text-[11px] text-accent">🎙️ Grabando... hablá y tocá el micrófono para terminar.</p>}
+                    {transcribing && <p className="text-[11px] text-white/40">Transcribiendo audio...</p>}
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
