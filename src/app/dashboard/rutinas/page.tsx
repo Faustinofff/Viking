@@ -188,6 +188,42 @@ export default function RutinasPage() {
   const [aiError, setAiError] = useState("");
   const [aiInfo, setAiInfo] = useState("");
   const [showAi, setShowAi] = useState(false);
+  const [micListening, setMicListening] = useState(false);
+  const micRef = useRef<any>(null);
+  const micSupported = typeof window !== "undefined" && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
+  const toggleMic = () => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      setAiError("Tu navegador no soporta dictado por voz. Usá Chrome o Edge.");
+      return;
+    }
+    if (micListening) {
+      try { micRef.current?.stop(); } catch {}
+      return;
+    }
+    const rec = new SR();
+    rec.lang = "es-AR";
+    rec.interimResults = false;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = (ev: any) => {
+      try {
+        const transcript = Array.from(ev.results ?? []).map((r: any) => (r[0]?.transcript ?? "")).join(" ").trim();
+        if (transcript) setAiPrompt((p) => (p ? p + " " : "") + transcript);
+      } catch {}
+    };
+    rec.onerror = (ev: any) => {
+      if (ev?.error === "not-allowed" || ev?.error === "service-not-allowed") {
+        setAiError("No se pudo acceder al micrófono. Verificá los permisos.");
+      }
+      setMicListening(false);
+    };
+    rec.onend = () => setMicListening(false);
+    micRef.current = rec;
+    setMicListening(true);
+    try { rec.start(); } catch {}
+  };
 
   const esCuentaPruebaCoach = usuarioActual?.rol === "coach" && usuarioActual?.email?.toLowerCase() === "faustinofiordalisi@gmail.com";
 
@@ -714,13 +750,31 @@ export default function RutinasPage() {
                 </div>
                 {showAi && (
                   <div className="space-y-2">
-                    <textarea
-                      className="input !text-sm w-full resize-none"
-                      rows={3}
-                      placeholder={'Ej: "Rutina de espalda y bíceps" o "Creá una rutina con press banca, remo con barra, curl con barra y jalón al pecho"'}
-                      value={aiPrompt}
-                      onChange={(e) => setAiPrompt(e.target.value)}
-                    />
+                    <div className="relative">
+                      <textarea
+                        className="input !text-sm w-full resize-none pr-12"
+                        rows={3}
+                        placeholder={'Ej: "Rutina de espalda y bíceps" o "lunes pecho y tríceps, martes espalda y bíceps"'}
+                        value={aiPrompt}
+                        onChange={(e) => { setAiPrompt(e.target.value); setAiError(""); }}
+                      />
+                      {micSupported && (
+                        <button
+                          type="button"
+                          onClick={toggleMic}
+                          className={`absolute right-2 top-2 flex items-center justify-center w-8 h-8 rounded-lg transition-all ${micListening ? "bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse" : "bg-white/[0.06] text-white/50 hover:text-white/80 border border-white/[0.08]"}`}
+                          title={micListening ? "Escuchando... tocá para detener" : "Dictar por voz"}
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                            <line x1="12" y1="19" x2="12" y2="22" />
+                            <line x1="8" y1="22" x2="16" y2="22" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    {micListening && <p className="text-[11px] text-accent">🎙️ Escuchando... hablá ahora.</p>}
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
