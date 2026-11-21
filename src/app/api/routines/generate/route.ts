@@ -170,10 +170,15 @@ function buildDeterministic(prompt: string, ejercicios: EjercicioInput[]): Rutin
       if (!usedIds.has(ex.id)) { usedIds.add(ex.id); out.push({ ejercicioId: ex.id }); }
     }
     for (const mk of muscles) {
-      const count = extractCount(segment, mk) || 4;
-      const pool = exercisesForMuscle(mk, ejercicios).filter((e) => !usedIds.has(e.id));
-      for (const e of pool.slice(0, count)) {
-        if (!usedIds.has(e.id)) { usedIds.add(e.id); out.push({ ejercicioId: e.id }); }
+      const explicitCount = extractCount(segment, mk);
+      // Sin cantidad: máximo 4 (3 o 4). Con cantidad: se respeta exacta, incluso > 4.
+      const cap = explicitCount > 0 ? explicitCount : 4;
+      const pool = exercisesForMuscle(mk, ejercicios);
+      const alreadyByMuscle = explicits.filter((ex) => pool.some((p) => p.id === ex.id)).length;
+      let remaining = cap - alreadyByMuscle;
+      for (const e of pool) {
+        if (remaining <= 0) break;
+        if (!usedIds.has(e.id)) { usedIds.add(e.id); out.push({ ejercicioId: e.id }); remaining--; }
       }
     }
     if (out.length === 0) {
@@ -415,12 +420,17 @@ Tu tarea: interpretar el pedido con la MÁXIMA comprensión y devolver UN ÚNICO
 REGLAS DE ORO:
 1. Solo podés usar ejercicios que estén en el CATÁLOGO. Jamás inventes ejercicios ni IDs.
 2. Entendé días de la semana: si el coach dice "lunes pecho y tríceps, martes espalda y bíceps, miércoles pecho y hombros", creá un día por cada uno, en ese orden y con esa combinación exacta.
-3. Si el coach pide ejercicios específicos por nombre, mapealos al ejercicio más equivalente del catálogo (sinónimos de fitness: "press banca"/"press plano"/"pecho plano" = press de pecho; "dominadas"/"jalón" = dominadas/jalón; etc.).
-4. Si el coach pide una cantidad ("incluí 5 de pecho", "3 ejercicios de espalda"), respetá esa cantidad de ejercicios.
-5. Si el coach pide por grupo muscular, elegí ejercicios variados de ese grupo desde el catálogo.
-6. Si un ejercicio pedido no está ni tiene equivalente en el catálogo, ponelo en "noEncontrados".
-7. Asigná "diaSemana" sin repetir (lunes..domingo), respetando los días pedidos.
-8. Valores por defecto si no se indican: series 4, reps 10, descansoSegundos 90.
+3. Si el coach pide ejercicios específicos por nombre, mapealos al ejercicio más equivalente del catálogo (sinónimos de fitness: "press banca"/"press plano"/"pecho plano" = press de pecho; "dominadas"/"jalón" = dominadas/jalón; "sillón de cuádriceps" = extensión de cuádriceps; etc.).
+4. CANTIDAD POR MÚSCULO:
+   - Si el coach pide un músculo SIN aclarar cuántos ejercicios, incluí 3 o 4 ejercicios de ese músculo (MÁXIMO 4, NUNCA más de 4).
+   - Si el coach SÍ aclara la cantidad ("3 de pecho", "5 ejercicios de espalda", "incluí 2 de bíceps"), respetá EXACTAMENTE esa cantidad, incluso si es mayor a 4.
+5. Si el coach pide por grupo muscular sin más detalles, elegí ejercicios variados de ese grupo desde el catálogo.
+6. PODÉS MEZCLAR las dos formas en el mismo pedido y en el mismo día:
+   - "martes incluí 3 ejercicios de pecho y press militar y elevaciones laterales" → 3 de Pecho MÁS el Press Militar y las Elevaciones Laterales (los específicos se agregan aparte, NO cuentan dentro de los 3 de pecho).
+   - "miércoles incluí sentadilla, prensa, sillón de cuádriceps y gemelos" → los 3 ejercicios nombrados MÁS 3 o 4 de Gemelos (porque no se aclaró cantidad de gemelos). Si el coach lista ejercicios concretos de un músculo, respetá esa lista y no agregues más de ese músculo salvo que lo pida.
+7. Si un ejercicio pedido no está ni tiene equivalente en el catálogo, ponelo en "noEncontrados".
+8. Asigná "diaSemana" sin repetir (lunes..domingo), respetando los días pedidos.
+9. Valores por defecto si no se indican: series 4, reps 10, descansoSegundos 90.
 
 FORMATO EXACTO DE SALIDA (solo este JSON):
 {
@@ -438,13 +448,15 @@ FORMATO EXACTO DE SALIDA (solo este JSON):
   "aclaraciones": ""
 }
 
-Ejemplo de pedido: "lunes pecho y tríceps, martes espalda y bíceps"
+Ejemplo de pedido: "lunes espalda y bíceps; martes incluí 3 de pecho y press militar y elevaciones laterales; miércoles incluí sentadilla, prensa, sillón de cuádriceps y gemelos; jueves pecho y tríceps"
 Ejemplo de respuesta correcta:
 {
-  "nombreSugerido": "Pecho/Tríceps y Espalda/Bíceps",
+  "nombreSugerido": "Empuje/Tirón/Mixta",
   "dias": [
-    { "nombre": "Pecho y Tríceps", "diaSemana": "lunes", "ejercicios": [ {"ejercicioId":"<id_pecho_1>"}, {"ejercicioId":"<id_pecho_2>"}, {"ejercicioId":"<id_triceps_1>"} ] },
-    { "nombre": "Espalda y Bíceps", "diaSemana": "martes", "ejercicios": [ {"ejercicioId":"<id_espalda_1>"}, {"ejercicioId":"<id_espalda_2>"}, {"ejercicioId":"<id_biceps_1>"} ] }
+    { "nombre": "Espalda y Bíceps", "diaSemana": "lunes", "ejercicios": [ {"ejercicioId":"<id_espalda_1>"}, {"ejercicioId":"<id_espalda_2>"}, {"ejercicioId":"<id_espalda_3>"}, {"ejercicioId":"<id_biceps_1>"}, {"ejercicioId":"<id_biceps_2>"}, {"ejercicioId":"<id_biceps_3>"} ] },
+    { "nombre": "Pecho y Hombros", "diaSemana": "martes", "ejercicios": [ {"ejercicioId":"<id_pecho_1>"}, {"ejercicioId":"<id_pecho_2>"}, {"ejercicioId":"<id_pecho_3>"}, {"ejercicioId":"<id_press_militar>"}, {"ejercicioId":"<id_elevaciones_laterales>"} ] },
+    { "nombre": "Cuádriceps y Gemelos", "diaSemana": "miercoles", "ejercicios": [ {"ejercicioId":"<id_sentadilla>"}, {"ejercicioId":"<id_prensa>"}, {"ejercicioId":"<id_extension_cuadriceps>"}, {"ejercicioId":"<id_gemelo_1>"}, {"ejercicioId":"<id_gemelo_2>"}, {"ejercicioId":"<id_gemelo_3>"} ] },
+    { "nombre": "Pecho y Tríceps", "diaSemana": "jueves", "ejercicios": [ {"ejercicioId":"<id_pecho_1>"}, {"ejercicioId":"<id_pecho_2>"}, {"ejercicioId":"<id_pecho_3>"}, {"ejercicioId":"<id_triceps_1>"}, {"ejercicioId":"<id_triceps_2>"}, {"ejercicioId":"<id_triceps_3>"} ] }
   ],
   "noEncontrados": [],
   "aclaraciones": ""
