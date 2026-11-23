@@ -66,6 +66,7 @@ const MUSCULOS: Mus[] = [
   { key: "cuadriceps", words: ["cuadricep"], label: "Cuádriceps" },
   { key: "isquios", words: ["isquiotibial", "isquio", "femoral"], label: "Isquiotibiales" },
   { key: "gluteos", words: ["gluteo"], label: "Glúteos" },
+  { key: "aductores", words: ["aductor"], label: "Aductores" },
   { key: "gemelos", words: ["gemelo", "pantorrill"], label: "Gemelos" },
   { key: "abdomen", words: ["abdom", "core"], label: "Abdomen" },
   { key: "antebrazos", words: ["antebraz"], label: "Antebrazos" },
@@ -77,7 +78,7 @@ function detectMuscles(text: string): string[] {
   const found: string[] = [];
   const add = (k: string) => { if (!found.includes(k)) found.push(k); };
 
-  if (seg.includes("piern")) ["cuadriceps", "isquios", "gluteos", "gemelos"].forEach(add);
+  if (seg.includes("piern")) ["cuadriceps", "isquios", "gluteos", "aductores", "gemelos"].forEach(add);
   if (seg.includes("brazo")) ["biceps", "triceps", "antebrazos"].forEach(add); // "brazo" genérico
 
   for (const m of MUSCULOS) {
@@ -102,7 +103,7 @@ function extractCount(segment: string, key: string): number {
   if (!mus) return 0;
   const seg = norm(segment);
   for (const w of mus.words) {
-    const re = new RegExp(`(\\d+)\\s*(?:ejercicios?\\s*)?(?:de\\s*)?${escapeRe(w)}`);
+    const re = new RegExp(`(\\d+)\\s*(?:ej(?:ercicios?|s)?\\s*)?(?:de\\s*)?${escapeRe(w)}`);
     const m = seg.match(re);
     if (m) return parseInt(m[1], 10);
   }
@@ -156,53 +157,182 @@ function dayName(muscles: string[]): string {
   return labels.length ? labels.join(" y ") : "Día";
 }
 
+// ─── Variedad / selección inteligente ───────────────────────
+
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function pickDiverse(pool: EjercicioInput[], count: number, usedIds: Set<string>, usedCounts: Map<string, number>, seed: number): EjercicioInput[] {
+  if (count <= 0) return [];
+  // Ordenar por menor uso global, con rotación por seed para variar entre días
+  const scored = pool.map((e, i) => ({
+    e,
+    u: usedCounts.get(e.id) ?? 0,
+    r: (hashStr(e.id + ":" + seed) + i) % 1000,
+  }));
+  scored.sort((a, b) => (a.u - b.u) || (a.r - b.r));
+  const picked: EjercicioInput[] = [];
+  for (const s of scored) {
+    if (picked.length >= count) break;
+    if (usedIds.has(s.e.id)) continue;
+    picked.push(s.e);
+  }
+  return picked;
+}
+
+function markUsed(picked: EjercicioInput[], usedIds: Set<string>, usedCounts: Map<string, number>) {
+  for (const e of picked) {
+    usedIds.add(e.id);
+    usedCounts.set(e.id, (usedCounts.get(e.id) ?? 0) + 1);
+  }
+}
+
+function detectDayCount(prompt: string): number {
+  const p = norm(prompt);
+  const m = p.match(/(\d+)\s*dias?/);
+  if (m) { const n = parseInt(m[1], 10); if (n >= 1 && n <= 7) return n; }
+  const words: Record<string, number> = { un: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7 };
+  for (const [w, n] of Object.entries(words)) {
+    if (new RegExp(`\\b${w}\\s+dias?\\b`).test(p)) return n;
+  }
+  return 0;
+}
+
+function defaultSplit(dayCount: number): string[][] {
+  // Cada entrada es array de muscle keys para ese día
+  if (dayCount <= 1) return [["pecho", "espalda", "cuadriceps", "hombros", "biceps", "triceps"]];
+  if (dayCount === 2) return [["pecho", "hombros", "triceps", "cuadriceps"], ["espalda", "biceps", "isquios", "gluteos"]];
+  if (dayCount === 3) return [["pecho", "hombros", "triceps"], ["espalda", "biceps"], ["cuadriceps", "isquios", "gluteos", "gemelos"]];
+  if (dayCount === 4) return [["pecho", "triceps"], ["espalda", "biceps"], ["cuadriceps", "isquios", "gluteos"], ["hombros", "abdomen", "gemelos"]];
+  if (dayCount === 5) return [["pecho", "triceps"], ["espalda", "biceps"], ["cuadriceps", "isquios"], ["hombros", "abdomen"], ["gluteos", "gemelos", "biceps", "triceps"]];
+  // 6-7
+  return [["pecho", "triceps"], ["espalda", "biceps"], ["cuadriceps", "isquios"], ["hombros", "abdomen"], ["gluteos", "gemelos"], ["pecho", "espalda", "biceps"]].slice(0, dayCount);
+}
+
+function diversifyRoutine(routine: RutinaResult, catalog: EjercicioInput[]): RutinaResult {
+  if (routine.dias.length <= 1) return routine;
+  const usedCounts = new Map<string, number>();
+  for (const d of routine.dias) for (const ej of d.ejercicios) usedCounts.set(ej.ejercicioId, (usedCounts.get(ej.ejercicioId) ?? 0) + 1);
+
+  // Detectar días idénticos o casi idénticos
+  const signatures = routine.dias.map((d) => d.ejercicios.map((e) => e.ejercicioId).sort().join(","));
+  const sigCounts = new Map<string, number>();
+  for (const s of signatures) sigCounts.set(s, (sigCounts.get(s) ?? 0) + 1);
+
+  const hasDupes = [...sigCounts.values()].some((c) => c > 1);
+  if (!hasDupes) return routine;
+
+  // Reasignar ejercicios en días duplicados, manteniendo estructura pero variando picks
+  const globalUsed = new Map<string, number>();
+  const newDias = routine.dias.map((d, dayIdx) => {
+    const dayUsed = new Set<string>();
+    const newEjs: EjercicioOut[] = [];
+    for (const ej of d.ejercicios) {
+      const orig = catalog.find((c) => c.id === ej.ejercicioId);
+      if (!orig) { newEjs.push(ej); continue; }
+      const count = globalUsed.get(ej.ejercicioId) ?? 0;
+      // Si ya se usó mucho, intentar reemplazar por otro del mismo grupo muscular
+      if (count >= 1 && dayIdx > 0) {
+        const pool = exercisesForMuscle(
+          MUSCULOS.find((m) => m.words.some((w) => norm(orig.grupoMuscular).includes(w)))?.key ?? "",
+          catalog
+        ).filter((c) => !dayUsed.has(c.id));
+        const replacement = pickDiverse(pool.length ? pool : catalog, 1, dayUsed, globalUsed, dayIdx * 100 + newEjs.length);
+        if (replacement.length > 0) {
+          const r = replacement[0];
+          dayUsed.add(r.id);
+          globalUsed.set(r.id, (globalUsed.get(r.id) ?? 0) + 1);
+          newEjs.push({ ...ej, ejercicioId: r.id });
+          continue;
+        }
+      }
+      dayUsed.add(ej.ejercicioId);
+      globalUsed.set(ej.ejercicioId, count + 1);
+      newEjs.push(ej);
+    }
+    return { ...d, ejercicios: newEjs };
+  });
+  return { ...routine, dias: newDias };
+}
+
 function buildDeterministic(prompt: string, ejercicios: EjercicioInput[]): RutinaResult {
   const dias: DiaOut[] = [];
   const noEncontrados: string[] = [];
+  const globalUsedCounts = new Map<string, number>();
 
-  const buildDay = (diaSemana: string, segment: string): DiaOut | null => {
-    const muscles = detectMuscles(segment);
+  const buildDay = (diaSemana: string, segment: string, seed: number, fallbackMuscles?: string[]): DiaOut | null => {
+    const musclesDetected = detectMuscles(segment);
+    const muscles = musclesDetected.length > 0 ? musclesDetected : (fallbackMuscles ?? []);
     const explicits = extractExplicit(segment, ejercicios);
     const out: EjercicioOut[] = [];
     const usedIds = new Set<string>();
 
     for (const ex of explicits) {
-      if (!usedIds.has(ex.id)) { usedIds.add(ex.id); out.push({ ejercicioId: ex.id }); }
+      if (!usedIds.has(ex.id) && !globalUsedCounts.has(ex.id)) { usedIds.add(ex.id); out.push({ ejercicioId: ex.id }); markUsed([ex], usedIds, globalUsedCounts); }
+    }
+    // Si todos los explícitos ya se usaron, permitir reutilizar solo si el día quedaría vacío
+    if (out.length === 0) {
+      for (const ex of explicits) {
+        if (!usedIds.has(ex.id)) { usedIds.add(ex.id); out.push({ ejercicioId: ex.id }); markUsed([ex], usedIds, globalUsedCounts); }
+      }
     }
     for (const mk of muscles) {
       const explicitCount = extractCount(segment, mk);
-      // Sin cantidad: máximo 4 (3 o 4). Con cantidad: se respeta exacta, incluso > 4.
-      const cap = explicitCount > 0 ? explicitCount : 4;
+      const cap = explicitCount > 0 ? explicitCount : (3 + ((seed + hashStr(mk)) % 2)); // 3 o 4 si no se aclara
       const pool = exercisesForMuscle(mk, ejercicios);
       const alreadyByMuscle = explicits.filter((ex) => pool.some((p) => p.id === ex.id)).length;
       let remaining = cap - alreadyByMuscle;
-      for (const e of pool) {
-        if (remaining <= 0) break;
-        if (!usedIds.has(e.id)) { usedIds.add(e.id); out.push({ ejercicioId: e.id }); remaining--; }
+      if (remaining > 0) {
+        const picks = pickDiverse(pool, remaining, usedIds, globalUsedCounts, seed + hashStr(mk));
+        for (const e of picks) {
+          if (remaining <= 0) break;
+          if (!usedIds.has(e.id)) { usedIds.add(e.id); out.push({ ejercicioId: e.id }); markUsed([e], usedIds, globalUsedCounts); remaining--; }
+        }
       }
     }
     if (out.length === 0) {
-      for (const e of ejercicios) {
-        if (out.length >= 5) break;
-        if (!usedIds.has(e.id)) { usedIds.add(e.id); out.push({ ejercicioId: e.id }); }
-      }
+      // Sin músculos ni explícitos: armar día variado usando split o muestra diversa
+      const fallbackPool = ejercicios.filter((e) => !usedIds.has(e.id));
+      const picks = pickDiverse(fallbackPool.length ? fallbackPool : ejercicios, 5, new Set(), globalUsedCounts, seed);
+      for (const e of picks) { if (!usedIds.has(e.id)) { usedIds.add(e.id); out.push({ ejercicioId: e.id }); markUsed([e], usedIds, globalUsedCounts); } }
     }
     if (out.length === 0) return null;
-    return { nombre: dayName(muscles), diaSemana, ejercicios: out };
+    const name = muscles.length > 0 ? dayName(muscles) : "Entrenamiento";
+    return { nombre: name, diaSemana, ejercicios: out };
   };
 
   const segments = detectDaySegments(prompt);
   const usedDays = new Set<string>();
+  const requestedCount = detectDayCount(prompt);
+
   if (segments && segments.length) {
-    for (const seg of segments) {
-      const day = buildDay(seg.diaSemana, seg.segment);
+    // Si hay días nombrados pero sin músculos, asignar split por defecto
+    const anyMuscle = segments.some((s) => detectMuscles(s.segment).length > 0 || extractExplicit(s.segment, ejercicios).length > 0);
+    const split = defaultSplit(segments.length);
+    segments.forEach((seg, idx) => {
+      const segHasContent = detectMuscles(seg.segment).length > 0 || extractExplicit(seg.segment, ejercicios).length > 0;
+      const fb = !segHasContent ? split[idx % split.length] : undefined;
+      const day = buildDay(seg.diaSemana, seg.segment, idx + 1, fb);
       if (day && !usedDays.has(day.diaSemana)) {
         usedDays.add(day.diaSemana);
+        if (!segHasContent && fb) day.nombre = dayName(fb);
         dias.push(day);
       }
-    }
+    });
+  } else if (requestedCount > 1) {
+    // "rutina de 4 dias" sin nombrar días
+    const split = defaultSplit(requestedCount);
+    const dayNames = DIAS_VALIDOS.slice(0, requestedCount);
+    dayNames.forEach((dn, idx) => {
+      const fb = split[idx % split.length];
+      const day = buildDay(dn, prompt, idx + 1, fb);
+      if (day) { day.nombre = dayName(fb); day.diaSemana = dn; usedDays.add(dn); dias.push(day); }
+    });
   } else {
-    const day = buildDay("lunes", prompt);
+    const day = buildDay("lunes", prompt, 1);
     if (day) {
       if (detectMuscles(prompt).length === 0 && extractExplicit(prompt, ejercicios).length === 0) {
         day.nombre = "Full Body";
@@ -219,7 +349,7 @@ function buildDeterministic(prompt: string, ejercicios: EjercicioInput[]): Rutin
     }
   });
 
-  const nombreSugerido = dias[0]?.nombre ? `Rutina ${dias[0].nombre}` : "";
+  const nombreSugerido = dias.length > 1 ? `Rutina ${dias.length} días` : (dias[0]?.nombre ? `Rutina ${dias[0].nombre}` : "");
   return { nombreSugerido, dias, noEncontrados, aclaraciones: "" };
 }
 
@@ -333,10 +463,12 @@ function resolveRoutine(parsed: any, ejercicios: EjercicioInput[]): RutinaResult
 // ─── Selección de catálogo (evita límites de tokens) ────────
 
 function selectCatalog(prompt: string, ejercicios: EjercicioInput[]): EjercicioInput[] {
-  if (ejercicios.length <= 180) return ejercicios;
+  if (ejercicios.length <= 220) return ejercicios;
 
   const tokens = new Set(norm(prompt).split(" ").filter((t) => t.length >= 3));
   const muscles = detectMuscles(prompt);
+  const explicit = extractExplicit(prompt, ejercicios);
+  const explicitIds = new Set(explicit.map((e) => e.id));
 
   const scored = ejercicios.map((e) => {
     const n = norm(e.nombre);
@@ -347,7 +479,8 @@ function selectCatalog(prompt: string, ejercicios: EjercicioInput[]): EjercicioI
       else if (g.includes(t)) s += 1;
     }
     for (const mk of muscles) {
-      if (g.includes(mk)) s += 5;
+      const mus = MUSCULOS.find((m) => m.key === mk);
+      if (mus && mus.words.some((w) => g.includes(w))) s += 5;
     }
     s += Math.min(10, Math.floor(scoreMatch(prompt, e.nombre) / 10));
     return { e, s };
@@ -355,13 +488,37 @@ function selectCatalog(prompt: string, ejercicios: EjercicioInput[]): EjercicioI
 
   const picked: EjercicioInput[] = [];
   const seen = new Set<string>();
-  for (const ex of extractExplicit(prompt, ejercicios)) {
-    if (!seen.has(ex.id)) { seen.add(ex.id); picked.push(ex); }
-  }
+  const add = (e: EjercicioInput) => { if (!seen.has(e.id)) { seen.add(e.id); picked.push(e); } };
+
+  for (const ex of explicit) add(ex);
+
+  // Priorizar matches directos del prompt
   scored.sort((a, b) => b.s - a.s);
   for (const x of scored) {
-    if (picked.length >= 180) break;
-    if (!seen.has(x.e.id)) { seen.add(x.e.id); picked.push(x.e); }
+    if (picked.length >= 140) break;
+    if (x.s > 0) add(x.e);
+  }
+
+  // Garantizar diversidad: al menos algunos ejercicios por grupo muscular
+  const byGroup = new Map<string, EjercicioInput[]>();
+  for (const e of ejercicios) {
+    const g = norm(e.grupoMuscular) || "otros";
+    if (!byGroup.has(g)) byGroup.set(g, []);
+    byGroup.get(g)!.push(e);
+  }
+  for (const [, group] of byGroup) {
+    if (picked.length >= 210) break;
+    let added = 0;
+    for (const e of group) {
+      if (added >= 4) break;
+      if (!seen.has(e.id)) { add(e); added++; }
+    }
+  }
+
+  // Rellenar hasta el tope con el resto priorizado
+  for (const x of scored) {
+    if (picked.length >= 220) break;
+    add(x.e);
   }
   return picked;
 }
@@ -372,8 +529,8 @@ async function callGroq(messages: { role: string; content: string }[], model: st
   const body: Record<string, any> = {
     model,
     messages,
-    temperature: 0.2,
-    max_tokens: 1600,
+    temperature: 0.7,
+    max_tokens: 2200,
   };
   if (responseFormat) body.response_format = { type: "json_object" };
   const res = await fetch(GROQ_URL, {
@@ -418,26 +575,32 @@ export async function POST(req: NextRequest) {
 Tu tarea: interpretar el pedido con la MÁXIMA comprensión y devolver UN ÚNICO objeto JSON válido. Nada de markdown, nada de texto antes ni después. Solo el JSON.
 
 REGLAS DE ORO:
-1. Solo podés usar ejercicios que estén en el CATÁLOGO. Jamás inventes ejercicios ni IDs.
-2. Entendé días de la semana: si el coach dice "lunes pecho y tríceps, martes espalda y bíceps, miércoles pecho y hombros", creá un día por cada uno, en ese orden y con esa combinación exacta.
-3. Si el coach pide ejercicios específicos por nombre, mapealos al ejercicio más equivalente del catálogo (sinónimos de fitness: "press banca"/"press plano"/"pecho plano" = press de pecho; "dominadas"/"jalón" = dominadas/jalón; "sillón de cuádriceps" = extensión de cuádriceps; etc.).
-4. CANTIDAD POR MÚSCULO:
+1. SOLO CATÁLOGO: Usá únicamente ejercicios del CATÁLOGO. Jamás inventes ejercicios ni IDs. El catálogo incluye ejercicios propios del coach (pueden tener nombres no típicos, ej. "pecho inclinado en polea") y debés considerarlos y usarlos cuando encajan.
+2. COMPRENSIÓN TOTAL: Interpretá el contexto completo: cantidad de días, nivel (principiante/intermedio/avanzado), objetivo (hipertrofia, fuerza, pérdida de grasa, etc.), género si se menciona, restricciones, y cualquier detalle. Adaptá la rutina a eso (volumen, selección, complejidad, series/reps/descanso).
+3. DÍAS Y SPLIT:
+   - Si el coach indica días concretos ("lunes..., martes..."), creá un día por cada uno, respetando lo pedido.
+   - Si pide "rutina de N días" sin especificar músculos por día, diseñá un split lógico y variado (ej: 3 días = push/pull/legs o full body; 4 días = torso/pierna o push/pull/legs+hombros; 5 días = bro split o PPLUL). NO repitas el mismo esquema ni los mismos ejercicios en todos los días.
+   - Si pide músculos sin aclarar días, elegí días coherentes (lunes en adelante) sin repetir diaSemana.
+4. VARIEDAD OBLIGATORIA:
+   - NUNCA repitas la misma lista de ejercicios en días distintos. Aunque dos días trabajen el mismo músculo, VARIÁ los ejercicios (ej. pecho día 1: press banca, aperturas; pecho día 3: press inclinado, cruces en polea).
+   - Dentro del mismo músculo, elegí ejercicios distintos y complementarios del catálogo; no te quedes siempre con los 3-4 más "típicos". Mezclá opciones del catálogo, incluyendo las que agregó el coach.
+   - Evitá repetir un mismo ejercicio en más de un día salvo que el usuario lo pida explícitamente o la estructura lo justifique claramente (y aun así variá el resto).
+5. CANTIDAD POR MÚSCULO:
    - Si el coach pide un músculo SIN aclarar cuántos ejercicios, incluí 3 o 4 ejercicios de ese músculo (MÁXIMO 4, NUNCA más de 4).
    - Si el coach SÍ aclara la cantidad ("3 de pecho", "5 ejercicios de espalda", "incluí 2 de bíceps"), respetá EXACTAMENTE esa cantidad, incluso si es mayor a 4.
-5. Si el coach pide por grupo muscular sin más detalles, elegí ejercicios variados de ese grupo desde el catálogo.
-6. PODÉS MEZCLAR las dos formas en el mismo pedido y en el mismo día:
-   - "martes incluí 3 ejercicios de pecho y press militar y elevaciones laterales" → 3 de Pecho MÁS el Press Militar y las Elevaciones Laterales (los específicos se agregan aparte, NO cuentan dentro de los 3 de pecho).
-   - "miércoles incluí sentadilla, prensa, sillón de cuádriceps y gemelos" → los 3 ejercicios nombrados MÁS 3 o 4 de Gemelos (porque no se aclaró cantidad de gemelos). Si el coach lista ejercicios concretos de un músculo, respetá esa lista y no agregues más de ese músculo salvo que lo pida.
-7. Si un ejercicio pedido no está ni tiene equivalente en el catálogo, ponelo en "noEncontrados".
-8. Asigná "diaSemana" sin repetir (lunes..domingo), respetando los días pedidos.
-9. Valores por defecto si no se indican: series 4, reps 10, descansoSegundos 90.
+6. MEZCLA DE FORMAS EN UN MISMO DÍA/PEDIDO:
+   - "martes incluí 3 ejercicios de pecho y press militar y elevaciones laterales" → 3 de Pecho MÁS Press Militar y Elevaciones Laterales (los específicos se agregan aparte, NO cuentan dentro de los 3 de pecho).
+   - "miércoles incluí sentadilla, prensa, sillón de cuádriceps y gemelos" → los 3 nombrados de cuádriceps MÁS 3 o 4 de Gemelos (cantidad no aclarada para gemelos). Si el coach lista ejercicios concretos de un músculo, respetá esa lista y no agregues más de ese músculo salvo que lo pida.
+7. MAPEO DE NOMBRES: Si pide un ejercicio por nombre, mapealo al más equivalente del catálogo (sinónimos: press banca/plano = press de pecho; dominadas/jalón = tirón vertical; sillón de cuádriceps = extensión de cuádriceps; peso muerto rumano = RDL; etc.). Si no hay equivalente, ponelo en "noEncontrados".
+8. PARÁMETROS: series/reps/descanso coherentes con el contexto. Por defecto: series 4, reps 10, descansoSegundos 90. Principiante: menos volumen/descanso moderado. Fuerza: menos reps, más descanso. Hipertrofia: 8-12 reps. Resistencia: más reps.
+9. diaSemana sin repetir (lunes..domingo). Máximo 7 días. Respetá los días pedidos.
 
 FORMATO EXACTO DE SALIDA (solo este JSON):
 {
   "nombreSugerido": "nombre corto de la rutina",
   "dias": [
     {
-      "nombre": "nombre del día, ej: Pecho y Tríceps",
+      "nombre": "nombre del día",
       "diaSemana": "lunes",
       "ejercicios": [
         { "ejercicioId": "id_del_catalogo", "series": 4, "reps": 10, "descansoSegundos": 90, "notas": "" }
@@ -448,15 +611,16 @@ FORMATO EXACTO DE SALIDA (solo este JSON):
   "aclaraciones": ""
 }
 
-Ejemplo de pedido: "lunes espalda y bíceps; martes incluí 3 de pecho y press militar y elevaciones laterales; miércoles incluí sentadilla, prensa, sillón de cuádriceps y gemelos; jueves pecho y tríceps"
-Ejemplo de respuesta correcta:
+Ejemplo (pedido mezclado, días con músculos y con ejercicios específicos + cantidad):
+Pedido: "lunes espalda y bíceps; martes incluí 3 de pecho y press militar y elevaciones laterales; miércoles incluí sentadilla, prensa, sillón de cuádriceps y gemelos; jueves pecho y tríceps"
+Respuesta:
 {
-  "nombreSugerido": "Empuje/Tirón/Mixta",
+  "nombreSugerido": "Rutina 4 días",
   "dias": [
-    { "nombre": "Espalda y Bíceps", "diaSemana": "lunes", "ejercicios": [ {"ejercicioId":"<id_espalda_1>"}, {"ejercicioId":"<id_espalda_2>"}, {"ejercicioId":"<id_espalda_3>"}, {"ejercicioId":"<id_biceps_1>"}, {"ejercicioId":"<id_biceps_2>"}, {"ejercicioId":"<id_biceps_3>"} ] },
-    { "nombre": "Pecho y Hombros", "diaSemana": "martes", "ejercicios": [ {"ejercicioId":"<id_pecho_1>"}, {"ejercicioId":"<id_pecho_2>"}, {"ejercicioId":"<id_pecho_3>"}, {"ejercicioId":"<id_press_militar>"}, {"ejercicioId":"<id_elevaciones_laterales>"} ] },
-    { "nombre": "Cuádriceps y Gemelos", "diaSemana": "miercoles", "ejercicios": [ {"ejercicioId":"<id_sentadilla>"}, {"ejercicioId":"<id_prensa>"}, {"ejercicioId":"<id_extension_cuadriceps>"}, {"ejercicioId":"<id_gemelo_1>"}, {"ejercicioId":"<id_gemelo_2>"}, {"ejercicioId":"<id_gemelo_3>"} ] },
-    { "nombre": "Pecho y Tríceps", "diaSemana": "jueves", "ejercicios": [ {"ejercicioId":"<id_pecho_1>"}, {"ejercicioId":"<id_pecho_2>"}, {"ejercicioId":"<id_pecho_3>"}, {"ejercicioId":"<id_triceps_1>"}, {"ejercicioId":"<id_triceps_2>"}, {"ejercicioId":"<id_triceps_3>"} ] }
+    { "nombre": "Espalda y Bíceps", "diaSemana": "lunes", "ejercicios": [ {"ejercicioId":"<espalda_1>","series":4,"reps":10,"descansoSegundos":90,"notas":""}, {"ejercicioId":"<espalda_2>"}, {"ejercicioId":"<espalda_3>"}, {"ejercicioId":"<biceps_1>"}, {"ejercicioId":"<biceps_2>"}, {"ejercicioId":"<biceps_3>"} ] },
+    { "nombre": "Pecho y Hombros", "diaSemana": "martes", "ejercicios": [ {"ejercicioId":"<pecho_1>"}, {"ejercicioId":"<pecho_2>"}, {"ejercicioId":"<pecho_3>"}, {"ejercicioId":"<press_militar>"}, {"ejercicioId":"<elevaciones_laterales>"} ] },
+    { "nombre": "Piernas y Gemelos", "diaSemana": "miercoles", "ejercicios": [ {"ejercicioId":"<sentadilla>"}, {"ejercicioId":"<prensa>"}, {"ejercicioId":"<extension_cuadriceps>"}, {"ejercicioId":"<gemelo_1>"}, {"ejercicioId":"<gemelo_2>"}, {"ejercicioId":"<gemelo_3>"} ] },
+    { "nombre": "Pecho y Tríceps", "diaSemana": "jueves", "ejercicios": [ {"ejercicioId":"<pecho_4_distinto>"}, {"ejercicioId":"<pecho_5_distinto>"}, {"ejercicioId":"<pecho_6_distinto>"}, {"ejercicioId":"<triceps_1>"}, {"ejercicioId":"<triceps_2>"}, {"ejercicioId":"<triceps_3>"} ] }
   ],
   "noEncontrados": [],
   "aclaraciones": ""
@@ -481,7 +645,7 @@ Ejemplo de respuesta correcta:
         contents.push(content);
         const parsedJson = extractJson(content);
         if (parsedJson) {
-          const routine = resolveRoutine(parsedJson, ejercicios);
+          const routine = diversifyRoutine(resolveRoutine(parsedJson, ejercicios), ejercicios);
           if (routine.dias.length > 0) return NextResponse.json(routine);
         }
       } catch {}
@@ -502,7 +666,7 @@ Ejemplo de respuesta correcta:
         if (repaired.trim()) {
           const parsedJson = extractJson(repaired);
           if (parsedJson) {
-            const routine = resolveRoutine(parsedJson, ejercicios);
+            const routine = diversifyRoutine(resolveRoutine(parsedJson, ejercicios), ejercicios);
             if (routine.dias.length > 0) return NextResponse.json(routine);
           }
         }
@@ -510,7 +674,7 @@ Ejemplo de respuesta correcta:
     }
 
     // Tercera pasada: construcción determinista (NUNCA devuelve "formato no válido").
-    const det = buildDeterministic(prompt, ejercicios);
+    const det = diversifyRoutine(buildDeterministic(prompt, ejercicios), ejercicios);
     if (det.dias.length > 0) {
       det.aclaraciones = (det.aclaraciones ? det.aclaraciones + " · " : "") + "Armado automáticamente. Revisá series/reps antes de guardar.";
       return NextResponse.json(det);
