@@ -474,38 +474,14 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
     router.push("/dashboard/redes");
   }, [router]);
 
-  // La tarjeta se ubica al costado cuando hay espacio para no tapar el botón.
-  const cardStyle = useMemo<CSSProperties>(() => {
-    if (!targetRect || !viewport.width) {
-      return { left: "50%", top: "50%", transform: "translate(-50%, -50%)", width: "min(360px, calc(100vw - 24px))" };
-    }
-    const isMobile = viewport.width < 640;
-    const cardWidth = Math.min(360, viewport.width - 24);
-    const estimatedHeight = isMobile ? 286 : 246;
-    const gap = 16;
-
-    if (!isMobile) {
-      const rightSpace = viewport.width - targetRect.right - gap - cardWidth;
-      const leftSpace = targetRect.left - gap - cardWidth;
-      if (rightSpace >= 12 || leftSpace >= 12) {
-        const placeRight = rightSpace >= leftSpace;
-        const left = placeRight ? targetRect.right + gap : targetRect.left - cardWidth - gap;
-        const top = targetRect.top + targetRect.height / 2 - estimatedHeight / 2;
-        return {
-          left: Math.max(12, Math.min(left, viewport.width - cardWidth - 12)),
-          top: Math.max(12, Math.min(top, viewport.height - estimatedHeight - 12)),
-          width: cardWidth,
-        };
-      }
-    }
-
-    let left = targetRect.left + targetRect.width / 2 - cardWidth / 2;
-    left = Math.max(12, Math.min(left, viewport.width - cardWidth - 12));
-    let top = targetRect.bottom + gap;
-    if (top + estimatedHeight > viewport.height - 12) top = targetRect.top - estimatedHeight - gap;
-    if (top < 12) top = Math.max(12, Math.min(targetRect.top, viewport.height - estimatedHeight - 12));
-    return { left, top, width: cardWidth };
-  }, [targetRect, viewport]);
+  // La tarjeta va fija al pie de la pantalla: así no tapa el elemento resaltado
+  // (que el auto-scroll deja centrado) y se mantiene estable, sin seguir el scroll.
+  const cardStyle = useMemo<CSSProperties>(() => ({
+    left: "50%",
+    bottom: "max(16px, calc(16px + env(safe-area-inset-bottom, 0px)))",
+    transform: "translateX(-50%)",
+    width: "min(400px, calc(100vw - 24px))",
+  }), []);
 
   const pointerLabelStyle = useMemo<CSSProperties | undefined>(() => {
     if (!targetRect || !viewport.width) return undefined;

@@ -305,12 +305,6 @@
   font-weight: 800;
   letter-spacing: 0.03em;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55), 0 0 20px rgba(43, 255, 213, 0.85);
-  animation: onboarding-pointer-bob 1.25s ease-in-out infinite;
-}
-
-@keyframes onboarding-pointer-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
 }
 
 .onboarding-tip {
