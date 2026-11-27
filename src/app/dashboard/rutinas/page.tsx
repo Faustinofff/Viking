@@ -551,6 +551,15 @@ export default function RutinasPage() {
     router.replace("/dashboard/rutinas");
   }, [searchParams, editRutinaId, showBuilder, router]);
 
+  // Durante el onboarding la primera rutina se guarda como borrador: el coach
+  // todavía no tiene por qué elegir alumnos para completar el recorrido.
+  useEffect(() => {
+    if (!showBuilder || editandoId || editandoUnassignedId) return;
+    if (onboarding.state?.status === "in_progress" && onboarding.state.phase === "tour") {
+      setNoAssign(true);
+    }
+  }, [showBuilder, editandoId, editandoUnassignedId, onboarding.state?.status, onboarding.state?.phase]);
+
   // Save draft when modal closes (cancel or save), not on every keystroke
   useEffect(() => {
     if (!showBuilder) {
@@ -760,7 +769,7 @@ export default function RutinasPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="label block mb-1.5">Nombre de la rutina</label>
-                <input className="input" placeholder="Ej: Push Pull Legs" value={nombre} data-onboarding="routine-name" onChange={(e) => { setNombre(e.target.value); if (e.target.value.trim()) onboarding.track("routine_name_filled"); }} />
+                <input className="input" placeholder="Ej: Push Pull Legs" value={nombre} data-onboarding="routine-name" onChange={(e) => setNombre(e.target.value)} />
               </div>
               <div>
                 <label className="label block mb-1.5">Alumnos (seleccioná uno o más)</label>

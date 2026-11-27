@@ -75,7 +75,7 @@ const TOUR_STEPS: TourStep[] = [
     targets: ["routine-name"],
     event: "routine_name_filled",
     title: "Ponéle un nombre",
-    description: "Escribí un nombre en el campo resaltado, por ejemplo «Full Body» o «Push Pull Legs».",
+    description: "Escribí el nombre en el campo blanco, por ejemplo «Full Body». Después tocá «Aceptar y continuar».",
   },
   {
     id: "days",
@@ -149,6 +149,7 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
+  const [targetKey, setTargetKey] = useState<string | null>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
 
   const stateRef = useRef<CoachOnboardingState | null>(null);
@@ -220,6 +221,7 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!active || !state || state.phase !== "tour") {
       setTargetRect(null);
+      setTargetKey(null);
       autoScrollPending.current = null;
       return;
     }
@@ -265,9 +267,11 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
         // Dentro de un mismo paso el objetivo puede cambiar (ej.: se abre el
         // buscador de ejercicios). También ahí hay que llevarlo al centro.
         if (highlighted && el) autoScrollPending.current = step.id;
-        highlighted?.classList.remove("onboarding-target-glow");
+        highlighted?.classList.remove("onboarding-target-glow", "onboarding-target-input");
         el?.classList.add("onboarding-target-glow");
+        el?.classList.toggle("onboarding-target-input", el.dataset.onboarding === "routine-name");
         highlighted = el;
+        setTargetKey(el?.dataset.onboarding ?? null);
       }
 
       setViewport((prev) => prev.width === window.innerWidth && prev.height === window.innerHeight
@@ -336,7 +340,7 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
       observer.disconnect();
-      highlighted?.classList.remove("onboarding-target-glow");
+      highlighted?.classList.remove("onboarding-target-glow", "onboarding-target-input");
       padded.forEach((el) => el.classList.remove("onboarding-scroll-space"));
     };
   }, [active, state?.phase, state?.step, pathname]);
@@ -436,6 +440,17 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
     });
   }, [apply]);
 
+  const acceptName = useCallback(() => {
+    const current = stateRef.current;
+    if (!current || current.step !== 1 || current.phase !== "tour") return;
+    const input = document.querySelector<HTMLInputElement>('[data-onboarding="routine-name"]');
+    if (!input?.value.trim()) {
+      input?.focus();
+      return;
+    }
+    track("routine_name_filled");
+  }, [track]);
+
   const goToRegisteredStudents = useCallback(() => {
     finish();
     router.push("/dashboard/redes");
@@ -448,7 +463,7 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
     }
     const isMobile = viewport.width < 640;
     const cardWidth = Math.min(360, viewport.width - 24);
-    const estimatedHeight = isMobile ? 236 : 206;
+    const estimatedHeight = isMobile ? 286 : 246;
     const gap = 16;
 
     if (!isMobile) {
@@ -575,7 +590,7 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
             <>
               <div
                 aria-hidden="true"
-                className="onboarding-spotlight"
+                className={`onboarding-spotlight ${targetKey === "routine-name" ? "onboarding-spotlight-input" : ""}`}
                 style={{
                   position: "fixed",
                   left: targetRect.left - 8,
@@ -634,6 +649,12 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
               <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,170,0.9)]" />
               El elemento resaltado es el que tenés que tocar
             </div>
+
+            {currentStep.id === "name" && (
+              <button onClick={acceptName} className="btn-secondary mt-3 w-full !py-2 text-xs">
+                Aceptar y continuar
+              </button>
+            )}
 
             {!targetRect && pathname !== "/dashboard/rutinas" && (
               <button onClick={() => router.push("/dashboard/rutinas")} className="btn-ghost mt-2 !px-2 !py-1 text-xs text-accent">
