@@ -10,6 +10,7 @@ import { esPaginaWebVisible } from "@/lib/pagina-web";
 import { ThemeToggle, useThemeMode } from "@/components/theme-toggle";
 import ChatDialog from "@/components/chat";
 import AppBrandMark from "@/components/app-brand";
+import { CoachOnboardingProvider } from "@/components/coach-onboarding";
 
 const BOTTOM_NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
@@ -356,7 +357,7 @@ useAppStore.getState().refreshBrandingEnabled();
             </div>
           </div>
         )}
-        {children}
+        <CoachOnboardingProvider>{children}</CoachOnboardingProvider>
       </main>
     </div>
   );

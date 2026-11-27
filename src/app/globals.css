@@ -105,6 +105,45 @@
 .animate-escaner-glow {
   animation: escaner-glow 2.2s ease-in-out infinite;
 }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-toast-in {
+  animation: toast-in 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes check-pop {
+  0% { opacity: 0; transform: scale(0.6); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.animate-check-pop {
+  animation: check-pop 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes check-draw {
+  to { stroke-dashoffset: 0; }
+}
+.animate-check-draw {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: check-draw 0.45s ease-out 0.12s forwards;
+}
+@keyframes spotlight-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-spotlight-in {
+  animation: spotlight-in 0.18s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 /* Texto que debe permanecer blanco sobre fondos de acento (ej. check de comidas). */
 .text-on-accent { color: #FFFFFF; }

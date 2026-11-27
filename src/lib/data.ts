@@ -2,6 +2,45 @@ import { supabase } from "./supabase";
 
 const NUTRITION_PREFIX = "NUTRITION: ";
 
+// ─── Coach onboarding ────────────────────────────────────
+// El estado se guarda dentro del blob JSON existente de profiles.avatar_url.
+// No agregamos tablas ni columnas: el blob ya es el mecanismo de persistencia
+// por usuario de la app y hereda las políticas RLS actuales del perfil.
+
+export type CoachOnboardingStatus = "not_started" | "in_progress" | "completed" | "dismissed";
+export type CoachOnboardingPhase = "tour" | "routine_success" | "students";
+
+export interface CoachOnboardingState {
+  status: CoachOnboardingStatus;
+  phase: CoachOnboardingPhase;
+  step: number;
+  completedSteps: string[];
+  firstRoutineCreated: boolean;
+  studentsHandled: boolean;
+  checklistHidden: boolean;
+  updatedAt?: string;
+}
+
+/** Estado de un coach nuevo: se escribe al crear el perfil. */
+export const NEW_COACH_ONBOARDING_STATE: CoachOnboardingState = {
+  status: "not_started",
+  phase: "tour",
+  step: 0,
+  completedSteps: [],
+  firstRoutineCreated: false,
+  studentsHandled: false,
+  checklistHidden: false,
+};
+
+/** Los coaches preexistentes no tienen la clave: para ellos el onboarding ya terminó. */
+const LEGACY_COACH_ONBOARDING_STATE: CoachOnboardingState = {
+  ...NEW_COACH_ONBOARDING_STATE,
+  status: "completed",
+  firstRoutineCreated: true,
+  studentsHandled: true,
+  checklistHidden: true,
+};
+
 // ─── Profiles ───────────────────────────────────────────────
 
 export async function getProfile(id: string) {
@@ -20,18 +59,30 @@ export async function createProfile(
   displayName: string,
   role: "coach" | "alumno"
 ) {
-  const { error } = await supabase.from("profiles").upsert(
-    {
-      id,
-      email,
-      display_name: displayName,
-      role: role === "alumno" ? "student" : role,
-      onboarded: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "id" }
-  );
+  // Solo los coaches nuevos estrenan la guía. Si el perfil ya existía,
+  // conservamos su blob y su experiencia actual sin tocar nada.
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+
+  const payload: Record<string, any> = {
+    id,
+    email,
+    display_name: displayName,
+    role: role === "alumno" ? "student" : role,
+    onboarded: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  if (role === "coach" && !existing) {
+    payload.avatar_url = JSON.stringify({
+      coachOnboarding: { ...NEW_COACH_ONBOARDING_STATE, status: "not_started" },
+    });
+  }
+
+  const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "id" });
   if (error) throw error;
 }
 
@@ -477,6 +528,35 @@ async function ensureProfileBlob(userId: string): Promise<void> {
 async function saveProfileBlob(userId: string, blob: Record<string, any>, originalUrl: string) {
   if (originalUrl) blob._url = originalUrl;
   await supabase.from("profiles").update({ avatar_url: JSON.stringify(blob) }).eq("id", userId);
+}
+
+/** Lee el estado de onboarding del coach. Ausente = coach preexistente (ya terminó). */
+export async function getCoachOnboardingState(userId: string): Promise<CoachOnboardingState> {
+  const { data } = await readProfileBlob(userId);
+  const raw = data.coachOnboarding;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { ...LEGACY_COACH_ONBOARDING_STATE };
+  }
+  const statuses: CoachOnboardingStatus[] = ["not_started", "in_progress", "completed", "dismissed"];
+  const phases: CoachOnboardingPhase[] = ["tour", "routine_success", "students"];
+  return {
+    status: statuses.includes(raw.status) ? raw.status : LEGACY_COACH_ONBOARDING_STATE.status,
+    phase: phases.includes(raw.phase) ? raw.phase : LEGACY_COACH_ONBOARDING_STATE.phase,
+    step: Number.isInteger(raw.step) && raw.step >= 0 ? raw.step : 0,
+    completedSteps: Array.isArray(raw.completedSteps) ? raw.completedSteps.filter((s: any) => typeof s === "string") : [],
+    firstRoutineCreated: Boolean(raw.firstRoutineCreated),
+    studentsHandled: Boolean(raw.studentsHandled),
+    checklistHidden: Boolean(raw.checklistHidden),
+    updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : undefined,
+  };
+}
+
+/** Guarda el estado sin alterar ninguna otra clave del blob del perfil. */
+export async function saveCoachOnboardingState(userId: string, state: CoachOnboardingState) {
+  await ensureProfileBlob(userId);
+  const { data, originalUrl } = await readProfileBlob(userId);
+  data.coachOnboarding = { ...state, updatedAt: new Date().toISOString() };
+  await saveProfileBlob(userId, data, originalUrl);
 }
 
 // ─── Water Tracking ────────────────────────────────────────────

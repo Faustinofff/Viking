@@ -1,9 +1,10 @@
 "use client";
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAppStore, type WeekDay, type DiaRutina, type Rutina } from "@/lib/store";
 import { useConfirmToast } from "@/components/toast";
+import { useCoachOnboarding } from "@/components/coach-onboarding";
 import { getCurrentWeekIndex, ejercicioWeekValue, updateWorkoutPlan, esCoachGratuito } from "@/lib/data";
 
 const DIAS_SEMANA: { value: WeekDay; label: string }[] = [
@@ -27,6 +28,7 @@ const MUSCLE_GROUPS = [
 
 export default function RutinasPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const alumnoIdParam = searchParams.get("alumnoId");
   const editRutinaId = searchParams.get("editRutinaId");
 
@@ -44,7 +46,8 @@ export default function RutinasPage() {
   const premium = useAppStore((s) => s.premium);
 
   const eliminarRutina = useAppStore((s) => s.eliminarRutina);
-  const { confirm, ToastUI } = useConfirmToast();
+  const { confirm, toast, ToastUI } = useConfirmToast();
+  const onboarding = useCoachOnboarding();
   const syncCoachData = useAppStore((s) => s.syncCoachData);
 
   const [syncing, setSyncing] = useState(false);
@@ -77,6 +80,24 @@ export default function RutinasPage() {
   const parseDiasDuracion = (v?: string): number | undefined => {
     const n = parseInt(v ?? "", 10);
     return Number.isFinite(n) && n > 0 ? n : undefined;
+  };
+
+  const nombreAlumno = (id: string) => {
+    const a = alumnos.find((al) => al.id === id);
+    return a?.apodo || a?.nombre || "";
+  };
+
+  const mostrarConfirmacionAsignacion = (nombreRutina: string, idsAlumnos: string[]) => {
+    const nombres = idsAlumnos.map(nombreAlumno).filter(Boolean);
+    toast("La rutina se asignó correctamente a tu alumno.", "success", {
+      title: "Rutina asignada correctamente",
+      details: [
+        `Rutina: ${nombreRutina}`,
+        ...(nombres.length > 0
+          ? [`Alumno${nombres.length > 1 ? "s" : ""}: ${nombres.join(", ")}`]
+          : []),
+      ],
+    });
   };
 
   const aplicarDiasATodos = () => {
@@ -138,6 +159,7 @@ export default function RutinasPage() {
     const disponibles = DIAS_SEMANA.filter((d) => !dias.find((dd) => dd.diaSemana === d.value));
     if (disponibles.length === 0) return;
     setDias([...dias, { id: `d_${Date.now()}`, nombre: `Día ${dias.length + 1}`, diaSemana: disponibles[0].value, ejercicios: [] }]);
+    onboarding.track("routine_day_added");
   };
 
   const agregarEjADia = (diaId: string, ejercicioId: string) => {
@@ -150,6 +172,7 @@ export default function RutinasPage() {
     ));
     setDiaActivo(null);
     setSearchText("");
+    onboarding.track("routine_exercise_added");
   };
 
   const ejercicioTutoriales = useAppStore((s) => s.ejercicioTutoriales);
@@ -355,7 +378,9 @@ export default function RutinasPage() {
           for (const id of alumnoIds) {
             await asignarRutina({ coachId, nombre: nombre.trim(), alumnoId: id, mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi, diasDuracion: parseDiasDuracion(diasPorAlumno[id]) ?? parseDiasDuracion(diasParaTodos) });
           }
+          mostrarConfirmacionAsignacion(nombre.trim(), alumnoIds);
         }
+        onboarding.track("routine_saved");
         setShowBuilder(false);
         resetForm();
       } else if (noAssign) {
@@ -364,6 +389,7 @@ export default function RutinasPage() {
           await eliminarRutina(editandoId);
         }
         await saveUnassignedRoutine({ coachId, nombre: nombre.trim(), alumnoId: "", mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi });
+        onboarding.track("routine_saved");
         setShowBuilder(false);
         resetForm();
       } else if (editandoId) {
@@ -385,12 +411,17 @@ export default function RutinasPage() {
         if (oldStudentId && !alumnoIds.includes(oldStudentId)) {
           await eliminarRutina(editandoId);
         }
+        const alumnosNuevos = alumnoIds.filter((id) => id !== oldStudentId);
+        if (alumnosNuevos.length > 0) mostrarConfirmacionAsignacion(nombre.trim(), alumnosNuevos);
+        onboarding.track("routine_saved");
         setShowBuilder(false);
         resetForm();
       } else {
         for (const id of alumnoIds) {
           await asignarRutina({ coachId, nombre: nombre.trim(), alumnoId: id, mes: new Date().getMonth() + 1, anio: new Date().getFullYear(), dias, activa: true, indicacionesSemanales: wi, diasDuracion: parseDiasDuracion(diasPorAlumno[id]) ?? parseDiasDuracion(diasParaTodos) });
         }
+        mostrarConfirmacionAsignacion(nombre.trim(), alumnoIds);
+        onboarding.track("routine_saved");
         setShowBuilder(false);
         resetForm();
       }
@@ -513,6 +544,13 @@ export default function RutinasPage() {
     if (rutina) abrirEditor(rutina);
   }, [editRutinaId]);
 
+  // Reanudar la guía abre el editor real con el borrador que el coach dejó.
+  useEffect(() => {
+    if (searchParams.get("onboardingResume") !== "1" || editRutinaId || showBuilder) return;
+    setShowBuilder(true);
+    router.replace("/dashboard/rutinas");
+  }, [searchParams, editRutinaId, showBuilder, router]);
+
   // Save draft when modal closes (cancel or save), not on every keystroke
   useEffect(() => {
     if (!showBuilder) {
@@ -548,8 +586,9 @@ export default function RutinasPage() {
                 return;
               }
             }
+            onboarding.track("routine_builder_opened");
             resetForm(); setShowBuilder(true);
-          }} className="btn-primary">+ Nueva Rutina</button>
+          }} className="btn-primary" data-onboarding="new-routine">+ Nueva Rutina</button>
         </div>
       </div>
 
@@ -626,7 +665,12 @@ export default function RutinasPage() {
                 <p className="text-sm text-white/30 text-center py-4">No hay alumnos</p>
               )}
               {alumnos.filter((a) => a.nombre.toLowerCase().includes(assignSearch.toLowerCase())).map((a) => (
-                <button key={a.id} onClick={async () => { await assignUnassignedRoutine(showAssignPicker, a.id, parseDiasDuracion(assignDiasDuracion)); setShowAssignPicker(null); setAssignSearch(""); setAssignDiasDuracion(""); setShowAssignAdvanced(false); }}
+                <button key={a.id} onClick={async () => {
+                  const rutina = unassignedRoutines.find((r) => r.id === showAssignPicker);
+                  await assignUnassignedRoutine(showAssignPicker, a.id, parseDiasDuracion(assignDiasDuracion));
+                  if (rutina) mostrarConfirmacionAsignacion(rutina.nombre, [a.id]);
+                  setShowAssignPicker(null); setAssignSearch(""); setAssignDiasDuracion(""); setShowAssignAdvanced(false);
+                }}
                   className="w-full text-left px-3 py-2.5 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg transition-colors">
                   {a.nombre}
                 </button>
@@ -716,7 +760,7 @@ export default function RutinasPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="label block mb-1.5">Nombre de la rutina</label>
-                <input className="input" placeholder="Ej: Push Pull Legs" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                <input className="input" placeholder="Ej: Push Pull Legs" value={nombre} data-onboarding="routine-name" onChange={(e) => { setNombre(e.target.value); if (e.target.value.trim()) onboarding.track("routine_name_filled"); }} />
               </div>
               <div>
                 <label className="label block mb-1.5">Alumnos (seleccioná uno o más)</label>
@@ -832,7 +876,7 @@ export default function RutinasPage() {
             <div className="space-y-4 mb-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider">Días</h3>
-                <button onClick={agregarDia} disabled={dias.length >= 7} className="btn-ghost text-sm">+ Agregar Día</button>
+                <button onClick={agregarDia} disabled={dias.length >= 7} className="btn-ghost text-sm" data-onboarding="add-day">+ Agregar Día</button>
               </div>
 
               {dias.length === 0 && (
@@ -866,6 +910,9 @@ export default function RutinasPage() {
                           const arr = (ej as any)[arrKey] ?? [4, 4, 4, 4];
                           arr[sw] = val;
                           upd({ [field]: val, [arrKey]: arr });
+                          if (field === "series" || field === "reps" || field === "descansoSegundos") {
+                            onboarding.track("routine_config_changed");
+                          }
                         };
                         return (
                         <div key={ej.id} className="flex flex-col sm:flex-row sm:items-start gap-2 bg-white/[0.04] rounded-lg px-3 py-2 border border-white/[0.05]">
@@ -885,7 +932,7 @@ export default function RutinasPage() {
                           </div>
                           <div className="flex flex-col gap-1.5">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <input type="text" inputMode="numeric" className="input !w-12 !text-center !text-xs !py-1.5"
+                              <input type="text" inputMode="numeric" className="input !w-12 !text-center !text-xs !py-1.5" data-onboarding="exercise-settings"
                                 value={(ej.seriesPorSemana ?? [ej.series, ej.series, ej.series, ej.series])[sw]}
                                 onChange={(e) => { const v = e.target.value; const n = v === "" ? 0 : parseInt(v); if (!isNaN(n)) updWeek("series", "seriesPorSemana", n); }} />
                               <span className="text-[10px] text-white/30">×</span>
@@ -920,7 +967,7 @@ export default function RutinasPage() {
                     {/* Exercise Search */}
                     <div>
                       <button onClick={() => setDiaActivo(diaActivo === dia.id ? null : dia.id)}
-                        className="btn-ghost text-xs border border-dashed border-white/[0.1] w-full py-2 rounded-lg">
+                        className="btn-ghost text-xs border border-dashed border-white/[0.1] w-full py-2 rounded-lg" data-onboarding="add-exercise">
                         {diaActivo === dia.id ? "Cancelar" : "+ Agregar ejercicio"}
                       </button>
 
@@ -977,7 +1024,7 @@ export default function RutinasPage() {
             )}
             <div className="flex gap-2 pt-4 border-t border-white/[0.06]">
               <button onClick={() => { setShowBuilder(false); resetForm(); }} className="btn-secondary flex-1">Cancelar</button>
-              <button onClick={handleSave} disabled={!nombre || (!noAssign && alumnoIds.length === 0) || dias.length === 0 || saving} className="btn-primary flex-1">
+              <button onClick={handleSave} disabled={!nombre || (!noAssign && alumnoIds.length === 0) || dias.length === 0 || saving} className="btn-primary flex-1" data-onboarding="save-routine">
                 {saving ? "Guardando..." : (editandoId || editandoUnassignedId) ? "Guardar Cambios" : noAssign ? "Guardar (sin asignar)" : "Asignar Rutina" + (alumnoIds.length > 1 ? ` (${alumnoIds.length} alumnos)` : "")}
               </button>
             </div>

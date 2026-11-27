@@ -1,8 +1,10 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { ClipboardList, UserPlus, X } from "lucide-react";
 import { useAppStore, type WeekDay, type DiaRutina, type Rutina, type PlanNutricional, type DiaComida, type Comida } from "@/lib/store";
 import { useConfirmToast } from "@/components/toast";
+import { StudentInvitation } from "@/components/student-invitation";
 import { loadPaymentStatus, savePaymentStatus, resetMonthPayments, calcularEstadoRutina, formatearFechaCorta } from "@/lib/data";
 
 const DIAS_SEMANA: { value: WeekDay; label: string }[] = [
@@ -90,6 +92,8 @@ function EstadoRutinaDetalle({ r }: { r: Rutina }) {
 
 export default function AlumnosPage() {
   const [search, setSearch] = useState("");
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
   const [expandidoId, setExpandidoId] = useState<string | null>(null);
   const [rutinaExpandida, setRutinaExpandida] = useState<string | null>(null);
   const [planExpandido, setPlanExpandido] = useState<string | null>(null);
@@ -97,7 +101,7 @@ export default function AlumnosPage() {
   // Payment tracking
   const [pagos, setPagos] = useState<Record<string, boolean>>({});
   const coachId = useAppStore((s) => s.usuarioActual?.id ?? "");
-  const { confirm, ToastUI } = useConfirmToast();
+  const { confirm, toast, ToastUI } = useConfirmToast();
 
   useEffect(() => {
     if (!coachId) return;
@@ -170,6 +174,14 @@ export default function AlumnosPage() {
     const r = editRutina;
     await asignarRutina({ coachId: r.coachId, nombre: r.nombre, alumnoId: r.alumnoId, mes: 1, anio: 2026, dias: editRutinaDias, activa: true, diasDuracion: r.diasDuracion, fechaAsignacion: r.fechaAsignacion });
     await eliminarRutina(r.id);
+    const alumno = alumnos.find((a) => a.id === r.alumnoId);
+    toast("La rutina se asignó correctamente a tu alumno.", "success", {
+      title: "Rutina asignada correctamente",
+      details: [
+        `Rutina: ${r.nombre}`,
+        ...(alumno ? [`Alumno: ${alumno.apodo || alumno.nombre}`] : []),
+      ],
+    });
     setEditRutina(null);
     setEditRutinaDias([]);
   };
@@ -287,7 +299,7 @@ export default function AlumnosPage() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <div className="flex items-center gap-2">
             <button onClick={handleNuevoMes} className="btn-ghost text-xs md:text-sm shrink-0 whitespace-nowrap">📅 Comenzar nuevo mes</button>
-            <Link href="/dashboard/redes" className="btn-primary text-xs md:text-sm shrink-0 whitespace-nowrap">+ Agregar</Link>
+            <button onClick={() => { setShowAddMenu(true); setShowInvite(false); }} className="btn-primary text-xs md:text-sm shrink-0 whitespace-nowrap" data-onboarding="add-student">+ Agregar</button>
           </div>
           <input className="input w-full sm:w-auto sm:flex-1 md:max-w-xs text-sm" placeholder="Buscar alumno..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
@@ -680,6 +692,45 @@ export default function AlumnosPage() {
               <button onClick={() => { setEditPlan(null); setEditPlanGrupos([]); }} className="btn-secondary flex-1">Cancelar</button>
               <button onClick={guardarPlanEditado} disabled={editPlanGrupos.length === 0} className="btn-primary flex-1">Guardar Cambios</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Agregar alumno: dos caminos explícitos, sin romper el flujo existente */}
+      {showAddMenu && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setShowAddMenu(false)}>
+          <div className="card relative w-full max-w-lg animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setShowAddMenu(false)} aria-label="Cerrar" className="absolute right-4 top-4 rounded-lg p-1 text-white/35 transition-colors hover:bg-white/10 hover:text-white">
+              <X className="h-4 w-4" />
+            </button>
+            {!showInvite ? (
+              <>
+                <h2 className="text-lg font-bold text-white">Agregar alumno</h2>
+                <p className="mt-1 text-sm text-white/50">Elegí cómo querés incorporarlo a tu lista.</p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <Link href="/dashboard/redes" onClick={() => setShowAddMenu(false)} className="card-hover !p-4 block">
+                    <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.06] text-white/70">
+                      <UserPlus className="h-4 w-4" />
+                    </span>
+                    <p className="text-sm font-semibold text-white">Agregar alumno registrado</p>
+                    <p className="mt-1 text-xs leading-relaxed text-white/45">Buscá y agregá alumnos que ya crearon su cuenta en Viking.</p>
+                  </Link>
+                  <button onClick={() => setShowInvite(true)} className="card-hover !p-4 text-left">
+                    <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                      <ClipboardList className="h-4 w-4" />
+                    </span>
+                    <p className="text-sm font-semibold text-white">Invitar a un alumno</p>
+                    <p className="mt-1 text-xs leading-relaxed text-white/45">Copiá un mensaje con el link de acceso para compartirlo directamente.</p>
+                  </button>
+                </div>
+                <p className="mt-4 text-[11px] text-white/30">Los alumnos deben registrarse en Viking antes de poder vincularlos.</p>
+              </>
+            ) : (
+              <>
+                <button onClick={() => setShowInvite(false)} className="mb-4 text-xs text-white/45 transition-colors hover:text-white">← Volver</button>
+                <StudentInvitation onBack={() => setShowAddMenu(false)} />
+              </>
+            )}
           </div>
         </div>
       )}
