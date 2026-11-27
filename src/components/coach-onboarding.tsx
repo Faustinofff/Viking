@@ -60,6 +60,8 @@ type TourStep = {
   event: CoachOnboardingEvent;
   title: string;
   description: string;
+  /** Texto corto del chip inferior; por defecto indica que hay que tocar el elemento. */
+  hint?: string;
 };
 
 const TOUR_STEPS: TourStep[] = [
@@ -95,8 +97,9 @@ const TOUR_STEPS: TourStep[] = [
     id: "settings",
     targets: ["exercise-settings"],
     event: "routine_config_changed",
-    title: "Ajustá cada ejercicio",
-    description: "Cambiá series o repeticiones en el campo resaltado. Podés hacerlo por semana.",
+    title: "Ajustá un ejercicio",
+    description: "Acá podés ajustar la cantidad de series, repeticiones y tiempo de descanso. También podés asignar un video al ejercicio.",
+    hint: "No es obligatorio: ya vienen valores por defecto. Ajustalo o tocá «Aceptar y continuar».",
   },
   {
     id: "save",
@@ -267,9 +270,10 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
         // Dentro de un mismo paso el objetivo puede cambiar (ej.: se abre el
         // buscador de ejercicios). También ahí hay que llevarlo al centro.
         if (highlighted && el) autoScrollPending.current = step.id;
-        highlighted?.classList.remove("onboarding-target-glow", "onboarding-target-input");
+        highlighted?.classList.remove("onboarding-target-glow", "onboarding-target-input", "onboarding-target-panel");
         el?.classList.add("onboarding-target-glow");
         el?.classList.toggle("onboarding-target-input", el.dataset.onboarding === "routine-name");
+        el?.classList.toggle("onboarding-target-panel", el.dataset.onboarding === "exercise-settings");
         highlighted = el;
         setTargetKey(el?.dataset.onboarding ?? null);
       }
@@ -340,7 +344,7 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
       observer.disconnect();
-      highlighted?.classList.remove("onboarding-target-glow", "onboarding-target-input");
+      highlighted?.classList.remove("onboarding-target-glow", "onboarding-target-input", "onboarding-target-panel");
       padded.forEach((el) => el.classList.remove("onboarding-scroll-space"));
     };
   }, [active, state?.phase, state?.step, pathname]);
@@ -440,16 +444,30 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
     });
   }, [apply]);
 
-  const acceptName = useCallback(() => {
+  const confirmStep = useCallback(() => {
     const current = stateRef.current;
-    if (!current || current.step !== 1 || current.phase !== "tour") return;
-    const input = document.querySelector<HTMLInputElement>('[data-onboarding="routine-name"]');
-    if (!input?.value.trim()) {
-      input?.focus();
+    if (!current || current.phase !== "tour") return;
+    const step = TOUR_STEPS[current.step];
+    if (!step) return;
+
+    // El paso de nombre exige escribir algo; los demás pasos manuales avanzan
+    // sin exigir interacción porque ya vienen valores por defecto.
+    if (step.id === "name") {
+      const input = document.querySelector<HTMLInputElement>('[data-onboarding="routine-name"]');
+      if (!input?.value.trim()) {
+        input?.focus();
+        return;
+      }
+      track("routine_name_filled");
       return;
     }
-    track("routine_name_filled");
-  }, [track]);
+
+    apply((prev) => prev ? {
+      ...prev,
+      completedSteps: Array.from(new Set([...prev.completedSteps, step.id])),
+      step: prev.step + 1,
+    } : prev);
+  }, [apply, track]);
 
   const goToRegisteredStudents = useCallback(() => {
     finish();
@@ -600,7 +618,7 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
                   borderRadius: 16,
                 }}
               />
-              {pointerLabelStyle && (
+              {pointerLabelStyle && currentStep.id !== "settings" && (
                 <span
                   aria-hidden="true"
                   style={pointerLabelStyle}
@@ -647,11 +665,11 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
 
             <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/[0.08] px-2.5 py-1 text-[10px] font-semibold text-accent">
               <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,170,0.9)]" />
-              El elemento resaltado es el que tenés que tocar
+              {currentStep.hint ?? "El elemento resaltado es el que tenés que tocar"}
             </div>
 
-            {currentStep.id === "name" && (
-              <button onClick={acceptName} className="btn-secondary mt-3 w-full !py-2 text-xs">
+            {(currentStep.id === "name" || currentStep.id === "settings") && (
+              <button onClick={confirmStep} className="btn-secondary mt-3 w-full !py-2 text-xs">
                 Aceptar y continuar
               </button>
             )}

@@ -8,4 +8,4 @@
 export const VIKING_ACCESS_TEXT = "www.viking-fit.com/login";
 
 export const STUDENT_INVITATION_MESSAGE =
-  `Hola, te invito a registrarte en mi nueva app para entregarte tu planificacion: ${VIKING_ACCESS_TEXT}`;
+  `¡Hola! Te invito a registrarte en mi nueva app para que recibas allí tu planificación 👇\n\n${VIKING_ACCESS_TEXT}\n\n1° Presiona “Continuar como alumno”.\n2° Regístrate con tu Gmail.`;

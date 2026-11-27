@@ -85,7 +85,7 @@ export function StudentInvitation({ onBack }: { onBack?: () => void }) {
         <textarea
           ref={textRef}
           readOnly
-          rows={7}
+          rows={8}
           value={STUDENT_INVITATION_MESSAGE}
           onFocus={(e) => e.currentTarget.select()}
           aria-label="Mensaje de invitación para copiar"

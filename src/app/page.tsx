@@ -362,10 +362,7 @@ export default function LandingPage() {
           <FadeIn delay={300}>
             <div className="flex flex-col sm:flex-row gap-3 mt-8 w-full sm:w-auto">
               <Link href="/login" className="btn-primary text-base px-7 py-3 w-full sm:w-auto text-center shadow-glow hover:shadow-glow-strong transition-shadow">
-                Acceder como Coach
-              </Link>
-              <Link href="/login" className="btn-secondary text-base px-7 py-3 w-full sm:w-auto text-center bg-white/[0.08] backdrop-blur-sm hover:bg-white/[0.12] border-white/[0.15]">
-                Acceder como Alumno
+                Probar Gratis
               </Link>
             </div>
           </FadeIn>

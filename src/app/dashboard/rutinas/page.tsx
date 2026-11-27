@@ -919,9 +919,6 @@ export default function RutinasPage() {
                           const arr = (ej as any)[arrKey] ?? [4, 4, 4, 4];
                           arr[sw] = val;
                           upd({ [field]: val, [arrKey]: arr });
-                          if (field === "series" || field === "reps" || field === "descansoSegundos") {
-                            onboarding.track("routine_config_changed");
-                          }
                         };
                         return (
                         <div key={ej.id} className="flex flex-col sm:flex-row sm:items-start gap-2 bg-white/[0.04] rounded-lg px-3 py-2 border border-white/[0.05]">
@@ -939,9 +936,9 @@ export default function RutinasPage() {
                               ))}
                             </div>
                           </div>
-                          <div className="flex flex-col gap-1.5">
+                          <div className="flex flex-col gap-1.5" data-onboarding="exercise-settings">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <input type="text" inputMode="numeric" className="input !w-12 !text-center !text-xs !py-1.5" data-onboarding="exercise-settings"
+                              <input type="text" inputMode="numeric" className="input !w-12 !text-center !text-xs !py-1.5"
                                 value={(ej.seriesPorSemana ?? [ej.series, ej.series, ej.series, ej.series])[sw]}
                                 onChange={(e) => { const v = e.target.value; const n = v === "" ? 0 : parseInt(v); if (!isNaN(n)) updWeek("series", "seriesPorSemana", n); }} />
                               <span className="text-[10px] text-white/30">×</span>
