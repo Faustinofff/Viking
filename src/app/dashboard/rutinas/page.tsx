@@ -990,6 +990,7 @@ export default function RutinasPage() {
                           <div className="max-h-52 overflow-y-auto space-y-1 bg-surface rounded-xl p-2 border border-white/[0.1]">
                             {filteredEjercicios.map((ej) => (
                               <button key={ej.id} onClick={() => agregarEjADia(dia.id, ej.id)}
+                                data-onboarding="exercise-pick"
                                 className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/[0.08] active:bg-white/[0.04] transition-all text-left border border-transparent hover:border-white/[0.06]">
                                 <div>
                                   <p className="text-sm text-white font-medium">{ej.nombre}</p>

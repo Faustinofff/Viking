@@ -55,7 +55,8 @@ export function useCoachOnboarding() {
 
 type TourStep = {
   id: string;
-  target: string;
+  /** Se prueba en orden: el primero visible gana (útil cuando se abre el buscador de ejercicios). */
+  targets: string[];
   event: CoachOnboardingEvent;
   title: string;
   description: string;
@@ -64,45 +65,45 @@ type TourStep = {
 const TOUR_STEPS: TourStep[] = [
   {
     id: "new-routine",
-    target: "new-routine",
+    targets: ["new-routine"],
     event: "routine_builder_opened",
     title: "Creá tu primera rutina",
-    description: "Tocá «+ Nueva Rutina». Se va a abrir el editor real donde armás tus entrenamientos.",
+    description: "Tocá el botón resaltado «+ Nueva Rutina». Se abre el editor real donde armás tus entrenamientos.",
   },
   {
     id: "name",
-    target: "routine-name",
+    targets: ["routine-name"],
     event: "routine_name_filled",
     title: "Ponéle un nombre",
-    description: "Escribí un nombre claro, por ejemplo «Full Body» o «Push Pull Legs».",
+    description: "Escribí un nombre en el campo resaltado, por ejemplo «Full Body» o «Push Pull Legs».",
   },
   {
     id: "days",
-    target: "add-day",
+    targets: ["add-day"],
     event: "routine_day_added",
     title: "Armá los días",
-    description: "Agregá los días de entrenamiento de tu planificación.",
+    description: "Tocá «+ Agregar Día». Después te llevo automáticamente al siguiente paso.",
   },
   {
     id: "exercises",
-    target: "add-exercise",
+    targets: ["exercise-pick", "add-exercise"],
     event: "routine_exercise_added",
     title: "Incorporá ejercicios",
-    description: "Buscá en tu biblioteca y agregá ejercicios a cada día.",
+    description: "Tocá «+ Agregar ejercicio» y elegí uno de la lista resaltada. No hace falta buscar: ya te dejo ahí.",
   },
   {
     id: "settings",
-    target: "exercise-settings",
+    targets: ["exercise-settings"],
     event: "routine_config_changed",
     title: "Ajustá cada ejercicio",
-    description: "Configurá series, repeticiones y descansos. Podés hacerlo por semana.",
+    description: "Cambiá series o repeticiones en el campo resaltado. Podés hacerlo por semana.",
   },
   {
     id: "save",
-    target: "save-routine",
+    targets: ["save-routine"],
     event: "routine_saved",
     title: "Guardá tu rutina",
-    description: "Cuando esté lista, guardala. Vos decidís si es para un alumno o queda como borrador.",
+    description: "Cuando esté lista, tocá el botón resaltado. Vos decidís si es para un alumno o queda como borrador.",
   },
 ];
 
@@ -110,10 +111,10 @@ const LEARNED_ITEMS = [
   { id: "new-routine", label: "Crear una rutina", Icon: ClipboardList },
   { id: "days", label: "Agregar días de entrenamiento", Icon: CalendarDays },
   { id: "exercises", label: "Incorporar ejercicios", Icon: Dumbbell },
-  { id: "settings", label: "Organizar una planificación", Icon: Lightbulb },
+  { id: "settings", label: "Ajustar series y repeticiones", Icon: Lightbulb },
 ];
 
-type Rect = { top: number; left: number; width: number; height: number; bottom: number };
+type Rect = { top: number; left: number; width: number; height: number; bottom: number; right: number };
 
 function sameRect(a: Rect | null, b: Rect | null) {
   if (!a || !b) return a === b;
@@ -153,6 +154,7 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef<CoachOnboardingState | null>(null);
   const activeRef = useRef(false);
   const saveQueue = useRef<Promise<void>>(Promise.resolve());
+  const autoScrollPending = useRef<string | null>(null);
 
   const setActiveBoth = useCallback((value: boolean) => {
     activeRef.current = value;
@@ -214,41 +216,128 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [active, exitTour]);
 
-  // El spotlight sigue al elemento real del flujo de rutinas.
+  // El spotlight sigue al elemento real y lo deja centrado antes de seguir.
   useEffect(() => {
     if (!active || !state || state.phase !== "tour") {
       setTargetRect(null);
+      autoScrollPending.current = null;
       return;
     }
     const step = TOUR_STEPS[state.step];
     if (!step) return;
+
+    autoScrollPending.current = step.id;
     let frame = 0;
+    let scrollFrame = 0;
+    let settleTimer = 0;
+    let highlighted: HTMLElement | null = null;
+    const padded: HTMLElement[] = [];
+    let cancelled = false;
+
+    const findTarget = () => {
+      for (const key of step.targets) {
+        const el = document.querySelector(`[data-onboarding="${key}"]`) as HTMLElement | null;
+        if (el && el.getClientRects().length > 0) return el;
+      }
+      return null;
+    };
+
+    // Los editors usan contenedores con scroll propio. Sin espacio extra, un
+    // botón al final del modal nunca puede quedar centrado en la pantalla.
+    const addScrollSpace = (el: HTMLElement) => {
+      let parent = el.parentElement;
+      while (parent) {
+        const style = getComputedStyle(parent);
+        const scrollable = /(auto|scroll)/.test(style.overflowY);
+        if (scrollable && parent.scrollHeight > parent.clientHeight + 24 && !parent.classList.contains("onboarding-scroll-space")) {
+          parent.classList.add("onboarding-scroll-space");
+          padded.push(parent);
+        }
+        parent = parent.parentElement;
+      }
+    };
+
     const measure = () => {
-      const el = document.querySelector(`[data-onboarding="${step.target}"]`) as HTMLElement | null;
-      const rect: Rect | null = el ? {
-        top: el.getBoundingClientRect().top,
-        left: el.getBoundingClientRect().left,
-        width: el.getBoundingClientRect().width,
-        height: el.getBoundingClientRect().height,
-        bottom: el.getBoundingClientRect().bottom,
-      } : null;
-      setTargetRect((prev) => sameRect(prev, rect) ? prev : rect);
+      if (cancelled) return;
+      const el = findTarget();
+
+      if (el !== highlighted) {
+        // Dentro de un mismo paso el objetivo puede cambiar (ej.: se abre el
+        // buscador de ejercicios). También ahí hay que llevarlo al centro.
+        if (highlighted && el) autoScrollPending.current = step.id;
+        highlighted?.classList.remove("onboarding-target-glow");
+        el?.classList.add("onboarding-target-glow");
+        highlighted = el;
+      }
+
       setViewport((prev) => prev.width === window.innerWidth && prev.height === window.innerHeight
         ? prev
         : { width: window.innerWidth, height: window.innerHeight });
+
+      if (!el) {
+        setTargetRect(null);
+        return;
+      }
+
+      const r = el.getBoundingClientRect();
+      setTargetRect((prev) => sameRect(prev, {
+        top: r.top,
+        left: r.left,
+        width: r.width,
+        height: r.height,
+        bottom: r.bottom,
+        right: r.right,
+      }) ? prev : {
+        top: r.top,
+        left: r.left,
+        width: r.width,
+        height: r.height,
+        bottom: r.bottom,
+        right: r.right,
+      });
+
+      if (autoScrollPending.current === step.id) {
+        const center = r.top + r.height / 2;
+        const tolerance = Math.max(70, Math.min(140, window.innerHeight * 0.16));
+        autoScrollPending.current = null;
+        if (Math.abs(center - window.innerHeight / 2) > tolerance) {
+          addScrollSpace(el);
+          const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+          scrollFrame = requestAnimationFrame(() => {
+            if (cancelled) return;
+            el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center", inline: "nearest" });
+            settleTimer = window.setTimeout(() => {
+              if (cancelled) return;
+              measure();
+              const settled = el.getBoundingClientRect();
+              const settledCenter = settled.top + settled.height / 2;
+              if (Math.abs(settledCenter - window.innerHeight / 2) > tolerance * 1.2) {
+                el.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
+                measure();
+              }
+            }, reduce ? 80 : 520);
+          });
+        }
+      }
     };
+
     frame = requestAnimationFrame(measure);
-    const delayed = setTimeout(measure, 220);
+    const delayed = window.setTimeout(measure, 240);
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, true);
     const observer = new MutationObserver(measure);
     observer.observe(document.body, { childList: true, subtree: true });
     return () => {
+      cancelled = true;
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(scrollFrame);
       clearTimeout(delayed);
+      clearTimeout(settleTimer);
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
       observer.disconnect();
+      highlighted?.classList.remove("onboarding-target-glow");
+      padded.forEach((el) => el.classList.remove("onboarding-scroll-space"));
     };
   }, [active, state?.phase, state?.step, pathname]);
 
@@ -352,20 +441,45 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
     router.push("/dashboard/redes");
   }, [router]);
 
+  // La tarjeta se ubica al costado cuando hay espacio para no tapar el botón.
   const cardStyle = useMemo<CSSProperties>(() => {
     if (!targetRect || !viewport.width) {
-      return { left: "50%", top: "50%", transform: "translate(-50%, -50%)", width: "min(420px, calc(100vw - 24px))" };
+      return { left: "50%", top: "50%", transform: "translate(-50%, -50%)", width: "min(360px, calc(100vw - 24px))" };
     }
     const isMobile = viewport.width < 640;
-    const cardWidth = Math.min(420, viewport.width - 24);
-    const estimatedHeight = isMobile ? 232 : 206;
-    const gap = 12;
+    const cardWidth = Math.min(360, viewport.width - 24);
+    const estimatedHeight = isMobile ? 236 : 206;
+    const gap = 16;
+
+    if (!isMobile) {
+      const rightSpace = viewport.width - targetRect.right - gap - cardWidth;
+      const leftSpace = targetRect.left - gap - cardWidth;
+      if (rightSpace >= 12 || leftSpace >= 12) {
+        const placeRight = rightSpace >= leftSpace;
+        const left = placeRight ? targetRect.right + gap : targetRect.left - cardWidth - gap;
+        const top = targetRect.top + targetRect.height / 2 - estimatedHeight / 2;
+        return {
+          left: Math.max(12, Math.min(left, viewport.width - cardWidth - 12)),
+          top: Math.max(12, Math.min(top, viewport.height - estimatedHeight - 12)),
+          width: cardWidth,
+        };
+      }
+    }
+
     let left = targetRect.left + targetRect.width / 2 - cardWidth / 2;
     left = Math.max(12, Math.min(left, viewport.width - cardWidth - 12));
     let top = targetRect.bottom + gap;
     if (top + estimatedHeight > viewport.height - 12) top = targetRect.top - estimatedHeight - gap;
     if (top < 12) top = Math.max(12, Math.min(targetRect.top, viewport.height - estimatedHeight - 12));
     return { left, top, width: cardWidth };
+  }, [targetRect, viewport]);
+
+  const pointerLabelStyle = useMemo<CSSProperties | undefined>(() => {
+    if (!targetRect || !viewport.width) return undefined;
+    const width = 78;
+    const left = Math.max(12, Math.min(targetRect.right - width + 6, viewport.width - width - 12));
+    const top = targetRect.top - 26 < 8 ? targetRect.bottom + 8 : targetRect.top - 26;
+    return { left, top, width };
   }, [targetRect, viewport]);
 
   const isCoach = usuario?.rol === "coach";
@@ -458,46 +572,76 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
       {showTour && currentStep && (
         <div className="pointer-events-none fixed inset-0 z-[80] animate-spotlight-in" aria-live="polite">
           {targetRect ? (
-            <div
-              aria-hidden="true"
-              style={{
-                position: "fixed",
-                left: targetRect.left - 6,
-                top: targetRect.top - 6,
-                width: targetRect.width + 12,
-                height: targetRect.height + 12,
-                borderRadius: 14,
-                border: "1px solid rgba(0, 212, 170, 0.55)",
-                boxShadow: "0 0 0 9999px rgba(3, 6, 8, 0.66), 0 0 22px rgba(0, 212, 170, 0.14)",
-                pointerEvents: "none",
-              }}
-            />
+            <>
+              <div
+                aria-hidden="true"
+                className="onboarding-spotlight"
+                style={{
+                  position: "fixed",
+                  left: targetRect.left - 8,
+                  top: targetRect.top - 8,
+                  width: targetRect.width + 16,
+                  height: targetRect.height + 16,
+                  borderRadius: 16,
+                }}
+              />
+              {pointerLabelStyle && (
+                <span
+                  aria-hidden="true"
+                  style={pointerLabelStyle}
+                  className="onboarding-pointer-label"
+                >
+                  Tocá acá
+                </span>
+              )}
+            </>
           ) : (
-            <div className="absolute inset-0 bg-black/60" aria-hidden="true" />
+            <div className="absolute inset-0 bg-[#020608]/55" aria-hidden="true" />
           )}
 
           <div
             role="dialog"
             aria-label={currentStep.title}
-            className="card pointer-events-auto fixed z-[82] !p-4 shadow-2xl sm:!p-5"
+            className="onboarding-tip pointer-events-auto fixed z-[83] animate-fade-in"
             style={cardStyle}
           >
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-accent">
-                Paso {state!.step + 1} de {TOUR_STEPS.length}
-              </span>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">
+                  Paso {state!.step + 1} de {TOUR_STEPS.length}
+                </span>
+              </div>
               <button onClick={exitTour} aria-label="Salir del recorrido" className="rounded-lg p-1 text-white/35 transition-colors hover:bg-white/10 hover:text-white">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <h3 className="text-base font-semibold text-white">{currentStep.title}</h3>
-            <p className="mt-1.5 text-xs leading-relaxed text-white/55">{currentStep.description}</p>
+
+            <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,170,0.55)] transition-all duration-300"
+                style={{ width: `${((state!.step + 1) / TOUR_STEPS.length) * 100}%` }}
+              />
+            </div>
+
+            <h3 className="mt-4 text-[15px] font-semibold text-white">{currentStep.title}</h3>
+            <p className="mt-1.5 text-xs leading-relaxed text-white/60">{currentStep.description}</p>
+
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/[0.08] px-2.5 py-1 text-[10px] font-semibold text-accent">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,170,0.9)]" />
+              El elemento resaltado es el que tenés que tocar
+            </div>
+
             {!targetRect && pathname !== "/dashboard/rutinas" && (
               <button onClick={() => router.push("/dashboard/rutinas")} className="btn-ghost mt-2 !px-2 !py-1 text-xs text-accent">
                 Ir a Rutinas
               </button>
             )}
-            <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/[0.06] pt-3">
+
+            <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/[0.07] pt-3">
               <div className="flex gap-1">
                 {state!.step > 0 && (
                   <button onClick={goBack} className="btn-ghost !px-2 !py-1.5 text-xs inline-flex items-center gap-1">
@@ -505,7 +649,7 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
                   </button>
                 )}
                 <button onClick={skipStep} className="btn-ghost !px-2 !py-1.5 text-xs">
-                  {state!.step === TOUR_STEPS.length - 1 ? "Salir" : "Omitir paso"}
+                  {state!.step === TOUR_STEPS.length - 1 ? "Omitir y salir" : "Omitir paso"}
                 </button>
               </div>
               <button onClick={exitTour} className="text-[11px] text-white/30 transition-colors hover:text-white/60">
@@ -523,7 +667,7 @@ export function CoachOnboardingProvider({ children }: { children: ReactNode }) {
           aria-labelledby="viking-first-routine-title"
           className="fixed inset-0 z-[92] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
         >
-          <div className="card relative w-full max-w-lg p-7 text-center animate-fade-in sm:p-9">
+          <div className="card relative w-full max-w-lg border-accent/20 p-7 text-center shadow-glow animate-fade-in sm:p-9">
             <button
               onClick={() => apply((prev) => prev ? { ...prev, phase: "students" } : prev)}
               aria-label="Continuar"

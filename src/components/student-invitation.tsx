@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, CircleCheck, Copy, ExternalLink } from "lucide-react";
-import { STUDENT_INVITATION_MESSAGE, VIKING_ACCESS_URL } from "@/lib/viking-links";
+import { ArrowLeft, CircleCheck, Copy, Link2 } from "lucide-react";
+import { STUDENT_INVITATION_MESSAGE, VIKING_ACCESS_TEXT } from "@/lib/viking-links";
 
 type CopyState = "idle" | "copied" | "error";
 
@@ -71,15 +71,13 @@ export function StudentInvitation({ onBack }: { onBack?: () => void }) {
 
       <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
         <p className="label mb-2">Link de acceso</p>
-        <a
-          href={VIKING_ACCESS_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm text-accent break-all hover:underline"
-        >
-          {VIKING_ACCESS_URL}
-          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-        </a>
+        <p className="inline-flex max-w-full items-center gap-2 break-all font-medium text-accent">
+          <Link2 className="h-3.5 w-3.5 shrink-0" />
+          {VIKING_ACCESS_TEXT}
+        </p>
+        <p className="mt-2 text-[11px] leading-relaxed text-white/35">
+          Es solo para copiar y pegar: dentro de la app no se abre como enlace.
+        </p>
       </div>
 
       <div>
